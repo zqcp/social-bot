@@ -1,47 +1,113 @@
-module.exports = {
-    name: "embed",
-    type: "select",
+const {
+    ActionRowBuilder,
+    StringSelectMenuBuilder,
+    UserSelectMenuBuilder,
+    RoleSelectMenuBuilder,
+    MentionableSelectMenuBuilder,
+    ChannelSelectMenuBuilder
+} = require("discord.js");
 
-    async execute(client, interaction) {
-        if (!interaction.customId.startsWith("embed:")) return;
+// =========================
+// SELECT MENU BUILDERS
+// =========================
 
-        const value = interaction.values?.[0];
+const menuTypes = {
+    string: StringSelectMenuBuilder,
+    user: UserSelectMenuBuilder,
+    role: RoleSelectMenuBuilder,
+    mentionable: MentionableSelectMenuBuilder,
+    channel: ChannelSelectMenuBuilder
+};
 
-        if (!value) {
-            return interaction.reply({
-                content: "No option was selected.",
-                flags: 64
-            });
+// =========================
+// BUILD SELECT MENUS
+// =========================
+
+function buildSelectMenus(menus = [], replace = value => value) {
+    const rows = [];
+
+    for (const menu of menus.slice(0, 5)) {
+        if (!menu || !menu.type || !menu.customId) continue;
+
+        const MenuBuilder = menuTypes[
+            String(menu.type).toLowerCase()
+        ];
+
+        if (!MenuBuilder) continue;
+
+        const builder = new MenuBuilder()
+            .setCustomId(
+                String(replace(menu.customId)).slice(0, 100)
+            );
+
+        if (menu.placeholder) {
+            builder.setPlaceholder(
+                String(replace(menu.placeholder)).slice(0, 150)
+            );
         }
 
-        const action = interaction.customId.split(":")[1];
-
-        if (action === "embed") {
-            return interaction.reply({
-                content: `Selected embed: \`${value}\``,
-                flags: 64
-            });
+        if (menu.minValues !== undefined) {
+            builder.setMinValues(
+                Math.max(0, Number(menu.minValues) || 0)
+            );
         }
 
-        if (action === "field") {
-            return interaction.reply({
-                content: `Selected field: \`${value}\``,
-                flags: 64
-            });
+        if (menu.maxValues !== undefined) {
+            builder.setMaxValues(
+                Math.max(1, Number(menu.maxValues) || 1)
+            );
         }
 
-        if (action === "button") {
-            return interaction.reply({
-                content: `Selected button: \`${value}\``,
-                flags: 64
-            });
+        if (menu.disabled) {
+            builder.setDisabled(true);
         }
 
-        if (action === "select") {
-            return interaction.reply({
-                content: `Selected menu option: \`${value}\``,
-                flags: 64
-            });
+        // String select options
+        if (
+            String(menu.type).toLowerCase() === "string" &&
+            Array.isArray(menu.options)
+        ) {
+            const options = menu.options
+                .slice(0, 25)
+                .filter(option => option?.label && option?.value)
+                .map(option => ({
+                    label: String(
+                        replace(option.label)
+                    ).slice(0, 100),
+
+                    value: String(
+                        replace(option.value)
+                    ).slice(0, 100),
+
+                    description: option.description
+                        ? String(
+                            replace(option.description)
+                        ).slice(0, 100)
+                        : undefined,
+
+                    emoji: option.emoji
+                        ? String(
+                            replace(option.emoji)
+                        )
+                        : undefined,
+
+                    default: Boolean(option.default)
+                }));
+
+            if (!options.length) continue;
+
+            builder.addOptions(options);
         }
+
+        rows.push(
+            new ActionRowBuilder().addComponents(builder)
+        );
     }
+
+    return rows;
+}
+
+module.exports = {
+    buildSelectMenus,
+    menuTypes
 };
