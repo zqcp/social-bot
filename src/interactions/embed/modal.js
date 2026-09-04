@@ -1,252 +1,823 @@
-const interactionEmbeds =
-    require("../../embeds/general/interaction");
-
 const {
-    getSession,
-    buildMessage
-} = require("../../systems/embed/builder");
+    ModalBuilder,
+    TextInputBuilder,
+    TextInputStyle,
+    ActionRowBuilder
+} = require("discord.js");
+
+const builder =
+    require("../../systems/embed/builder");
+
+const fields =
+    require("../../systems/embed/fields");
+
+const buttons =
+    require("../../systems/embed/buttons");
+
+const selectMenus =
+    require("../../systems/embed/selectMenus");
+
+const globalEmbeds =
+    require("../../embeds/general/global");
+
+
+// ============================================================
+// HELPERS
+// ============================================================
+
+function getSession(interaction) {
+    return builder.getSession(
+        interaction.user.id,
+        interaction.guildId
+    );
+}
+
+function input(
+    customId,
+    label,
+    value = "",
+    style = TextInputStyle.Short,
+    required = false,
+    maxLength = 4000
+) {
+    const field =
+        new TextInputBuilder()
+            .setCustomId(customId)
+            .setLabel(label)
+            .setStyle(style)
+            .setRequired(required)
+            .setMaxLength(maxLength);
+
+    if (value !== undefined && value !== null) {
+        field.setValue(String(value).slice(0, maxLength));
+    }
+
+    return new ActionRowBuilder().addComponents(field);
+}
+
+function showError(interaction, text) {
+    return interaction.reply({
+        embeds: [
+            globalEmbeds.error(text)
+        ],
+        flags: 64
+    });
+}
+
+
+// ============================================================
+// MODAL BUILDER
+// ============================================================
+
+function contentModal(session) {
+
+    return new ModalBuilder()
+        .setCustomId("embed:modal:content")
+        .setTitle("Edit Content")
+        .addComponents(
+            input(
+                "content",
+                "Content",
+                session.data.content || "",
+                TextInputStyle.Paragraph,
+                false,
+                2000
+            )
+        );
+}
+
+
+function embedPropertyModal(session, property) {
+
+    const index =
+        Number(session.data.activeEmbed) || 0;
+
+    const embed =
+        session.data.embeds[index];
+
+    if (!embed) return null;
+
+    const values = {
+        title: embed.title || "",
+        description: embed.description || "",
+        url: embed.url || "",
+        color: embed.color || "",
+        author: embed.author?.name || "",
+        thumbnail: embed.thumbnail || "",
+        image: embed.image || "",
+        footer: embed.footer?.text || ""
+    };
+
+    const settings = {
+        title: {
+            label: "Title",
+            style: TextInputStyle.Short,
+            max: 256
+        },
+        description: {
+            label: "Description",
+            style: TextInputStyle.Paragraph,
+            max: 4000
+        },
+        url: {
+            label: "URL",
+            style: TextInputStyle.Short,
+            max: 2048
+        },
+        color: {
+            label: "Color",
+            style: TextInputStyle.Short,
+            max: 20
+        },
+        author: {
+            label: "Author Name",
+            style: TextInputStyle.Short,
+            max: 256
+        },
+        thumbnail: {
+            label: "Thumbnail URL",
+            style: TextInputStyle.Short,
+            max: 2048
+        },
+        image: {
+            label: "Image URL",
+            style: TextInputStyle.Short,
+            max: 2048
+        },
+        footer: {
+            label: "Footer Text",
+            style: TextInputStyle.Short,
+            max: 2048
+        }
+    };
+
+    const setting =
+        settings[property];
+
+    if (!setting) return null;
+
+    return new ModalBuilder()
+        .setCustomId(
+            `embed:modal:${property}`
+        )
+        .setTitle(
+            `Edit ${setting.label}`
+        )
+        .addComponents(
+            input(
+                "value",
+                setting.label,
+                values[property],
+                setting.style,
+                false,
+                setting.max
+            )
+        );
+}
+
+
+function authorModal(session) {
+
+    const index =
+        Number(session.data.activeEmbed) || 0;
+
+    const author =
+        session.data.embeds[index]?.author || {};
+
+    return new ModalBuilder()
+        .setCustomId("embed:modal:author")
+        .setTitle("Edit Author")
+        .addComponents(
+            input(
+                "name",
+                "Author Name",
+                author.name || "",
+                TextInputStyle.Short,
+                false,
+                256
+            ),
+            input(
+                "url",
+                "Author URL",
+                author.url || "",
+                TextInputStyle.Short,
+                false,
+                2048
+            ),
+            input(
+                "icon",
+                "Author Icon URL",
+                author.iconURL || "",
+                TextInputStyle.Short,
+                false,
+                2048
+            )
+        );
+}
+
+
+function footerModal(session) {
+
+    const index =
+        Number(session.data.activeEmbed) || 0;
+
+    const footer =
+        session.data.embeds[index]?.footer || {};
+
+    return new ModalBuilder()
+        .setCustomId("embed:modal:footer")
+        .setTitle("Edit Footer")
+        .addComponents(
+            input(
+                "text",
+                "Footer Text",
+                footer.text || "",
+                TextInputStyle.Short,
+                false,
+                2048
+            ),
+            input(
+                "icon",
+                "Footer Icon URL",
+                footer.iconURL || "",
+                TextInputStyle.Short,
+                false,
+                2048
+            )
+        );
+}
+
+
+function fieldModal(session, mode) {
+
+    const index =
+        Number(session.data.activeField) || 0;
+
+    const field =
+        session.data.embeds[
+            Number(session.data.activeEmbed) || 0
+        ]?.fields?.[index] || {};
+
+    return new ModalBuilder()
+        .setCustomId(
+            `embed:modal:field:${mode}`
+        )
+        .setTitle(
+            mode === "add"
+                ? "Add Field"
+                : "Edit Field"
+        )
+        .addComponents(
+            input(
+                "name",
+                "Field Name",
+                field.name || "",
+                TextInputStyle.Short,
+                true,
+                256
+            ),
+            input(
+                "value",
+                "Field Value",
+                field.value || "",
+                TextInputStyle.Paragraph,
+                true,
+                1024
+            ),
+            input(
+                "inline",
+                "Inline",
+                field.inline ? "Yes" : "No",
+                TextInputStyle.Short,
+                true,
+                3
+            )
+        );
+}
+
+
+function buttonModal(session, mode) {
+
+    const index =
+        Number(session.data.activeButton) || 0;
+
+    const button =
+        session.data.buttons[index] || {};
+
+    return new ModalBuilder()
+        .setCustomId(
+            `embed:modal:button:${mode}`
+        )
+        .setTitle(
+            mode === "add"
+                ? "Add Button"
+                : "Edit Button"
+        )
+        .addComponents(
+            input(
+                "label",
+                "Label",
+                button.label || "",
+                TextInputStyle.Short,
+                false,
+                80
+            ),
+            input(
+                "style",
+                "Style",
+                button.style || "secondary",
+                TextInputStyle.Short,
+                true,
+                10
+            ),
+            input(
+                "customId",
+                "Custom ID",
+                button.customId || "",
+                TextInputStyle.Short,
+                false,
+                100
+            ),
+            input(
+                "emoji",
+                "Emoji",
+                button.emoji || "",
+                TextInputStyle.Short,
+                false,
+                100
+            ),
+            input(
+                "url",
+                "URL",
+                button.url || "",
+                TextInputStyle.Short,
+                false,
+                2048
+            )
+        );
+}
+
+
+function selectMenuModal(session) {
+
+    const index =
+        Number(session.data.activeSelectMenu) || 0;
+
+    const menu =
+        session.data.selectMenus[index] || {};
+
+    return new ModalBuilder()
+        .setCustomId("embed:modal:select-menu")
+        .setTitle("Edit Select Menu")
+        .addComponents(
+            input(
+                "type",
+                "Type",
+                menu.type || "string",
+                TextInputStyle.Short,
+                true,
+                20
+            ),
+            input(
+                "customId",
+                "Custom ID",
+                menu.customId || "",
+                TextInputStyle.Short,
+                true,
+                100
+            ),
+            input(
+                "placeholder",
+                "Placeholder",
+                menu.placeholder || "",
+                TextInputStyle.Short,
+                false,
+                150
+            ),
+            input(
+                "min",
+                "Minimum Values",
+                menu.minValues ?? 1,
+                TextInputStyle.Short,
+                true,
+                2
+            ),
+            input(
+                "max",
+                "Maximum Values",
+                menu.maxValues ?? 1,
+                TextInputStyle.Short,
+                true,
+                2
+            )
+        );
+}
+
+
+function moveModal(type) {
+
+    return new ModalBuilder()
+        .setCustomId(
+            `embed:modal:move:${type}`
+        )
+        .setTitle(
+            `Move ${type}`
+        )
+        .addComponents(
+            input(
+                "position",
+                "New Position",
+                "1",
+                TextInputStyle.Short,
+                true,
+                3
+            )
+        );
+}
+
+
+// ============================================================
+// EXECUTE
+// ============================================================
 
 module.exports = {
-    name: "embed",
-    type: "modal",
 
-    async execute(client, interaction) {
+    name: "embedModals",
+
+    async execute(interaction) {
+
+        if (!interaction.isModalSubmit()) {
+            return;
+        }
+
+        if (!interaction.customId.startsWith("embed:")) {
+            return;
+        }
 
         const session =
-            getSession(
-                interaction.user.id,
-                interaction.guildId
-            );
+            getSession(interaction);
 
         if (!session) {
+            return showError(
+                interaction,
+                "This embed editor session has expired."
+            );
+        }
+
+        const id =
+            interaction.customId;
+
+
+        // ====================================================
+        // CONTENT
+        // ====================================================
+
+        if (id === "embed:modal:content") {
+
+            session.data.content =
+                interaction.fields.getTextInputValue(
+                    "content"
+                );
+
+            builder.updateSession(session);
+
             return interaction.reply({
                 embeds: [
-                    interactionEmbeds.modalFailed(
-                        "This embed builder session has expired."
+                    globalEmbeds.success(
+                        interaction.user,
+                        "Content updated."
                     )
                 ],
                 flags: 64
             });
         }
 
-        const id =
-            interaction.customId;
 
-        /*
-         * CONTENT
-         */
+        // ====================================================
+        // EMBED PROPERTIES
+        // ====================================================
 
-        if (id === "embed:content") {
-
-            session.data.content =
-                getValue(
-                    interaction,
-                    "content"
-                );
-
-            await refreshEditor(
-                client,
-                session,
-                interaction
+        const propertyMatch =
+            id.match(
+                /^embed:modal:(title|description|url|color|thumbnail|image)$/
             );
 
-            return success(
-                interaction,
-                "Message content updated."
-            );
-        }
+        if (propertyMatch) {
 
-        /*
-         * EMBED
-         */
+            const property =
+                propertyMatch[1];
 
-        if (id === "embed:embed") {
+            const index =
+                Number(session.data.activeEmbed) || 0;
 
             const embed =
-                getEmbed(session);
+                session.data.embeds[index];
 
-            embed.title =
-                getValue(
+            if (!embed) {
+                return showError(
                     interaction,
-                    "title"
-                ).slice(0, 256);
-
-            embed.description =
-                getValue(
-                    interaction,
-                    "description"
-                ).slice(0, 4096);
-
-            embed.url =
-                getValue(
-                    interaction,
-                    "url"
-                ).slice(0, 2048);
-
-            embed.color =
-                getValue(
-                    interaction,
-                    "color"
+                    "No embed is currently selected."
                 );
-
-            const timestamp =
-                getValue(
-                    interaction,
-                    "timestamp"
-                );
-
-            if (!timestamp) {
-                embed.timestamp = false;
-            } else if (
-                timestamp.toLowerCase() === "true"
-            ) {
-                embed.timestamp = true;
-            } else if (
-                !Number.isNaN(
-                    Date.parse(timestamp)
-                )
-            ) {
-                embed.timestamp = timestamp;
-            } else {
-                return interaction.reply({
-                    embeds: [
-                        interactionEmbeds.modalFailed(
-                            "The timestamp is invalid."
-                        )
-                    ],
-                    flags: 64
-                });
             }
-
-            await refreshEditor(
-                client,
-                session,
-                interaction
-            );
-
-            return success(
-                interaction,
-                "Embed updated."
-            );
-        }
-
-        /*
-         * FIELD
-         */
-
-        if (id === "embed:field") {
-
-            const embed =
-                getEmbed(session);
-
-            if (
-                embed.fields.length >= 25
-            ) {
-                return interaction.reply({
-                    embeds: [
-                        interactionEmbeds.modalFailed(
-                            "This embed already has 25 fields."
-                        )
-                    ],
-                    flags: 64
-                });
-            }
-
-            const name =
-                getValue(
-                    interaction,
-                    "fieldName"
-                ).slice(0, 256);
 
             const value =
-                getValue(
-                    interaction,
-                    "fieldValue"
-                ).slice(0, 1024);
+                interaction.fields.getTextInputValue(
+                    "value"
+                ).trim();
 
-            if (!name || !value) {
-                return interaction.reply({
-                    embeds: [
-                        interactionEmbeds.modalFailed(
-                            "Field name and value are required."
-                        )
-                    ],
-                    flags: 64
-                });
-            }
+            embed[property] =
+                value;
 
-            const inline =
-                ["true", "yes", "1"]
-                    .includes(
-                        getValue(
-                            interaction,
-                            "fieldInline"
-                        ).toLowerCase()
-                    );
+            builder.updateSession(session);
 
-            embed.fields.push({
-                name,
-                value,
-                inline
+            return interaction.reply({
+                embeds: [
+                    globalEmbeds.success(
+                        interaction.user,
+                        `${property} updated.`
+                    )
+                ],
+                flags: 64
             });
-
-            await refreshEditor(
-                client,
-                session,
-                interaction
-            );
-
-            return success(
-                interaction,
-                "Field added."
-            );
         }
 
-        /*
-         * BUTTON
-         */
 
-        if (id === "embed:button") {
+        // ====================================================
+        // AUTHOR
+        // ====================================================
 
-            if (
-                !Array.isArray(
-                    session.data.buttons
-                )
-            ) {
-                session.data.buttons = [];
+        if (id === "embed:modal:author") {
+
+            const index =
+                Number(session.data.activeEmbed) || 0;
+
+            const embed =
+                session.data.embeds[index];
+
+            if (!embed) {
+                return showError(
+                    interaction,
+                    "No embed is currently selected."
+                );
             }
 
-            const label =
-                getValue(
-                    interaction,
-                    "buttonLabel"
-                ).slice(0, 80);
+            embed.author = {
+                name:
+                    interaction.fields.getTextInputValue(
+                        "name"
+                    ).trim(),
+                url:
+                    interaction.fields.getTextInputValue(
+                        "url"
+                    ).trim(),
+                iconURL:
+                    interaction.fields.getTextInputValue(
+                        "icon"
+                    ).trim()
+            };
 
-            const customId =
-                getValue(
-                    interaction,
-                    "buttonId"
-                ).slice(0, 100);
+            builder.updateSession(session);
 
-            const style =
-                getValue(
-                    interaction,
-                    "buttonStyle"
-                ).toLowerCase();
+            return interaction.reply({
+                embeds: [
+                    globalEmbeds.success(
+                        interaction.user,
+                        "Author updated."
+                    )
+                ],
+                flags: 64
+            });
+        }
 
-            const url =
-                getValue(
-                    interaction,
-                    "buttonUrl"
-                ).slice(0, 512);
 
-            const emoji =
-                getValue(
-                    interaction,
-                    "buttonEmoji"
-                ).slice(0, 100);
+        // ====================================================
+        // FOOTER
+        // ====================================================
 
-            const validStyles = [
+        if (id === "embed:modal:footer") {
+
+            const index =
+                Number(session.data.activeEmbed) || 0;
+
+            const embed =
+                session.data.embeds[index];
+
+            if (!embed) {
+                return showError(
+                    interaction,
+                    "No embed is currently selected."
+                );
+            }
+
+            embed.footer = {
+                text:
+                    interaction.fields.getTextInputValue(
+                        "text"
+                    ).trim(),
+                iconURL:
+                    interaction.fields.getTextInputValue(
+                        "icon"
+                    ).trim()
+            };
+
+            builder.updateSession(session);
+
+            return interaction.reply({
+                embeds: [
+                    globalEmbeds.success(
+                        interaction.user,
+                        "Footer updated."
+                    )
+                ],
+                flags: 64
+            });
+        }
+
+
+        // ====================================================
+        // ADD / EDIT FIELD
+        // ====================================================
+
+        const fieldMatch =
+            id.match(
+                /^embed:modal:field:(add|edit)$/
+            );
+
+        if (fieldMatch) {
+
+            const mode =
+                fieldMatch[1];
+
+            const name =
+                interaction.fields.getTextInputValue(
+                    "name"
+                ).trim();
+
+            const value =
+                interaction.fields.getTextInputValue(
+                    "value"
+                ).trim();
+
+            const inline =
+                interaction.fields.getTextInputValue(
+                    "inline"
+                ).trim().toLowerCase() === "yes";
+
+            if (!name || !value) {
+                return showError(
+                    interaction,
+                    "Field name and value are required."
+                );
+            }
+
+            if (mode === "add") {
+
+                const created =
+                    fields.addField(
+                        session,
+                        {
+                            name,
+                            value,
+                            inline
+                        }
+                    );
+
+                if (!created) {
+                    return showError(
+                        interaction,
+                        "Unable to add the field. This embed may already contain 25 fields."
+                    );
+                }
+
+            } else {
+
+                const index =
+                    Number(session.data.activeField) || 0;
+
+                const updated =
+                    fields.editField(
+                        session,
+                        index,
+                        {
+                            name,
+                            value,
+                            inline
+                        }
+                    );
+
+                if (!updated) {
+                    return showError(
+                        interaction,
+                        "Unable to edit that field."
+                    );
+                }
+            }
+
+            builder.updateSession(session);
+
+            return interaction.reply({
+                embeds: [
+                    globalEmbeds.success(
+                        interaction.user,
+                        mode === "add"
+                            ? "Field added."
+                            : "Field updated."
+                    )
+                ],
+                flags: 64
+            });
+        }
+
+
+        // ====================================================
+        // MOVE FIELD
+        // ====================================================
+
+        if (id === "embed:modal:move:field") {
+
+            const position =
+                Number(
+                    interaction.fields.getTextInputValue(
+                        "position"
+                    )
+                );
+
+            const current =
+                Number(session.data.activeField) || 0;
+
+            const target =
+                position - 1;
+
+            const moved =
+                fields.moveField(
+                    session,
+                    current,
+                    target
+                );
+
+            if (!moved) {
+                return showError(
+                    interaction,
+                    "Invalid field position."
+                );
+            }
+
+            builder.updateSession(session);
+
+            return interaction.reply({
+                embeds: [
+                    globalEmbeds.success(
+                        interaction.user,
+                        "Field moved."
+                    )
+                ],
+                flags: 64
+            });
+        }
+
+
+        // ====================================================
+        // ADD / EDIT BUTTON
+        // ====================================================
+
+        const buttonMatch =
+            id.match(
+                /^embed:modal:button:(add|edit)$/
+            );
+
+        if (buttonMatch) {
+
+            const mode =
+                buttonMatch[1];
+
+            const data = {
+                label:
+                    interaction.fields.getTextInputValue(
+                        "label"
+                    ).trim(),
+
+                style:
+                    interaction.fields.getTextInputValue(
+                        "style"
+                    ).trim().toLowerCase(),
+
+                customId:
+                    interaction.fields.getTextInputValue(
+                        "customId"
+                    ).trim(),
+
+                emoji:
+                    interaction.fields.getTextInputValue(
+                        "emoji"
+                    ).trim(),
+
+                url:
+                    interaction.fields.getTextInputValue(
+                        "url"
+                    ).trim()
+            };
+
+            const styles = [
                 "primary",
                 "secondary",
                 "success",
@@ -254,127 +825,155 @@ module.exports = {
                 "link"
             ];
 
-            if (!validStyles.includes(style)) {
-                return interaction.reply({
-                    embeds: [
-                        interactionEmbeds.modalFailed(
-                            "Invalid button style. Use primary, secondary, success, danger, or link."
-                        )
-                    ],
-                    flags: 64
-                });
-            }
-
-            if (!label) {
-                return interaction.reply({
-                    embeds: [
-                        interactionEmbeds.modalFailed(
-                            "Button label is required."
-                        )
-                    ],
-                    flags: 64
-                });
+            if (!styles.includes(data.style)) {
+                return showError(
+                    interaction,
+                    "Invalid button style. Use primary, secondary, success, danger, or link."
+                );
             }
 
             if (
-                style === "link" &&
-                !url
+                data.style === "link" &&
+                !data.url
             ) {
-                return interaction.reply({
-                    embeds: [
-                        interactionEmbeds.modalFailed(
-                            "A URL is required for link buttons."
-                        )
-                    ],
-                    flags: 64
-                });
+                return showError(
+                    interaction,
+                    "Link buttons require a URL."
+                );
             }
 
-            if (
-                style !== "link" &&
-                !customId
-            ) {
-                return interaction.reply({
-                    embeds: [
-                        interactionEmbeds.modalFailed(
-                            "A Custom ID is required for this button."
-                        )
-                    ],
-                    flags: 64
-                });
+            if (mode === "add") {
+
+                buttons.addButton(
+                    session,
+                    data
+                );
+
+            } else {
+
+                const index =
+                    Number(session.data.activeButton) || 0;
+
+                if (
+                    !buttons.editButton(
+                        session,
+                        index,
+                        data
+                    )
+                ) {
+                    return showError(
+                        interaction,
+                        "Unable to edit that button."
+                    );
+                }
             }
 
-            session.data.buttons.push({
-                label,
-                emoji,
-                style,
-                customId:
-                    style === "link"
-                        ? ""
-                        : customId,
-                url:
-                    style === "link"
-                        ? url
-                        : "",
-                disabled: false
+            builder.updateSession(session);
+
+            return interaction.reply({
+                embeds: [
+                    globalEmbeds.success(
+                        interaction.user,
+                        mode === "add"
+                            ? "Button added."
+                            : "Button updated."
+                    )
+                ],
+                flags: 64
             });
-
-            await refreshEditor(
-                client,
-                session,
-                interaction
-            );
-
-            return success(
-                interaction,
-                "Button added."
-            );
         }
 
-        /*
-         * SELECT MENU
-         */
 
-        if (id === "embed:select") {
+        // ====================================================
+        // MOVE BUTTON
+        // ====================================================
 
-            if (
-                !Array.isArray(
-                    session.data.selectMenus
-                )
-            ) {
-                session.data.selectMenus = [];
+        if (id === "embed:modal:move:button") {
+
+            const position =
+                Number(
+                    interaction.fields.getTextInputValue(
+                        "position"
+                    )
+                );
+
+            const current =
+                Number(session.data.activeButton) || 0;
+
+            const moved =
+                buttons.moveButton(
+                    session,
+                    current,
+                    position - 1
+                );
+
+            if (!moved) {
+                return showError(
+                    interaction,
+                    "Invalid button position."
+                );
             }
 
-            const customId =
-                getValue(
-                    interaction,
-                    "customId"
-                ).slice(0, 100);
+            builder.updateSession(session);
 
-            const placeholder =
-                getValue(
+            return interaction.reply({
+                embeds: [
+                    globalEmbeds.success(
+                        interaction.user,
+                        "Button moved."
+                    )
+                ],
+                flags: 64
+            });
+        }
+
+
+        // ====================================================
+        // SELECT MENU
+        // ====================================================
+
+        if (id === "embed:modal:select-menu") {
+
+            const index =
+                Number(session.data.activeSelectMenu) || 0;
+
+            const menu =
+                session.data.selectMenus[index];
+
+            if (!menu) {
+                return showError(
                     interaction,
-                    "placeholder"
-                ).slice(0, 150);
+                    "No select menu is currently selected."
+                );
+            }
 
             const type =
-                getValue(
-                    interaction,
+                interaction.fields.getTextInputValue(
                     "type"
-                ).toLowerCase();
+                ).trim().toLowerCase();
+
+            const customId =
+                interaction.fields.getTextInputValue(
+                    "customId"
+                ).trim();
+
+            const placeholder =
+                interaction.fields.getTextInputValue(
+                    "placeholder"
+                ).trim();
 
             const minValues =
-                parseNumber(
-                    interaction,
-                    "minValues",
-                    1
+                Number(
+                    interaction.fields.getTextInputValue(
+                        "min"
+                    )
                 );
 
             const maxValues =
-                parseNumber(
-                    interaction,
-                    "maxValues",
-                    1
+                Number(
+                    interaction.fields.getTextInputValue(
+                        "max"
+                    )
                 );
 
             const validTypes = [
@@ -385,213 +984,130 @@ module.exports = {
                 "channel"
             ];
 
-            if (!customId) {
-                return interaction.reply({
-                    embeds: [
-                        interactionEmbeds.modalFailed(
-                            "A Custom ID is required."
-                        )
-                    ],
-                    flags: 64
-                });
-            }
-
             if (!validTypes.includes(type)) {
-                return interaction.reply({
-                    embeds: [
-                        interactionEmbeds.modalFailed(
-                            "Invalid select menu type."
-                        )
-                    ],
-                    flags: 64
-                });
+                return showError(
+                    interaction,
+                    "Invalid select menu type."
+                );
             }
 
             if (
+                !Number.isInteger(minValues) ||
+                !Number.isInteger(maxValues) ||
                 minValues < 0 ||
-                maxValues < 1 ||
-                minValues > maxValues ||
-                maxValues > 25
+                maxValues < minValues
             ) {
-                return interaction.reply({
-                    embeds: [
-                        interactionEmbeds.modalFailed(
-                            "Invalid minimum or maximum values."
-                        )
-                    ],
-                    flags: 64
-                });
+                return showError(
+                    interaction,
+                    "Invalid minimum or maximum values."
+                );
             }
 
-            session.data.selectMenus.push({
-                type,
-                customId,
-                placeholder:
-                    placeholder ||
-                    "Select an option",
-                minValues,
-                maxValues,
-                disabled: false,
-                options: []
-            });
-
-            await refreshEditor(
-                client,
+            selectMenus.editSelectMenu(
                 session,
-                interaction
+                index,
+                {
+                    type,
+                    customId,
+                    placeholder,
+                    minValues,
+                    maxValues
+                }
             );
 
-            return success(
-                interaction,
-                "Select menu added."
-            );
+            builder.updateSession(session);
+
+            return interaction.reply({
+                embeds: [
+                    globalEmbeds.success(
+                        interaction.user,
+                        "Select menu updated."
+                    )
+                ],
+                flags: 64
+            });
         }
 
-        return interaction.reply({
-            embeds: [
-                interactionEmbeds.modalFailed(
-                    "This modal action is invalid."
-                )
-            ],
-            flags: 64
-        });
-    }
+
+        // ====================================================
+        // MOVE EMBED
+        // ====================================================
+
+        if (id === "embed:modal:move:embed") {
+
+            const position =
+                Number(
+                    interaction.fields.getTextInputValue(
+                        "position"
+                    )
+                );
+
+            const from =
+                Number(session.data.activeEmbed) || 0;
+
+            const to =
+                position - 1;
+
+            if (
+                !Array.isArray(
+                    session.data.embeds
+                ) ||
+                from < 0 ||
+                from >= session.data.embeds.length ||
+                to < 0 ||
+                to >= session.data.embeds.length
+            ) {
+                return showError(
+                    interaction,
+                    "Invalid embed position."
+                );
+            }
+
+            if (from !== to) {
+
+                const [embed] =
+                    session.data.embeds.splice(
+                        from,
+                        1
+                    );
+
+                session.data.embeds.splice(
+                    to,
+                    0,
+                    embed
+                );
+
+                session.data.activeEmbed =
+                    to;
+            }
+
+            builder.updateSession(session);
+
+            return interaction.reply({
+                embeds: [
+                    globalEmbeds.success(
+                        interaction.user,
+                        "Embed moved."
+                    )
+                ],
+                flags: 64
+            });
+        }
+
+
+        return;
+    },
+
+    // ========================================================
+    // MODAL FACTORIES
+    // ========================================================
+
+    contentModal,
+    embedPropertyModal,
+    authorModal,
+    footerModal,
+    fieldModal,
+    buttonModal,
+    selectMenuModal,
+    moveModal
 };
-
-function getValue(
-    interaction,
-    id
-) {
-    try {
-        return interaction.fields
-            .getTextInputValue(id)
-            .trim();
-    } catch {
-        return "";
-    }
-}
-
-function parseNumber(
-    interaction,
-    id,
-    fallback
-) {
-    const value =
-        Number(
-            getValue(
-                interaction,
-                id
-            )
-        );
-
-    return Number.isFinite(value)
-        ? value
-        : fallback;
-}
-
-function getEmbed(session) {
-
-    if (
-        !Array.isArray(
-            session.data.embeds
-        )
-    ) {
-        session.data.embeds = [];
-    }
-
-    if (!session.data.embeds[0]) {
-        session.data.embeds.push({
-            title: "",
-            description: "",
-            url: "",
-            color: "",
-            author: {
-                name: "",
-                url: "",
-                iconURL: ""
-            },
-            thumbnail: "",
-            image: "",
-            footer: {
-                text: "",
-                iconURL: ""
-            },
-            timestamp: false,
-            fields: []
-        });
-    }
-
-    if (
-        !Array.isArray(
-            session.data.embeds[0].fields
-        )
-    ) {
-        session.data.embeds[0].fields = [];
-    }
-
-    return session.data.embeds[0];
-}
-
-async function refreshEditor(
-    client,
-    session,
-    interaction
-) {
-    if (
-        !session.channelId ||
-        !session.messageId
-    ) {
-        return;
-    }
-
-    const channel =
-        client.channels.cache.get(
-            session.channelId
-        );
-
-    if (!channel) {
-        return;
-    }
-
-    try {
-        const message =
-            await channel.messages.fetch(
-                session.messageId
-            );
-
-        const data =
-            buildMessage(
-                session,
-                interaction
-            );
-
-        await message.edit({
-            content:
-                data.content || null,
-            embeds:
-                data.embeds,
-            components:
-                data.components
-        });
-
-    } catch (error) {
-        console.error(
-            "[EMBED EDITOR]",
-            error
-        );
-    }
-}
-
-function success(
-    interaction,
-    message
-) {
-    return interaction.reply({
-        embeds: [
-            interactionEmbeds.modalSuccess(
-                message
-            )
-        ],
-        flags: 64
-    });
-}
