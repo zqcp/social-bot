@@ -1,171 +1,84 @@
-const {
-    StringSelectMenuBuilder,
-    UserSelectMenuBuilder,
-    RoleSelectMenuBuilder,
-    MentionableSelectMenuBuilder,
-    ChannelSelectMenuBuilder,
-    ChannelType
-} = require("discord.js");
+// ============================================================
+// EMBED SELECT MENUS SYSTEM
+// ============================================================
 
 const SELECT_TYPES = {
-    string: StringSelectMenuBuilder,
-    user: UserSelectMenuBuilder,
-    role: RoleSelectMenuBuilder,
-    mentionable: MentionableSelectMenuBuilder,
-    channel: ChannelSelectMenuBuilder
+    string: "string",
+    user: "user",
+    role: "role",
+    mentionable: "mentionable",
+    channel: "channel"
 };
 
 const SELECT_ACTIONS = {
     none: "none",
-    addRole: "add_role",
-    removeRole: "remove_role"
+    add_role: "add_role",
+    remove_role: "remove_role"
 };
 
-function clamp(value, min, max) {
-    const number = Number(value);
 
-    if (!Number.isFinite(number)) {
-        return min;
-    }
-
-    return Math.max(min, Math.min(max, number));
-}
+// ============================================================
+// CREATE SELECT MENU
+// ============================================================
 
 function createSelectMenu(data = {}) {
-    const type = String(data.type || "string").toLowerCase();
+    return {
+        type: SELECT_TYPES[data.type]
+            ? data.type
+            : SELECT_TYPES.string,
 
-    if (!SELECT_TYPES[type]) {
-        return null;
-    }
+        customId: data.customId || "",
 
-    const customId =
-        data.customId ||
-        `embed_select_${Date.now()}_${Math.random()
-            .toString(36)
-            .slice(2, 8)}`;
+        placeholder:
+            data.placeholder || "",
 
-    const Menu = SELECT_TYPES[type];
+        minValues:
+            Number.isInteger(data.minValues)
+                ? data.minValues
+                : 1,
 
-    const menu = new Menu()
-        .setCustomId(customId)
-        .setPlaceholder(data.placeholder || "Select an option")
-        .setMinValues(clamp(data.minValues ?? 1, 0, 25))
-        .setMaxValues(clamp(data.maxValues ?? 1, 1, 25))
-        .setDisabled(Boolean(data.disabled));
+        maxValues:
+            Number.isInteger(data.maxValues)
+                ? data.maxValues
+                : 1,
 
-    if (type === "string") {
-        const options = Array.isArray(data.options)
-            ? data.options.slice(0, 25)
-            : [];
+        disabled:
+            Boolean(data.disabled),
 
-        if (options.length) {
-            menu.addOptions(
-                options.map(option => ({
-                    label: String(option.label || "Option").slice(0, 100),
-                    value: String(
-                        option.value ||
-                        `option_${Date.now()}`
-                    ).slice(0, 100),
-                    ...(option.description
-                        ? {
-                            description: String(
-                                option.description
-                            ).slice(0, 100)
-                        }
-                        : {}),
-                    ...(option.emoji
-                        ? { emoji: option.emoji }
-                        : {}),
-                    ...(option.default !== undefined
-                        ? {
-                            default: Boolean(option.default)
-                        }
-                        : {})
-                }))
-            );
-        }
-    }
+        options:
+            Array.isArray(data.options)
+                ? data.options
+                : [],
 
-    if (type === "channel" && Array.isArray(data.channelTypes)) {
-        const validTypes = data.channelTypes.filter(type =>
-            Object.values(ChannelType).includes(type)
-        );
+        channelTypes:
+            Array.isArray(data.channelTypes)
+                ? data.channelTypes
+                : [],
 
-        if (validTypes.length) {
-            menu.setChannelTypes(validTypes);
-        }
-    }
+        action:
+            SELECT_ACTIONS[data.action]
+                ? data.action
+                : SELECT_ACTIONS.none,
 
-    return menu;
+        roleId:
+            data.roleId || ""
+    };
 }
 
-function createSelectMenus(selectMenus = []) {
-    return selectMenus
-        .map(createSelectMenu)
-        .filter(Boolean);
-}
+
+// ============================================================
+// ADD
+// ============================================================
 
 function addSelectMenu(session, data = {}) {
-    if (!Array.isArray(session.data.selectMenus)) {
-        session.data.selectMenus = [];
-    }
-
-    const type = String(data.type || "string").toLowerCase();
-
-    if (!SELECT_TYPES[type]) {
+    if (!session?.data) {
         return null;
     }
 
-    const minValues = clamp(data.minValues ?? 1, 0, 25);
-    const maxValues = Math.max(
-        minValues,
-        clamp(data.maxValues ?? 1, 1, 25)
-    );
-
-    const menu = {
-        type,
-
-        customId:
-            data.customId ||
-            `embed_select_${Date.now()}_${Math.random()
-                .toString(36)
-                .slice(2, 8)}`,
-
-        placeholder: data.placeholder || "Select an option",
-
-        minValues,
-        maxValues,
-
-        disabled: Boolean(data.disabled),
-
-        options: type === "string"
-            ? (Array.isArray(data.options)
-                ? data.options.slice(0, 25)
-                : [])
-            : [],
-
-        channelTypes: type === "channel"
-            ? (Array.isArray(data.channelTypes)
-                ? data.channelTypes
-                : [])
-            : [],
-
-        action: data.action || SELECT_ACTIONS.none,
-        roleId: data.roleId || null
-    };
-
-    if (!SELECT_ACTIONS[menu.action]) {
-        menu.action = SELECT_ACTIONS.none;
-    }
-
-    if (
-        menu.action !== SELECT_ACTIONS.none &&
-        !menu.roleId
-    ) {
-        return null;
-    }
+    const menu = createSelectMenu(data);
 
     session.data.selectMenus.push(menu);
+
     session.data.activeSelectMenu =
         session.data.selectMenus.length - 1;
 
@@ -174,89 +87,393 @@ function addSelectMenu(session, data = {}) {
     return menu;
 }
 
-function editSelectMenu(session, index, changes = {}) {
+
+// ============================================================
+// EDIT
+// ============================================================
+
+function editSelectMenu(
+    session,
+    index,
+    changes = {}
+) {
+    if (!session?.data?.selectMenus?.[index]) {
+        return null;
+    }
+
+    const menu =
+        session.data.selectMenus[index];
+
+    if (changes.type !== undefined) {
+        menu.type =
+            SELECT_TYPES[changes.type]
+                ? changes.type
+                : SELECT_TYPES.string;
+    }
+
+    if (changes.customId !== undefined) {
+        menu.customId =
+            String(changes.customId);
+    }
+
+    if (changes.placeholder !== undefined) {
+        menu.placeholder =
+            String(changes.placeholder);
+    }
+
+    if (changes.minValues !== undefined) {
+        menu.minValues =
+            Math.max(
+                0,
+                Number(changes.minValues) || 0
+            );
+    }
+
+    if (changes.maxValues !== undefined) {
+        menu.maxValues =
+            Math.max(
+                menu.minValues,
+                Number(changes.maxValues) ||
+                menu.minValues
+            );
+    }
+
+    if (changes.disabled !== undefined) {
+        menu.disabled =
+            Boolean(changes.disabled);
+    }
+
+    if (changes.options !== undefined) {
+        menu.options =
+            Array.isArray(changes.options)
+                ? changes.options
+                : [];
+    }
+
+    if (changes.channelTypes !== undefined) {
+        menu.channelTypes =
+            Array.isArray(changes.channelTypes)
+                ? changes.channelTypes
+                : [];
+    }
+
+    if (changes.action !== undefined) {
+        menu.action =
+            SELECT_ACTIONS[changes.action]
+                ? changes.action
+                : SELECT_ACTIONS.none;
+    }
+
+    if (changes.roleId !== undefined) {
+        menu.roleId =
+            String(changes.roleId);
+    }
+
+    session.data.activeSelectMenu = index;
+    session.updatedAt = Date.now();
+
+    return menu;
+}
+
+
+// ============================================================
+// REMOVE
+// ============================================================
+
+function removeSelectMenu(session, index) {
+    if (!session?.data?.selectMenus?.[index]) {
+        return null;
+    }
+
+    const removed =
+        session.data.selectMenus.splice(index, 1)[0];
+
+    if (!session.data.selectMenus.length) {
+        session.data.activeSelectMenu = 0;
+    } else {
+        session.data.activeSelectMenu =
+            Math.min(
+                index,
+                session.data.selectMenus.length - 1
+            );
+    }
+
+    session.updatedAt = Date.now();
+
+    return removed;
+}
+
+
+// ============================================================
+// MOVE
+// ============================================================
+
+function moveSelectMenu(
+    session,
+    from,
+    to
+) {
+    if (!session?.data?.selectMenus?.length) {
+        return false;
+    }
+
+    from = Number(from);
+    to = Number(to);
+
+    if (
+        !Number.isInteger(from) ||
+        !Number.isInteger(to) ||
+        from < 0 ||
+        from >= session.data.selectMenus.length ||
+        to < 0 ||
+        to >= session.data.selectMenus.length
+    ) {
+        return false;
+    }
+
+    if (from === to) {
+        return true;
+    }
+
+    const [menu] =
+        session.data.selectMenus.splice(
+            from,
+            1
+        );
+
+    session.data.selectMenus.splice(
+        to,
+        0,
+        menu
+    );
+
+    session.data.activeSelectMenu = to;
+    session.updatedAt = Date.now();
+
+    return true;
+}
+
+
+// ============================================================
+// OPTIONS
+// ============================================================
+
+function addOption(
+    session,
+    menuIndex,
+    option = {}
+) {
+    const menu =
+        session?.data?.selectMenus?.[menuIndex];
+
+    if (!menu) {
+        return null;
+    }
+
+    if (menu.type !== SELECT_TYPES.string) {
+        return null;
+    }
+
+    if (menu.options.length >= 25) {
+        return null;
+    }
+
+    const newOption = {
+        label: option.label || "",
+        value: option.value || "",
+        description: option.description || "",
+        emoji: option.emoji || "",
+        default: Boolean(option.default)
+    };
+
+    menu.options.push(newOption);
+
+    session.data.activeSelectMenu =
+        menuIndex;
+
+    session.updatedAt = Date.now();
+
+    return newOption;
+}
+
+
+function editOption(
+    session,
+    menuIndex,
+    optionIndex,
+    changes = {}
+) {
+    const menu =
+        session?.data?.selectMenus?.[menuIndex];
+
+    if (!menu?.options?.[optionIndex]) {
+        return null;
+    }
+
+    const option =
+        menu.options[optionIndex];
+
+    if (changes.label !== undefined) {
+        option.label =
+            String(changes.label);
+    }
+
+    if (changes.value !== undefined) {
+        option.value =
+            String(changes.value);
+    }
+
+    if (changes.description !== undefined) {
+        option.description =
+            String(changes.description);
+    }
+
+    if (changes.emoji !== undefined) {
+        option.emoji =
+            String(changes.emoji);
+    }
+
+    if (changes.default !== undefined) {
+        option.default =
+            Boolean(changes.default);
+    }
+
+    session.updatedAt = Date.now();
+
+    return option;
+}
+
+
+function removeOption(
+    session,
+    menuIndex,
+    optionIndex
+) {
+    const menu =
+        session?.data?.selectMenus?.[menuIndex];
+
+    if (!menu?.options?.[optionIndex]) {
+        return null;
+    }
+
+    const removed =
+        menu.options.splice(
+            optionIndex,
+            1
+        )[0];
+
+    session.updatedAt = Date.now();
+
+    return removed;
+}
+
+
+function moveOption(
+    session,
+    menuIndex,
+    from,
+    to
+) {
+    const menu =
+        session?.data?.selectMenus?.[menuIndex];
+
+    if (!menu?.options?.length) {
+        return false;
+    }
+
+    from = Number(from);
+    to = Number(to);
+
+    if (
+        !Number.isInteger(from) ||
+        !Number.isInteger(to) ||
+        from < 0 ||
+        from >= menu.options.length ||
+        to < 0 ||
+        to >= menu.options.length
+    ) {
+        return false;
+    }
+
+    if (from === to) {
+        return true;
+    }
+
+    const [option] =
+        menu.options.splice(from, 1);
+
+    menu.options.splice(to, 0, option);
+
+    session.updatedAt = Date.now();
+
+    return true;
+}
+
+
+// ============================================================
+// GET
+// ============================================================
+
+function getSelectMenus(session) {
+    return session?.data?.selectMenus || [];
+}
+
+function getSelectMenu(session, index) {
+    return (
+        session?.data?.selectMenus?.[index] ||
+        null
+    );
+}
+
+function getOptions(session, menuIndex) {
+    return (
+        session?.data?.selectMenus?.[menuIndex]
+            ?.options || []
+    );
+}
+
+
+// ============================================================
+// ACTIVE MENU
+// ============================================================
+
+function setActiveSelectMenu(
+    session,
+    index
+) {
     if (!session?.data?.selectMenus?.[index]) {
         return false;
     }
 
-    const menu = session.data.selectMenus[index];
+    session.data.activeSelectMenu =
+        Number(index);
 
-    if (changes.type !== undefined) {
-        const type = String(changes.type).toLowerCase();
+    session.updatedAt = Date.now();
 
-        if (!SELECT_TYPES[type]) {
-            return false;
-        }
+    return true;
+}
 
-        menu.type = type;
 
-        if (type !== "string") {
-            menu.options = [];
-        }
+// ============================================================
+// VALIDATE
+// ============================================================
 
-        if (type !== "channel") {
-            menu.channelTypes = [];
-        }
+function validateSelectMenu(menu) {
+    if (!menu) {
+        return false;
     }
 
-    if (changes.customId !== undefined) {
-        menu.customId = changes.customId;
+    if (
+        !SELECT_TYPES[menu.type]
+    ) {
+        return false;
     }
 
-    if (changes.placeholder !== undefined) {
-        menu.placeholder = changes.placeholder;
-    }
-
-    if (changes.minValues !== undefined) {
-        menu.minValues = clamp(changes.minValues, 0, 25);
-    }
-
-    if (changes.maxValues !== undefined) {
-        menu.maxValues = clamp(changes.maxValues, 1, 25);
-    }
-
-    if (menu.maxValues < menu.minValues) {
-        menu.maxValues = menu.minValues;
-    }
-
-    if (changes.disabled !== undefined) {
-        menu.disabled = Boolean(changes.disabled);
-    }
-
-    if (changes.options !== undefined) {
-        if (menu.type !== "string") {
-            return false;
-        }
-
-        if (!Array.isArray(changes.options)) {
-            return false;
-        }
-
-        menu.options = changes.options.slice(0, 25);
-    }
-
-    if (changes.channelTypes !== undefined) {
-        if (menu.type !== "channel") {
-            return false;
-        }
-
-        menu.channelTypes = Array.isArray(changes.channelTypes)
-            ? changes.channelTypes.filter(type =>
-                Object.values(ChannelType).includes(type)
-            )
-            : [];
-    }
-
-    if (changes.action !== undefined) {
-        if (!SELECT_ACTIONS[changes.action]) {
-            return false;
-        }
-
-        menu.action = changes.action;
-    }
-
-    if (changes.roleId !== undefined) {
-        menu.roleId = changes.roleId;
+    if (
+        menu.minValues < 0 ||
+        menu.maxValues < menu.minValues
+    ) {
+        return false;
     }
 
     if (
@@ -266,192 +483,42 @@ function editSelectMenu(session, index, changes = {}) {
         return false;
     }
 
-    session.updatedAt = Date.now();
-
-    return true;
-}
-
-function addOption(session, menuIndex, option) {
-    const menu = session?.data?.selectMenus?.[menuIndex];
-
-    if (!menu || menu.type !== "string") {
-        return false;
-    }
-
-    if (!Array.isArray(menu.options)) {
-        menu.options = [];
-    }
-
-    if (menu.options.length >= 25) {
-        return false;
-    }
-
-    if (!option?.label || !option?.value) {
-        return false;
-    }
-
-    menu.options.push({
-        label: String(option.label).slice(0, 100),
-        value: String(option.value).slice(0, 100),
-        ...(option.description
-            ? {
-                description: String(
-                    option.description
-                ).slice(0, 100)
-            }
-            : {}),
-        ...(option.emoji
-            ? { emoji: option.emoji }
-            : {}),
-        default: Boolean(option.default)
-    });
-
-    session.updatedAt = Date.now();
-
-    return true;
-}
-
-function editOption(session, menuIndex, optionIndex, changes = {}) {
-    const menu = session?.data?.selectMenus?.[menuIndex];
-
     if (
-        !menu ||
-        menu.type !== "string" ||
-        !menu.options?.[optionIndex]
+        menu.type === SELECT_TYPES.string &&
+        menu.options.length > 25
     ) {
         return false;
     }
-
-    const option = menu.options[optionIndex];
-
-    if (changes.label !== undefined) {
-        option.label = String(changes.label).slice(0, 100);
-    }
-
-    if (changes.value !== undefined) {
-        option.value = String(changes.value).slice(0, 100);
-    }
-
-    if (changes.description !== undefined) {
-        option.description = String(
-            changes.description
-        ).slice(0, 100);
-    }
-
-    if (changes.emoji !== undefined) {
-        option.emoji = changes.emoji;
-    }
-
-    if (changes.default !== undefined) {
-        option.default = Boolean(changes.default);
-    }
-
-    session.updatedAt = Date.now();
 
     return true;
 }
 
-function removeOption(session, menuIndex, optionIndex) {
-    const menu = session?.data?.selectMenus?.[menuIndex];
 
-    if (
-        !menu ||
-        menu.type !== "string" ||
-        !menu.options?.[optionIndex]
-    ) {
-        return false;
-    }
-
-    menu.options.splice(optionIndex, 1);
-
-    session.updatedAt = Date.now();
-
-    return true;
-}
-
-function moveOption(session, menuIndex, optionIndex, direction) {
-    const menu = session?.data?.selectMenus?.[menuIndex];
-
-    if (
-        !menu ||
-        menu.type !== "string" ||
-        !menu.options?.[optionIndex]
-    ) {
-        return false;
-    }
-
-    const newIndex =
-        direction === "up"
-            ? optionIndex - 1
-            : optionIndex + 1;
-
-    if (
-        newIndex < 0 ||
-        newIndex >= menu.options.length
-    ) {
-        return false;
-    }
-
-    [
-        menu.options[optionIndex],
-        menu.options[newIndex]
-    ] = [
-        menu.options[newIndex],
-        menu.options[optionIndex]
-    ];
-
-    session.updatedAt = Date.now();
-
-    return true;
-}
-
-function removeSelectMenu(session, index) {
-    if (!session?.data?.selectMenus?.[index]) {
-        return false;
-    }
-
-    session.data.selectMenus.splice(index, 1);
-
-    if (session.data.selectMenus.length === 0) {
-        session.data.activeSelectMenu = null;
-    } else if (
-        session.data.activeSelectMenu >=
-        session.data.selectMenus.length
-    ) {
-        session.data.activeSelectMenu =
-            session.data.selectMenus.length - 1;
-    }
-
-    session.updatedAt = Date.now();
-
-    return true;
-}
-
-function buildSelectMenuRows(selectMenus = []) {
-    return selectMenus
-        .map(createSelectMenu)
-        .filter(Boolean)
-        .map(menu => ({
-            type: 1,
-            components: [menu.toJSON()]
-        }))
-        .slice(0, 5);
-}
+// ============================================================
+// EXPORTS
+// ============================================================
 
 module.exports = {
     SELECT_TYPES,
     SELECT_ACTIONS,
 
     createSelectMenu,
-    createSelectMenus,
-    buildSelectMenuRows,
 
     addSelectMenu,
     editSelectMenu,
     removeSelectMenu,
+    moveSelectMenu,
 
     addOption,
     editOption,
     removeOption,
-    moveOption
+    moveOption,
+
+    getSelectMenus,
+    getSelectMenu,
+    getOptions,
+
+    setActiveSelectMenu,
+
+    validateSelectMenu
 };
