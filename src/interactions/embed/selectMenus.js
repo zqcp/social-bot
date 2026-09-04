@@ -1,139 +1,321 @@
-const interactionEmbeds =
-    require("../../embeds/general/interaction");
-
 const {
-    getSession,
-    buildMessage
-} = require("../../systems/embed/builder");
+    EmbedBuilder,
+    ButtonBuilder,
+    ButtonStyle,
+    ActionRowBuilder,
+    StringSelectMenuBuilder
+} = require("discord.js");
+
+const builder =
+    require("../../systems/embed/builder");
+
+const fields =
+    require("../../systems/embed/fields");
+
+const buttons =
+    require("../../systems/embed/buttons");
+
+const selectMenus =
+    require("../../systems/embed/selectMenus");
+
+const globalEmbeds =
+    require("../../embeds/general/global");
+
+
+// ============================================================
+// HELPERS
+// ============================================================
+
+function getSession(interaction) {
+    return builder.getSession(
+        interaction.user.id,
+        interaction.guildId
+    );
+}
+
+function error(interaction, text) {
+    return interaction.reply({
+        embeds: [
+            globalEmbeds.error(text)
+        ],
+        flags: 64
+    });
+}
+
+function optionLabel(text, fallback) {
+    const value = String(text || fallback);
+    return value.length > 100
+        ? value.slice(0, 97) + "..."
+        : value;
+}
+
+
+// ============================================================
+// EXECUTE
+// ============================================================
 
 module.exports = {
-    name: "embed",
-    type: "selectMenu",
 
-    async execute(client, interaction) {
+    name: "embedSelectMenus",
+
+    async execute(interaction) {
+
+        if (!interaction.isStringSelectMenu()) {
+            return;
+        }
+
+        if (!interaction.customId.startsWith("embed:")) {
+            return;
+        }
 
         const session =
-            getSession(
-                interaction.user.id,
-                interaction.guildId
-            );
+            getSession(interaction);
 
         if (!session) {
-            return interaction.reply({
-                embeds: [
-                    interactionEmbeds.selectDisabled(
-                        "This embed builder session has expired."
-                    )
-                ],
-                flags: 64
-            });
+            return error(
+                interaction,
+                "This embed editor session has expired."
+            );
         }
 
-        const customId =
+        const id =
             interaction.customId;
 
-        if (!customId.startsWith("embed:")) {
-            return interaction.reply({
-                embeds: [
-                    interactionEmbeds.selectInvalid(
-                        "This select menu action is invalid."
-                    )
-                ],
-                flags: 64
-            });
-        }
 
-        const menuId =
-            customId.slice("embed:".length);
+        // ====================================================
+        // EMBED SELECT
+        // ====================================================
 
-        const value =
-            interaction.values[0];
-
-        /*
-         * EMBED SELECTOR
-         */
-
-        if (menuId === "embed") {
+        if (id === "embed:select-embed") {
 
             const index =
-                Number(value);
+                Number(interaction.values[0]);
 
             if (
                 !Number.isInteger(index) ||
-                index < 0 ||
-                index >= session.data.embeds.length
+                !session.data.embeds[index]
             ) {
-                return interaction.reply({
-                    embeds: [
-                        interactionEmbeds.selectInvalid(
-                            "That embed could not be selected."
-                        )
-                    ],
-                    flags: 64
-                });
+                return error(
+                    interaction,
+                    "That embed could not be found."
+                );
             }
 
             session.data.activeEmbed =
                 index;
 
-            await refreshEditor(
-                client,
-                session,
-                interaction
-            );
+            session.data.activeField = 0;
 
-            return interaction.reply({
-                embeds: [
-                    interactionEmbeds.selectSuccess(
-                        `Embed ${index + 1} selected.`
-                    )
-                ],
-                flags: 64
-            });
+            builder.updateSession(session);
+
+            return interaction.update();
         }
 
-        /*
-         * BUTTON STYLE
-         */
 
-        if (menuId === "button-style") {
+        // ====================================================
+        // FIELD SELECT
+        // ====================================================
 
-            if (
-                !Array.isArray(
-                    session.data.buttons
-                ) ||
-                !session.data.buttons.length
-            ) {
-                return interaction.reply({
-                    embeds: [
-                        interactionEmbeds.selectInvalid(
-                            "There are no buttons to edit."
-                        )
-                    ],
-                    flags: 64
-                });
-            }
+        if (id === "embed:select-field") {
 
             const index =
-                Number(
-                    session.data.activeButton
-                );
+                Number(interaction.values[0]);
+
+            const embedIndex =
+                Number(session.data.activeEmbed) || 0;
+
+            const embed =
+                session.data.embeds[embedIndex];
 
             if (
-                !Number.isInteger(index) ||
-                !session.data.buttons[index]
+                !embed?.fields?.[index]
             ) {
-                return interaction.reply({
-                    embeds: [
-                        interactionEmbeds.selectInvalid(
-                            "No button is currently selected."
-                        )
-                    ],
-                    flags: 64
-                });
+                return error(
+                    interaction,
+                    "That field could not be found."
+                );
             }
 
-            const styles = [
+            fields.setActiveField(
+                session,
+                index
+            );
+
+            builder.updateSession(session);
+
+            return interaction.update();
+        }
+
+
+        // ====================================================
+        // BUTTON SELECT
+        // ====================================================
+
+        if (id === "embed:select-button") {
+
+            const index =
+                Number(interaction.values[0]);
+
+            if (
+                !session.data.buttons[index]
+            ) {
+                return error(
+                    interaction,
+                    "That button could not be found."
+                );
+            }
+
+            buttons.setActiveButton(
+                session,
+                index
+            );
+
+            builder.updateSession(session);
+
+            return interaction.update();
+        }
+
+
+        // ====================================================
+        // SELECT MENU SELECT
+        // ====================================================
+
+        if (id === "embed:select-menu") {
+
+            const index =
+                Number(interaction.values[0]);
+
+            if (
+                !session.data.selectMenus[index]
+            ) {
+                return error(
+                    interaction,
+                    "That select menu could not be found."
+                );
+            }
+
+            selectMenus.setActiveSelectMenu(
+                session,
+                index
+            );
+
+            builder.updateSession(session);
+
+            return interaction.update();
+        }
+
+
+        // ====================================================
+        // SELECT MENU OPTION SELECT
+        // ====================================================
+
+        if (
+            id.startsWith(
+                "embed:select-option:"
+            )
+        ) {
+
+            const parts =
+                id.split(":");
+
+            const menuIndex =
+                Number(parts[2]);
+
+            const menu =
+                session.data.selectMenus[
+                    menuIndex
+                ];
+
+            if (!menu) {
+                return error(
+                    interaction,
+                    "That select menu could not be found."
+                );
+            }
+
+            /*
+             * This is primarily used by the editor
+             * for selecting an option to edit.
+             */
+            const optionIndex =
+                Number(interaction.values[0]);
+
+            if (
+                !Number.isInteger(optionIndex) ||
+                !menu.options?.[optionIndex]
+            ) {
+                return error(
+                    interaction,
+                    "That option could not be found."
+                );
+            }
+
+            menu.activeOption =
+                optionIndex;
+
+            session.data.activeSelectMenu =
+                menuIndex;
+
+            builder.updateSession(session);
+
+            return interaction.update();
+        }
+
+
+        // ====================================================
+        // TIMESTAMP YES / NO
+        // ====================================================
+
+        if (id === "embed:timestamp") {
+
+            const value =
+                interaction.values[0];
+
+            const index =
+                Number(session.data.activeEmbed) || 0;
+
+            const embed =
+                session.data.embeds[index];
+
+            if (!embed) {
+                return error(
+                    interaction,
+                    "No embed is currently selected."
+                );
+            }
+
+            embed.timestamp =
+                value === "yes";
+
+            builder.updateSession(session);
+
+            return interaction.update();
+        }
+
+
+        // ====================================================
+        // BUTTON STYLE SELECT
+        // ====================================================
+
+        if (id === "embed:button-style") {
+
+            const index =
+                Number(session.data.activeButton) || 0;
+
+            const button =
+                session.data.buttons[index];
+
+            if (!button) {
+                return error(
+                    interaction,
+                    "No button is currently selected."
+                );
+            }
+
+            const style =
+                interaction.values[0];
+
+            const validStyles = [
                 "primary",
                 "secondary",
                 "success",
@@ -141,86 +323,99 @@ module.exports = {
                 "link"
             ];
 
-            if (!styles.includes(value)) {
-                return interaction.reply({
-                    embeds: [
-                        interactionEmbeds.selectInvalid(
-                            "That button style is invalid."
-                        )
-                    ],
-                    flags: 64
-                });
+            if (
+                !validStyles.includes(style)
+            ) {
+                return error(
+                    interaction,
+                    "Invalid button style."
+                );
             }
 
-            session.data.buttons[index].style =
-                value;
-
-            if (value === "link") {
-                session.data.buttons[index].customId =
-                    "";
-            } else {
-                session.data.buttons[index].url =
-                    "";
-            }
-
-            await refreshEditor(
-                client,
+            buttons.editButton(
                 session,
-                interaction
+                index,
+                { style }
             );
 
-            return interaction.reply({
-                embeds: [
-                    interactionEmbeds.selectSuccess(
-                        "Button style updated."
-                    )
-                ],
-                flags: 64
-            });
+            builder.updateSession(session);
+
+            return interaction.update();
         }
 
-        /*
-         * SELECT MENU TYPE
-         */
 
-        if (menuId === "select-type") {
+        // ====================================================
+        // BUTTON ACTION SELECT
+        // ====================================================
 
-            if (
-                !Array.isArray(
-                    session.data.selectMenus
-                ) ||
-                !session.data.selectMenus.length
-            ) {
-                return interaction.reply({
-                    embeds: [
-                        interactionEmbeds.selectInvalid(
-                            "There are no select menus to edit."
-                        )
-                    ],
-                    flags: 64
-                });
-            }
+        if (id === "embed:button-action") {
 
             const index =
-                Number(
-                    session.data.activeSelectMenu
-                );
+                Number(session.data.activeButton) || 0;
 
-            if (
-                !Number.isInteger(index) ||
-                !session.data.selectMenus[index]
-            ) {
-                return interaction.reply({
-                    embeds: [
-                        interactionEmbeds.selectInvalid(
-                            "No select menu is currently selected."
-                        )
-                    ],
-                    flags: 64
-                });
+            const button =
+                session.data.buttons[index];
+
+            if (!button) {
+                return error(
+                    interaction,
+                    "No button is currently selected."
+                );
             }
 
-            const types = [
+            const action =
+                interaction.values[0];
+
+            const validActions = [
+                "none",
+                "add_role",
+                "remove_role"
+            ];
+
+            if (
+                !validActions.includes(action)
+            ) {
+                return error(
+                    interaction,
+                    "Invalid button action."
+                );
+            }
+
+            buttons.editButton(
+                session,
+                index,
+                { action }
+            );
+
+            builder.updateSession(session);
+
+            return interaction.update();
+        }
+
+
+        // ====================================================
+        // SELECT MENU TYPE
+        // ====================================================
+
+        if (id === "embed:select-type") {
+
+            const index =
+                Number(session.data.activeSelectMenu) || 0;
+
+            const menu =
+                session.data.selectMenus[index];
+
+            if (!menu) {
+                return error(
+                    interaction,
+                    "No select menu is currently selected."
+                );
+            }
+
+            const type =
+                interaction.values[0];
+
+            const validTypes = [
                 "string",
                 "user",
                 "role",
@@ -228,97 +423,121 @@ module.exports = {
                 "channel"
             ];
 
-            if (!types.includes(value)) {
-                return interaction.reply({
-                    embeds: [
-                        interactionEmbeds.selectInvalid(
-                            "That select menu type is invalid."
-                        )
-                    ],
-                    flags: 64
-                });
+            if (
+                !validTypes.includes(type)
+            ) {
+                return error(
+                    interaction,
+                    "Invalid select menu type."
+                );
             }
 
-            session.data.selectMenus[index].type =
-                value;
-
-            if (value !== "string") {
-                session.data.selectMenus[index].options = [];
-            }
-
-            await refreshEditor(
-                client,
+            selectMenus.editSelectMenu(
                 session,
-                interaction
+                index,
+                {
+                    type
+                }
             );
 
-            return interaction.reply({
-                embeds: [
-                    interactionEmbeds.selectSuccess(
-                        "Select menu type updated."
-                    )
-                ],
-                flags: 64
-            });
+            builder.updateSession(session);
+
+            return interaction.update();
         }
 
-        return interaction.reply({
-            embeds: [
-                interactionEmbeds.selectInvalid(
-                    "This select menu action is invalid."
-                )
-            ],
-            flags: 64
-        });
+
+        // ====================================================
+        // SELECT MENU ACTION
+        // ====================================================
+
+        if (id === "embed:select-action") {
+
+            const index =
+                Number(session.data.activeSelectMenu) || 0;
+
+            const menu =
+                session.data.selectMenus[index];
+
+            if (!menu) {
+                return error(
+                    interaction,
+                    "No select menu is currently selected."
+                );
+            }
+
+            const action =
+                interaction.values[0];
+
+            const validActions = [
+                "none",
+                "add_role",
+                "remove_role"
+            ];
+
+            if (
+                !validActions.includes(action)
+            ) {
+                return error(
+                    interaction,
+                    "Invalid select menu action."
+                );
+            }
+
+            selectMenus.editSelectMenu(
+                session,
+                index,
+                { action }
+            );
+
+            builder.updateSession(session);
+
+            return interaction.update();
+        }
+
+
+        // ====================================================
+        // FIELD INLINE YES / NO
+        // ====================================================
+
+        if (id === "embed:field-inline") {
+
+            const index =
+                Number(session.data.activeField) || 0;
+
+            const embedIndex =
+                Number(session.data.activeEmbed) || 0;
+
+            const field =
+                session.data.embeds[
+                    embedIndex
+                ]?.fields?.[index];
+
+            if (!field) {
+                return error(
+                    interaction,
+                    "No field is currently selected."
+                );
+            }
+
+            fields.editField(
+                session,
+                index,
+                {
+                    inline:
+                        interaction.values[0] === "yes"
+                }
+            );
+
+            builder.updateSession(session);
+
+            return interaction.update();
+        }
+
+
+        // ====================================================
+        // UNKNOWN SELECT MENU
+        // ====================================================
+
+        return;
     }
 };
-
-async function refreshEditor(
-    client,
-    session,
-    interaction
-) {
-    if (
-        !session.channelId ||
-        !session.messageId
-    ) {
-        return;
-    }
-
-    const channel =
-        client.channels.cache.get(
-            session.channelId
-        );
-
-    if (!channel) {
-        return;
-    }
-
-    try {
-        const message =
-            await channel.messages.fetch(
-                session.messageId
-            );
-
-        const data =
-            buildMessage(
-                session,
-                interaction
-            );
-
-        await message.edit({
-            content:
-                data.content || null,
-            embeds:
-                data.embeds,
-            components:
-                data.components
-        });
-
-    } catch (error) {
-        console.error(
-            "[EMBED SELECT MENU]",
-            error
-        );
-    }
-}
