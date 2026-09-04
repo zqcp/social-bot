@@ -1,219 +1,331 @@
 const {
-    ActionRowBuilder,
-    ButtonBuilder,
-    ButtonStyle,
-    ModalBuilder,
-    TextInputBuilder,
-    TextInputStyle
+    PermissionFlagsBits
 } = require("discord.js");
+
+const {
+    getSession,
+    updateSession,
+    saveSession,
+    updateSentMessages
+} = require("../../systems/embed/builder");
+
+const {
+    addButton,
+    editButton,
+    removeButton,
+    moveButton,
+    setActiveButton
+} = require("../../systems/embed/buttons");
+
+const globalEmbeds =
+    require("../../embeds/general/global");
 
 const interactionEmbeds =
     require("../../embeds/general/interaction");
 
-const Embed =
-    require("../../models/Embed");
 
-const {
-    getSession,
-    buildMessage,
-    deleteSession
-} = require("../../systems/embed/builder");
+// ============================================================
+// HELPERS
+// ============================================================
+
+function getUser(interaction) {
+    return interaction.user;
+}
+
+function getSessionForInteraction(interaction) {
+    return getSession(
+        interaction.user.id
+    );
+}
+
+async function deny(interaction, embed) {
+    if (interaction.replied || interaction.deferred) {
+        return interaction.editReply({
+            embeds: [embed]
+        });
+    }
+
+    return interaction.reply({
+        embeds: [embed],
+        flags: 64
+    });
+}
+
+
+// ============================================================
+// MAIN
+// ============================================================
 
 module.exports = {
-    name: "embed",
-    type: "button",
 
-    async execute(client, interaction) {
+    name: "embedButtons",
+
+    async execute(interaction, client) {
+
+        if (!interaction.isButton()) {
+            return;
+        }
+
+        if (!interaction.customId.startsWith("embed:")) {
+            return;
+        }
 
         const session =
-            getSession(
-                interaction.user.id,
-                interaction.guildId
-            );
+            getSessionForInteraction(interaction);
 
         if (!session) {
-            return interaction.reply({
-                embeds: [
-                    interactionEmbeds.buttonFailed(
-                        "This embed builder session has expired."
-                    )
-                ],
-                flags: 64
-            });
+            return deny(
+                interaction,
+                interactionEmbeds.sessionExpired(
+                    getUser(interaction)
+                )
+            );
+        }
+
+        if (
+            session.guildId !== interaction.guildId
+        ) {
+            return deny(
+                interaction,
+                globalEmbeds.error(
+                    "This embed editor session belongs to another server."
+                )
+            );
         }
 
         const id =
             interaction.customId;
 
-        if (!id.startsWith("embed:")) {
+
+        // ====================================================
+        // ADD BUTTON
+        // ====================================================
+
+        if (id === "embed:add-button") {
+
+            addButton(session, {
+                label: "Button",
+                style: "secondary",
+                customId:
+                    `embed:button:${Date.now()}`,
+                disabled: false,
+                action: "none",
+                roleId: ""
+            });
+
+            updateSession(session);
+
             return interaction.reply({
                 embeds: [
-                    interactionEmbeds.buttonInvalid(
-                        "This embed button action is invalid."
+                    globalEmbeds.success(
+                        interaction.user,
+                        "Added",
+                        "button"
                     )
                 ],
                 flags: 64
             });
         }
 
-        /*
-         * CANCEL
-         */
 
-        if (id === "embed:cancel") {
+        // ====================================================
+        // SELECT BUTTON
+        // ====================================================
 
-            deleteSession(
-                interaction.user.id,
-                interaction.guildId
-            );
+        if (id === "embed:button-select") {
 
-            try {
-                await interaction.update({
-                    content: "Embed builder cancelled.",
-                    embeds: [],
-                    components: []
-                });
-            } catch {
-                if (!interaction.replied) {
-                    await interaction.reply({
-                        content: "Embed builder cancelled.",
-                        flags: 64
-                    });
-                }
+            if (!session.data.buttons.length) {
+                return deny(
+                    interaction,
+                    globalEmbeds.error(
+                        "There are no buttons to select."
+                    )
+                );
             }
 
-            return;
-        }
-
-        /*
-         * PREVIEW
-         */
-
-        if (id === "embed:preview") {
-
-            const data =
-                buildMessage(
-                    session,
-                    interaction
-                );
-
             return interaction.reply({
-                content: data.content || undefined,
-                embeds: data.embeds,
-                components: data.components,
+                content:
+                    "Select a button from the editor.",
                 flags: 64
             });
         }
 
-        /*
-         * SAVE
-         */
+
+        // ====================================================
+        // REMOVE BUTTON
+        // ====================================================
+
+        if (id === "embed:remove-button") {
+
+            const index =
+                Number(session.data.activeButton) || 0;
+
+            const removed =
+                removeButton(
+                    session,
+                    index
+                );
+
+            if (!removed) {
+                return deny(
+                    interaction,
+                    globalEmbeds.error(
+                        "There is no button to remove."
+                    )
+                );
+            }
+
+            updateSession(session);
+
+            return interaction.reply({
+                embeds: [
+                    globalEmbeds.deleted(
+                        interaction.user,
+                        "button",
+                        removed.label || "Button"
+                    )
+                ],
+                flags: 64
+            });
+        }
+
+
+        // ====================================================
+        // MOVE BUTTON
+        // ====================================================
+
+        if (id === "embed:move-button-up") {
+
+            const index =
+                Number(session.data.activeButton) || 0;
+
+            if (index <= 0) {
+                return deny(
+                    interaction,
+                    globalEmbeds.error(
+                        "That button is already first."
+                    )
+                );
+            }
+
+            moveButton(
+                session,
+                index,
+                index - 1
+            );
+
+            updateSession(session);
+
+            return interaction.update();
+        }
+
+
+        if (id === "embed:move-button-down") {
+
+            const index =
+                Number(session.data.activeButton) || 0;
+
+            if (
+                index >=
+                session.data.buttons.length - 1
+            ) {
+                return deny(
+                    interaction,
+                    globalEmbeds.error(
+                        "That button is already last."
+                    )
+                );
+            }
+
+            moveButton(
+                session,
+                index,
+                index + 1
+            );
+
+            updateSession(session);
+
+            return interaction.update();
+        }
+
+
+        // ====================================================
+        // EDIT BUTTON
+        // ====================================================
+
+        if (id === "embed:edit-button") {
+
+            if (!session.data.buttons.length) {
+                return deny(
+                    interaction,
+                    globalEmbeds.error(
+                        "There are no buttons to edit."
+                    )
+                );
+            }
+
+            const index =
+                Number(session.data.activeButton) || 0;
+
+            if (
+                !session.data.buttons[index]
+            ) {
+                return deny(
+                    interaction,
+                    globalEmbeds.error(
+                        "That button could not be found."
+                    )
+                );
+            }
+
+            return interaction.reply({
+                content:
+                    "Use the button editor to change this button.",
+                flags: 64
+            });
+        }
+
+
+        // ====================================================
+        // SAVE
+        // ====================================================
 
         if (id === "embed:save") {
 
             try {
 
-                await Embed.findOneAndUpdate(
-                    {
-                        guildId: interaction.guildId,
-                        name: session.data.name
-                    },
-                    {
-                        guildId: interaction.guildId,
-                        name: session.data.name,
-                        channelId: session.channelId || null,
-                        content: session.data.content || "",
-                        embeds: session.data.embeds || [],
-                        buttons: session.data.buttons || [],
-                        selectMenus:
-                            session.data.selectMenus || [],
-                        createdBy: interaction.user.id
-                    },
-                    {
-                        upsert: true,
-                        new: true,
-                        setDefaultsOnInsert: true
-                    }
-                );
+                const member =
+                    interaction.member;
 
-                return interaction.reply({
-                    embeds: [
-                        interactionEmbeds.buttonSuccess(
-                            "Embed saved successfully."
+                if (
+                    !member.permissions.has(
+                        PermissionFlagsBits.ManageMessages
+                    )
+                ) {
+                    return deny(
+                        interaction,
+                        globalEmbeds.permission(
+                            interaction.user,
+                            PermissionFlagsBits.ManageMessages
                         )
-                    ],
-                    flags: 64
-                });
-
-            } catch (error) {
-
-                console.error(
-                    "[EMBED SAVE]",
-                    error
-                );
-
-                return interaction.reply({
-                    embeds: [
-                        interactionEmbeds.buttonFailed(
-                            "The embed could not be saved."
-                        )
-                    ],
-                    flags: 64
-                });
-            }
-        }
-
-        /*
-         * SEND
-         */
-
-        if (id === "embed:send") {
-
-            const data =
-                buildMessage(
-                    session,
-                    interaction
-                );
-
-            if (
-                !data.content &&
-                !data.embeds.length &&
-                !data.components.length
-            ) {
-                return interaction.reply({
-                    embeds: [
-                        interactionEmbeds.buttonFailed(
-                            "There is nothing to send."
-                        )
-                    ],
-                    flags: 64
-                });
-            }
-
-            try {
-
-                const channel =
-                    client.channels.cache.get(
-                        session.channelId
                     );
-
-                if (!channel) {
-                    return interaction.reply({
-                        embeds: [
-                            interactionEmbeds.buttonFailed(
-                                "The editor channel could not be found."
-                            )
-                        ],
-                        flags: 64
-                    });
                 }
 
-                await channel.send(data);
+                const saved =
+                    await saveSession(session);
+
+                await updateSentMessages(
+                    saved,
+                    interaction.message,
+                    client
+                );
 
                 return interaction.reply({
                     embeds: [
-                        interactionEmbeds.buttonSuccess(
-                            "Embed sent successfully."
+                        globalEmbeds.updated(
+                            interaction.user,
+                            "embed",
+                            saved.name
                         )
                     ],
                     flags: 64
@@ -222,337 +334,87 @@ module.exports = {
             } catch (error) {
 
                 console.error(
-                    "[EMBED SEND]",
+                    "Embed save error:",
                     error
                 );
 
-                return interaction.reply({
-                    embeds: [
-                        interactionEmbeds.buttonFailed(
-                            "The embed could not be sent."
-                        )
-                    ],
-                    flags: 64
-                });
+                return deny(
+                    interaction,
+                    globalEmbeds.actionFailed(
+                        interaction.user,
+                        "Save"
+                    )
+                );
             }
         }
 
-        /*
-         * CONTENT
-         */
 
-        if (id === "embed:content") {
+        // ====================================================
+        // CANCEL
+        // ====================================================
 
-            return showModal(
-                interaction,
-                "embed:content",
-                "Message Content",
-                [
-                    input(
-                        "content",
-                        "Content",
-                        session.data.content || "",
-                        TextInputStyle.Paragraph,
-                        false
-                    )
-                ]
+        if (id === "embed:cancel") {
+
+            const {
+                deleteSession
+            } =
+                require(
+                    "../../systems/embed/builder"
+                );
+
+            deleteSession(
+                interaction.user.id
             );
+
+            return interaction.update({
+                content: "Embed editor cancelled.",
+                embeds: [],
+                components: []
+            });
         }
 
-        /*
-         * EMBED
-         */
 
-        if (id === "embed:embed") {
+        // ====================================================
+        // SET ACTIVE BUTTON
+        // ====================================================
 
-            const embed =
-                getEmbed(session);
-
-            return showModal(
-                interaction,
-                "embed:embed",
-                "Embed",
-                [
-                    input(
-                        "title",
-                        "Title",
-                        embed.title || "",
-                        TextInputStyle.Short,
-                        false
-                    ),
-
-                    input(
-                        "description",
-                        "Description",
-                        embed.description || "",
-                        TextInputStyle.Paragraph,
-                        false
-                    ),
-
-                    input(
-                        "url",
-                        "URL",
-                        embed.url || "",
-                        TextInputStyle.Short,
-                        false
-                    ),
-
-                    input(
-                        "color",
-                        "Color",
-                        embed.color || "",
-                        TextInputStyle.Short,
-                        false
-                    ),
-
-                    input(
-                        "timestamp",
-                        "Timestamp",
-                        embed.timestamp === true
-                            ? "true"
-                            : embed.timestamp || "",
-                        TextInputStyle.Short,
-                        false
-                    )
-                ]
+        const buttonMatch =
+            id.match(
+                /^embed:button:(\d+)$/
             );
+
+        if (buttonMatch) {
+
+            const index =
+                Number(buttonMatch[1]);
+
+            if (
+                !session.data.buttons[index]
+            ) {
+                return deny(
+                    interaction,
+                    globalEmbeds.error(
+                        "That button could not be found."
+                    )
+                );
+            }
+
+            setActiveButton(
+                session,
+                index
+            );
+
+            updateSession(session);
+
+            return interaction.update();
         }
 
-        /*
-         * FIELDS
-         */
 
-        if (id === "embed:field") {
+        // ====================================================
+        // UNKNOWN
+        // ====================================================
 
-            const fields =
-                getEmbed(session).fields || [];
-
-            return showModal(
-                interaction,
-                "embed:field",
-                "Add Field",
-                [
-                    input(
-                        "fieldName",
-                        "Field Name",
-                        "",
-                        TextInputStyle.Short,
-                        true
-                    ),
-
-                    input(
-                        "fieldValue",
-                        "Field Value",
-                        "",
-                        TextInputStyle.Paragraph,
-                        true
-                    ),
-
-                    input(
-                        "fieldInline",
-                        "Inline",
-                        "false",
-                        TextInputStyle.Short,
-                        true
-                    )
-                ]
-            );
-        }
-
-        /*
-         * BUTTONS
-         */
-
-        if (id === "embed:button") {
-
-            return showModal(
-                interaction,
-                "embed:button",
-                "Add Button",
-                [
-                    input(
-                        "buttonLabel",
-                        "Label",
-                        "",
-                        TextInputStyle.Short,
-                        true
-                    ),
-
-                    input(
-                        "buttonId",
-                        "Custom ID",
-                        "",
-                        TextInputStyle.Short,
-                        false
-                    ),
-
-                    input(
-                        "buttonStyle",
-                        "Style",
-                        "secondary",
-                        TextInputStyle.Short,
-                        true
-                    ),
-
-                    input(
-                        "buttonUrl",
-                        "URL",
-                        "",
-                        TextInputStyle.Short,
-                        false
-                    ),
-
-                    input(
-                        "buttonEmoji",
-                        "Emoji",
-                        "",
-                        TextInputStyle.Short,
-                        false
-                    )
-                ]
-            );
-        }
-
-        /*
-         * SELECT MENUS
-         */
-
-        if (id === "embed:select") {
-
-            return showModal(
-                interaction,
-                "embed:select",
-                "Add Select Menu",
-                [
-                    input(
-                        "customId",
-                        "Custom ID",
-                        "",
-                        TextInputStyle.Short,
-                        true
-                    ),
-
-                    input(
-                        "placeholder",
-                        "Placeholder",
-                        "Select an option",
-                        TextInputStyle.Short,
-                        false
-                    ),
-
-                    input(
-                        "type",
-                        "Type",
-                        "string",
-                        TextInputStyle.Short,
-                        true
-                    ),
-
-                    input(
-                        "minValues",
-                        "Minimum Values",
-                        "1",
-                        TextInputStyle.Short,
-                        true
-                    ),
-
-                    input(
-                        "maxValues",
-                        "Maximum Values",
-                        "1",
-                        TextInputStyle.Short,
-                        true
-                    )
-                ]
-            );
-        }
-
-        return interaction.reply({
-            embeds: [
-                interactionEmbeds.buttonInvalid(
-                    "This embed button action is invalid."
-                )
-            ],
-            flags: 64
-        });
+        return;
     }
+
 };
-
-function input(
-    customId,
-    label,
-    value,
-    style,
-    required
-) {
-    const component =
-        new TextInputBuilder()
-            .setCustomId(customId)
-            .setLabel(label)
-            .setStyle(style)
-            .setRequired(required);
-
-    if (value) {
-        component.setValue(
-            String(value).slice(0, 4000)
-        );
-    }
-
-    return component;
-}
-
-async function showModal(
-    interaction,
-    customId,
-    title,
-    inputs
-) {
-    const modal =
-        new ModalBuilder()
-            .setCustomId(customId)
-            .setTitle(title);
-
-    for (const component of inputs) {
-        modal.addComponents(
-            new ActionRowBuilder()
-                .addComponents(component)
-        );
-    }
-
-    return interaction.showModal(modal);
-}
-
-function getEmbed(session) {
-
-    if (!Array.isArray(session.data.embeds)) {
-        session.data.embeds = [];
-    }
-
-    if (!session.data.embeds[0]) {
-        session.data.embeds.push({
-            title: "",
-            description: "",
-            url: "",
-            color: "",
-            author: {
-                name: "",
-                url: "",
-                iconURL: ""
-            },
-            thumbnail: "",
-            image: "",
-            footer: {
-                text: "",
-                iconURL: ""
-            },
-            timestamp: false,
-            fields: []
-        });
-    }
-
-    if (!Array.isArray(session.data.embeds[0].fields)) {
-        session.data.embeds[0].fields = [];
-    }
-
-    return session.data.embeds[0];
-}
