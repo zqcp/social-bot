@@ -1,158 +1,78 @@
 const {
-    ModalBuilder,
-    TextInputBuilder,
-    TextInputStyle,
-    ActionRowBuilder
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle
 } = require("discord.js");
 
-const builder = require("../../systems/embed/builder");
+const styles = {
+    primary: ButtonStyle.Primary,
+    secondary: ButtonStyle.Secondary,
+    success: ButtonStyle.Success,
+    danger: ButtonStyle.Danger,
+    link: ButtonStyle.Link
+};
 
-function input(id, label, style = TextInputStyle.Short, required = false) {
-    return new ActionRowBuilder().addComponents(
-        new TextInputBuilder()
-            .setCustomId(id)
-            .setLabel(label)
-            .setStyle(style)
-            .setRequired(required)
-    );
-}
+function buildButtons(buttons = [], replace = value => value) {
+    const rows = [];
 
-function modal(id, title, inputs) {
-    return new ModalBuilder()
-        .setCustomId(id)
-        .setTitle(title)
-        .addComponents(...inputs);
+    for (let i = 0; i < buttons.length && rows.length < 5; i += 5) {
+        const rowButtons = buttons
+            .slice(i, i + 5)
+            .map(button => {
+                if (!button) return null;
+
+                const style =
+                    styles[String(button.style || "secondary").toLowerCase()] ||
+                    ButtonStyle.Secondary;
+
+                const builder = new ButtonBuilder()
+                    .setStyle(style);
+
+                if (button.label) {
+                    builder.setLabel(
+                        String(replace(button.label)).slice(0, 80)
+                    );
+                }
+
+                if (button.emoji) {
+                    builder.setEmoji(
+                        String(replace(button.emoji))
+                    );
+                }
+
+                if (button.disabled) {
+                    builder.setDisabled(true);
+                }
+
+                if (style === ButtonStyle.Link) {
+                    if (!button.url) return null;
+
+                    builder.setURL(
+                        String(replace(button.url)).slice(0, 512)
+                    );
+                } else {
+                    if (!button.customId) return null;
+
+                    builder.setCustomId(
+                        String(replace(button.customId)).slice(0, 100)
+                    );
+                }
+
+                return builder;
+            })
+            .filter(Boolean);
+
+        if (!rowButtons.length) continue;
+
+        rows.push(
+            new ActionRowBuilder().addComponents(...rowButtons)
+        );
+    }
+
+    return rows;
 }
 
 module.exports = {
-    name: "embed",
-    type: "button",
-
-    async execute(client, interaction) {
-        if (!interaction.customId.startsWith("embed:")) return;
-
-        const session = builder.getSession(
-            interaction.user.id,
-            interaction.guildId
-        );
-
-        if (!session) {
-            return interaction.reply({
-                content: "Your embed builder session has expired.",
-                flags: 64
-            });
-        }
-
-        const action = interaction.customId.split(":")[1];
-
-        if (action === "content") {
-            return interaction.showModal(
-                modal("embedModal:content", "Message Content", [
-                    input(
-                        "content",
-                        "Message content",
-                        TextInputStyle.Paragraph
-                    )
-                ])
-            );
-        }
-
-        if (action === "embed") {
-            return interaction.showModal(
-                modal("embedModal:embed", "Embed", [
-                    input("title", "Title"),
-                    input(
-                        "description",
-                        "Description",
-                        TextInputStyle.Paragraph
-                    ),
-                    input("color", "Color")
-                ])
-            );
-        }
-
-        if (action === "field") {
-            return interaction.showModal(
-                modal("embedModal:field", "Add Field", [
-                    input("name", "Field name", TextInputStyle.Short, true),
-                    input(
-                        "value",
-                        "Field value",
-                        TextInputStyle.Paragraph,
-                        true
-                    ),
-                    input("inline", "Inline? (yes/no)")
-                ])
-            );
-        }
-
-        if (action === "button") {
-            return interaction.showModal(
-                modal("embedModal:button", "Add Button", [
-                    input("label", "Button label"),
-                    input("customId", "Custom ID", TextInputStyle.Short, true),
-                    input("style", "Style (primary/secondary/success/danger/link)")
-                ])
-            );
-        }
-
-        if (action === "select") {
-            return interaction.showModal(
-                modal("embedModal:select", "Add Select Menu", [
-                    input(
-                        "customId",
-                        "Custom ID",
-                        TextInputStyle.Short,
-                        true
-                    ),
-                    input(
-                        "type",
-                        "Type (string/user/role/mentionable/channel)",
-                        TextInputStyle.Short,
-                        true
-                    ),
-                    input("placeholder", "Placeholder")
-                ])
-            );
-        }
-
-        if (action === "preview") {
-            const embeds = builder.buildEmbeds(
-                session.data.embeds || [],
-                interaction
-            );
-
-            const components = [
-                ...builder.buildButtons(
-                    session.data.buttons || [],
-                    value => builder.replaceVariables(value, interaction)
-                )
-            ];
-
-            return interaction.reply({
-                content: session.data.content
-                    ? builder.replaceVariables(
-                        session.data.content,
-                        interaction
-                    )
-                    : undefined,
-                embeds,
-                components,
-                flags: 64
-            });
-        }
-
-        if (action === "cancel") {
-            builder.deleteSession(
-                interaction.user.id,
-                interaction.guildId
-            );
-
-            return interaction.update({
-                content: "Embed builder cancelled.",
-                embeds: [],
-                components: []
-            });
-        }
-    }
+    buildButtons,
+    styles
 };
