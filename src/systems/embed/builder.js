@@ -1,437 +1,147 @@
-const { EmbedBuilder } = require("discord.js");
+function replaceVariables(value, message) {
+    if (typeof value !== "string") return value;
 
-const { buildButtons } = require("./buttons");
-const { buildSelectMenus } = require("./selectMenus");
+    const user = message?.author;
+    const member = message?.member;
+    const guild = message?.guild;
+    const channel = message?.channel;
+    const client = message?.client;
 
-const sessions = new Map();
-
-const SESSION_TIME = 30 * 60 * 1000;
-
-function getKey(userId, guildId) {
-    return `${guildId}:${userId}`;
-}
-
-function createSession(userId, guildId) {
-    const session = {
-        userId,
-        guildId,
-
-        messageId: null,
-        channelId: null,
-
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-
-        data: {
-            content: "",
-            embeds: [],
-            buttons: [],
-            selectMenus: [],
-            activeEmbed: 0,
-            activeButton: 0,
-            activeSelectMenu: 0
-        }
-    };
-
-    sessions.set(
-        getKey(userId, guildId),
-        session
-    );
-
-    return session;
-}
-
-function getSession(userId, guildId) {
-    const key = getKey(userId, guildId);
-    const session = sessions.get(key);
-
-    if (!session) return null;
-
-    if (
-        Date.now() - session.updatedAt >
-        SESSION_TIME
-    ) {
-        sessions.delete(key);
-        return null;
-    }
-
-    session.updatedAt = Date.now();
-
-    return session;
-}
-
-function deleteSession(userId, guildId) {
-    sessions.delete(
-        getKey(userId, guildId)
-    );
-}
-
-function replaceVariables(value, interaction) {
-    if (
-        value === undefined ||
-        value === null
-    ) {
-        return value;
-    }
-
-    const text = String(value);
-
-    const user = interaction?.user;
-    const member = interaction?.member;
-    const guild = interaction?.guild;
-    const channel = interaction?.channel;
-    const client = interaction?.client;
-
-    const owner = guild?.ownerId
-        ? guild.members?.cache?.get(guild.ownerId)
-        : null;
-
-    const humanCount = guild?.members?.cache
-        ? guild.members.cache.filter(
-            member => !member.user.bot
-        ).size
-        : "";
-
-    const botCount = guild?.members?.cache
-        ? guild.members.cache.filter(
-            member => member.user.bot
-        ).size
-        : "";
+    const now = new Date();
 
     const variables = {
         // =========================
         // USER
         // =========================
-
         "{user}": user?.username || "",
         "{user.name}": user?.username || "",
         "{user.username}": user?.username || "",
-        "{user.displayName}":
-            member?.displayName ||
-            user?.displayName ||
-            "",
-        "{user.mention}":
-            user
+        "{user.tag}": user?.tag || "",
+        "{user.id}": user?.id || "",
+        "{user.mention}": user ? `<@${user.id}>` : "",
+        "{user.avatar}": user?.displayAvatarURL?.({ dynamic: true }) || "",
+        "{user.created}": user
+            ? `<t:${Math.floor(user.createdTimestamp / 1000)}:F>`
+            : "",
+
+        // =========================
+        // MEMBER
+        // =========================
+        "{member}": member?.displayName || user?.username || "",
+        "{member.name}": member?.displayName || "",
+        "{member.nickname}": member?.nickname || "",
+        "{member.id}": member?.id || user?.id || "",
+        "{member.mention}": member
+            ? `<@${member.id}>`
+            : user
                 ? `<@${user.id}>`
                 : "",
-        "{user.id}": user?.id || "",
-        "{user.tag}": user?.tag || "",
-        "{user.avatar}":
-            user?.displayAvatarURL?.({
-                size: 4096
-            }) || "",
-        "{user.createdAt}":
-            user?.createdAt?.toISOString?.() || "",
-        "{user.joinedAt}":
-            member?.joinedAt?.toISOString?.() || "",
-        "{user.isBooster}":
-            member?.premiumSince
-                ? "true"
-                : "false",
-        "{user.boostedAt}":
-            member?.premiumSince?.toISOString?.() || "",
+        "{member.joined}": member?.joinedTimestamp
+            ? `<t:${Math.floor(member.joinedTimestamp / 1000)}:F>`
+            : "",
+        "{member.joinedAt}": member?.joinedAt
+            ? `<t:${Math.floor(member.joinedAt.getTime() / 1000)}:F>`
+            : "",
+        "{member.avatar}": member?.displayAvatarURL?.({
+            dynamic: true
+        }) || "",
 
         // =========================
         // SERVER
         // =========================
-
         "{server}": guild?.name || "",
         "{server.name}": guild?.name || "",
         "{server.id}": guild?.id || "",
-        "{server.icon}":
-            guild?.iconURL?.({
-                size: 4096
-            }) || "",
-        "{server.banner}":
-            guild?.bannerURL?.({
-                size: 4096
-            }) || "",
-        "{server.splash}":
-            guild?.splashURL?.({
-                size: 4096
-            }) || "",
-        "{server.owner}":
-            owner?.user?.username ||
-            guild?.ownerId ||
-            "",
-        "{server.ownerId}":
-            guild?.ownerId || "",
-        "{server.memberCount}":
-            guild?.memberCount || 0,
-        "{server.humanCount}":
-            humanCount,
-        "{server.botCount}":
-            botCount,
-        "{server.channelCount}":
-            guild?.channels?.cache?.size || 0,
-        "{server.roleCount}":
-            guild?.roles?.cache?.size || 0,
-        "{server.emojiCount}":
-            guild?.emojis?.cache?.size || 0,
-        "{server.stickerCount}":
-            guild?.stickers?.cache?.size || 0,
-        "{server.boostCount}":
-            guild?.premiumSubscriptionCount || 0,
-        "{server.boosterCount}":
-            guild?.premiumSubscriptionCount || 0,
-        "{server.boostLevel}":
-            guild?.premiumTier || 0,
-        "{server.createdAt}":
-            guild?.createdAt?.toISOString?.() || "",
-        "{server.verificationLevel}":
-            guild?.verificationLevel || "",
+        "{server.icon}": guild?.iconURL?.({ dynamic: true }) || "",
+        "{server.owner}": guild?.ownerId || "",
+        "{server.owner.id}": guild?.ownerId || "",
+        "{server.owner.mention}": guild?.ownerId
+            ? `<@${guild.ownerId}>`
+            : "",
+        "{server.membercount}": guild?.memberCount?.toString() || "",
+        "{server.members}": guild?.memberCount?.toString() || "",
+        "{server.created}": guild
+            ? `<t:${Math.floor(guild.createdTimestamp / 1000)}:F>`
+            : "",
 
         // =========================
         // CHANNEL
         // =========================
-
-        "{channel}":
-            channel?.name || "",
-        "{channel.name}":
-            channel?.name || "",
-        "{channel.id}":
-            channel?.id || "",
-        "{channel.mention}":
-            channel
-                ? `<#${channel.id}>`
-                : "",
-        "{channel.type}":
-            channel?.type || "",
-        "{channel.createdAt}":
-            channel?.createdAt?.toISOString?.() || "",
-        "{channel.topic}":
-            channel?.topic || "",
+        "{channel}": channel?.name || "",
+        "{channel.name}": channel?.name || "",
+        "{channel.id}": channel?.id || "",
+        "{channel.mention}": channel
+            ? `<#${channel.id}>`
+            : "",
+        "{channel.type}": channel?.type?.toString() || "",
+        "{channel.created}": channel
+            ? `<t:${Math.floor(channel.createdTimestamp / 1000)}:F>`
+            : "",
 
         // =========================
         // BOT
         // =========================
-
-        "{bot}":
-            client?.user?.username || "",
-        "{bot.name}":
-            client?.user?.username || "",
-        "{bot.id}":
-            client?.user?.id || "",
-        "{bot.mention}":
-            client?.user
-                ? `<@${client.user.id}>`
-                : "",
-        "{bot.avatar}":
-            client?.user?.displayAvatarURL?.({
-                size: 4096
-            }) || "",
-        "{bot.tag}":
-            client?.user?.tag || "",
+        "{bot}": client?.user?.username || "",
+        "{bot.name}": client?.user?.username || "",
+        "{bot.username}": client?.user?.username || "",
+        "{bot.tag}": client?.user?.tag || "",
+        "{bot.id}": client?.user?.id || "",
+        "{bot.mention}": client?.user
+            ? `<@${client.user.id}>`
+            : "",
+        "{bot.avatar}": client?.user?.displayAvatarURL?.({
+            dynamic: true
+        }) || "",
 
         // =========================
         // TIME
         // =========================
+        "{time}": now.toLocaleTimeString(),
+        "{time.short}": now.toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit"
+        }),
+        "{time.long}": now.toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit"
+        }),
 
-        "{time}":
-            new Date().toLocaleTimeString(),
-        "{date}":
-            new Date().toLocaleDateString(),
-        "{timestamp}":
-            `<t:${Math.floor(
-                Date.now() / 1000
-            )}:F>`
+        // =========================
+        // DATE
+        // =========================
+        "{date}": now.toLocaleDateString(),
+        "{date.short}": now.toLocaleDateString(),
+        "{date.long}": now.toLocaleDateString([], {
+            year: "numeric",
+            month: "long",
+            day: "numeric"
+        }),
+
+        // =========================
+        // TIMESTAMP
+        // =========================
+        "{timestamp}": `<t:${Math.floor(now.getTime() / 1000)}:F>`,
+        "{timestamp.relative}": `<t:${Math.floor(now.getTime() / 1000)}:R>`,
+        "{timestamp.short}": `<t:${Math.floor(now.getTime() / 1000)}:t>`,
+        "{timestamp.long}": `<t:${Math.floor(now.getTime() / 1000)}:T>`,
+        "{timestamp.date}": `<t:${Math.floor(now.getTime() / 1000)}:d>`,
+        "{timestamp.date.long}": `<t:${Math.floor(now.getTime() / 1000)}:D>`,
+        "{timestamp.datetime}": `<t:${Math.floor(now.getTime() / 1000)}:f>`,
+        "{timestamp.datetime.long}": `<t:${Math.floor(now.getTime() / 1000)}:F>`
     };
 
-    return text.replace(
-        /\{[^}]+\}/g,
-        match =>
-            variables[match] !== undefined
-                ? String(variables[match])
-                : match
-    );
+    let result = value;
+
+    for (const [variable, replacement] of Object.entries(variables)) {
+        result = result.replace(
+            new RegExp(
+                variable.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+                "gi"
+            ),
+            replacement
+        );
+    }
+
+    return result;
 }
-
-function buildEmbeds(
-    embedData = [],
-    interaction
-) {
-    return embedData
-        .slice(0, 10)
-        .map(data => {
-            const embed = new EmbedBuilder();
-
-            if (data.title) {
-                embed.setTitle(
-                    replaceVariables(
-                        data.title,
-                        interaction
-                    ).slice(0, 256)
-                );
-            }
-
-            if (data.description) {
-                embed.setDescription(
-                    replaceVariables(
-                        data.description,
-                        interaction
-                    ).slice(0, 4096)
-                );
-            }
-
-            if (data.url) {
-                embed.setURL(
-                    replaceVariables(
-                        data.url,
-                        interaction
-                    ).slice(0, 2048)
-                );
-            }
-
-            if (data.color) {
-                embed.setColor(data.color);
-            }
-
-            if (data.author?.name) {
-                embed.setAuthor({
-                    name: replaceVariables(
-                        data.author.name,
-                        interaction
-                    ).slice(0, 256),
-
-                    url: data.author.url
-                        ? replaceVariables(
-                            data.author.url,
-                            interaction
-                        )
-                        : undefined,
-
-                    iconURL: data.author.iconURL
-                        ? replaceVariables(
-                            data.author.iconURL,
-                            interaction
-                        )
-                        : undefined
-                });
-            }
-
-            if (data.thumbnail) {
-                embed.setThumbnail(
-                    replaceVariables(
-                        data.thumbnail,
-                        interaction
-                    )
-                );
-            }
-
-            if (data.image) {
-                embed.setImage(
-                    replaceVariables(
-                        data.image,
-                        interaction
-                    )
-                );
-            }
-
-            if (data.footer?.text) {
-                embed.setFooter({
-                    text: replaceVariables(
-                        data.footer.text,
-                        interaction
-                    ).slice(0, 2048),
-
-                    iconURL: data.footer.iconURL
-                        ? replaceVariables(
-                            data.footer.iconURL,
-                            interaction
-                        )
-                        : undefined
-                });
-            }
-
-            if (data.timestamp) {
-                embed.setTimestamp(
-                    data.timestamp === true
-                        ? new Date()
-                        : new Date(data.timestamp)
-                );
-            }
-
-            if (Array.isArray(data.fields)) {
-                for (
-                    const field of data.fields.slice(0, 25)
-                ) {
-                    if (
-                        !field?.name ||
-                        !field?.value
-                    ) {
-                        continue;
-                    }
-
-                    embed.addFields({
-                        name: replaceVariables(
-                            field.name,
-                            interaction
-                        ).slice(0, 256),
-
-                        value: replaceVariables(
-                            field.value,
-                            interaction
-                        ).slice(0, 1024),
-
-                        inline: Boolean(
-                            field.inline
-                        )
-                    });
-                }
-            }
-
-            return embed;
-        });
-}
-
-function buildMessage(session, interaction) {
-    const embeds = buildEmbeds(
-        session?.data?.embeds || [],
-        interaction
-    );
-
-    const content = session?.data?.content
-        ? replaceVariables(
-            session.data.content,
-            interaction
-        )
-        : undefined;
-
-    const buttons = buildButtons(
-        session?.data?.buttons || [],
-        value =>
-            replaceVariables(
-                value,
-                interaction
-            )
-    );
-
-    const selectMenus = buildSelectMenus(
-        session?.data?.selectMenus || [],
-        value =>
-            replaceVariables(
-                value,
-                interaction
-            )
-    );
-
-    const components = [
-        ...buttons,
-        ...selectMenus
-    ].slice(0, 5);
-
-    return {
-        content,
-        embeds,
-        components
-    };
-}
-
-module.exports = {
-    createSession,
-    getSession,
-    deleteSession,
-    replaceVariables,
-    buildEmbeds,
-    buildMessage
-};
