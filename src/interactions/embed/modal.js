@@ -2,7 +2,8 @@ const interactionEmbeds =
     require("../../embeds/general/interaction");
 
 const {
-    getSession
+    getSession,
+    buildMessage
 } = require("../../systems/embed/builder");
 
 module.exports = {
@@ -31,9 +32,9 @@ module.exports = {
         const id =
             interaction.customId;
 
-        // =========================
-        // MESSAGE CONTENT
-        // =========================
+        /*
+         * CONTENT
+         */
 
         if (id === "embed:content") {
 
@@ -55,9 +56,9 @@ module.exports = {
             );
         }
 
-        // =========================
-        // EMBED
-        // =========================
+        /*
+         * EMBED
+         */
 
         if (id === "embed:embed") {
 
@@ -86,13 +87,13 @@ module.exports = {
                 getValue(
                     interaction,
                     "color"
-                ).slice(0, 20);
+                );
 
             const timestamp =
                 getValue(
                     interaction,
                     "timestamp"
-                ).trim();
+                );
 
             if (!timestamp) {
                 embed.timestamp = false;
@@ -100,27 +101,21 @@ module.exports = {
                 timestamp.toLowerCase() === "true"
             ) {
                 embed.timestamp = true;
+            } else if (
+                !Number.isNaN(
+                    Date.parse(timestamp)
+                )
+            ) {
+                embed.timestamp = timestamp;
             } else {
-                const date =
-                    new Date(timestamp);
-
-                if (
-                    Number.isNaN(
-                        date.getTime()
-                    )
-                ) {
-                    return interaction.reply({
-                        embeds: [
-                            interactionEmbeds.modalFailed(
-                                "The timestamp is invalid. Use `true` or a valid date/time."
-                            )
-                        ],
-                        flags: 64
-                    });
-                }
-
-                embed.timestamp =
-                    date.toISOString();
+                return interaction.reply({
+                    embeds: [
+                        interactionEmbeds.modalFailed(
+                            "The timestamp is invalid."
+                        )
+                    ],
+                    flags: 64
+                });
             }
 
             await refreshEditor(
@@ -131,41 +126,18 @@ module.exports = {
 
             return success(
                 interaction,
-                "Embed settings updated."
+                "Embed updated."
             );
         }
 
-        // =========================
-        // FIELD
-        // =========================
+        /*
+         * FIELD
+         */
 
         if (id === "embed:field") {
 
-            const name =
-                getValue(
-                    interaction,
-                    "fieldName"
-                );
-
-            const value =
-                getValue(
-                    interaction,
-                    "fieldValue"
-                );
-
-            const inlineValue =
-                getValue(
-                    interaction,
-                    "fieldInline"
-                ).trim()
-                .toLowerCase();
-
             const embed =
                 getEmbed(session);
-
-            if (!Array.isArray(embed.fields)) {
-                embed.fields = [];
-            }
 
             if (
                 embed.fields.length >= 25
@@ -173,46 +145,49 @@ module.exports = {
                 return interaction.reply({
                     embeds: [
                         interactionEmbeds.modalFailed(
-                            "This embed already has the maximum of 25 fields."
+                            "This embed already has 25 fields."
                         )
                     ],
                     flags: 64
                 });
             }
 
-            if (!name.trim()) {
+            const name =
+                getValue(
+                    interaction,
+                    "fieldName"
+                ).slice(0, 256);
+
+            const value =
+                getValue(
+                    interaction,
+                    "fieldValue"
+                ).slice(0, 1024);
+
+            if (!name || !value) {
                 return interaction.reply({
                     embeds: [
                         interactionEmbeds.modalFailed(
-                            "The field name cannot be empty."
+                            "Field name and value are required."
                         )
                     ],
                     flags: 64
                 });
             }
 
-            if (!value.trim()) {
-                return interaction.reply({
-                    embeds: [
-                        interactionEmbeds.modalFailed(
-                            "The field value cannot be empty."
-                        )
-                    ],
-                    flags: 64
-                });
-            }
+            const inline =
+                ["true", "yes", "1"]
+                    .includes(
+                        getValue(
+                            interaction,
+                            "fieldInline"
+                        ).toLowerCase()
+                    );
 
             embed.fields.push({
-                name:
-                    name.slice(0, 256),
-
-                value:
-                    value.slice(0, 1024),
-
-                inline:
-                    inlineValue === "true" ||
-                    inlineValue === "yes" ||
-                    inlineValue === "1"
+                name,
+                value,
+                inline
             });
 
             await refreshEditor(
@@ -223,61 +198,55 @@ module.exports = {
 
             return success(
                 interaction,
-                "Embed field added."
+                "Field added."
             );
         }
 
-        // =========================
-        // BUTTON
-        // =========================
+        /*
+         * BUTTON
+         */
 
         if (id === "embed:button") {
+
+            if (
+                !Array.isArray(
+                    session.data.buttons
+                )
+            ) {
+                session.data.buttons = [];
+            }
 
             const label =
                 getValue(
                     interaction,
                     "buttonLabel"
-                );
+                ).slice(0, 80);
 
             const customId =
                 getValue(
                     interaction,
                     "buttonId"
-                );
+                ).slice(0, 100);
 
             const style =
                 getValue(
                     interaction,
                     "buttonStyle"
-                )
-                .trim()
-                .toLowerCase() ||
-                "secondary";
+                ).toLowerCase();
 
             const url =
                 getValue(
                     interaction,
                     "buttonUrl"
-                );
+                ).slice(0, 512);
 
             const emoji =
                 getValue(
                     interaction,
                     "buttonEmoji"
-                );
+                ).slice(0, 100);
 
-            if (!label.trim()) {
-                return interaction.reply({
-                    embeds: [
-                        interactionEmbeds.modalFailed(
-                            "The button label cannot be empty."
-                        )
-                    ],
-                    flags: 64
-                });
-            }
-
-            const styles = [
+            const validStyles = [
                 "primary",
                 "secondary",
                 "success",
@@ -285,11 +254,22 @@ module.exports = {
                 "link"
             ];
 
-            if (!styles.includes(style)) {
+            if (!validStyles.includes(style)) {
                 return interaction.reply({
                     embeds: [
                         interactionEmbeds.modalFailed(
-                            "Invalid button style. Use `primary`, `secondary`, `success`, `danger`, or `link`."
+                            "Invalid button style. Use primary, secondary, success, danger, or link."
+                        )
+                    ],
+                    flags: 64
+                });
+            }
+
+            if (!label) {
+                return interaction.reply({
+                    embeds: [
+                        interactionEmbeds.modalFailed(
+                            "Button label is required."
                         )
                     ],
                     flags: 64
@@ -298,12 +278,12 @@ module.exports = {
 
             if (
                 style === "link" &&
-                !url.trim()
+                !url
             ) {
                 return interaction.reply({
                     embeds: [
                         interactionEmbeds.modalFailed(
-                            "Link buttons require a URL."
+                            "A URL is required for link buttons."
                         )
                     ],
                     flags: 64
@@ -312,31 +292,12 @@ module.exports = {
 
             if (
                 style !== "link" &&
-                !customId.trim()
+                !customId
             ) {
                 return interaction.reply({
                     embeds: [
                         interactionEmbeds.modalFailed(
-                            "This button requires a Custom ID."
-                        )
-                    ],
-                    flags: 64
-                });
-            }
-
-            if (!Array.isArray(
-                session.data.buttons
-            )) {
-                session.data.buttons = [];
-            }
-
-            if (
-                session.data.buttons.length >= 25
-            ) {
-                return interaction.reply({
-                    embeds: [
-                        interactionEmbeds.modalFailed(
-                            "You cannot add more than 25 buttons."
+                            "A Custom ID is required for this button."
                         )
                     ],
                     flags: 64
@@ -344,22 +305,18 @@ module.exports = {
             }
 
             session.data.buttons.push({
-                label:
-                    label.slice(0, 80),
-
-                emoji:
-                    emoji.slice(0, 100),
-
+                label,
+                emoji,
                 style,
-
                 customId:
-                    customId.slice(0, 100),
-
+                    style === "link"
+                        ? ""
+                        : customId,
                 url:
-                    url.slice(0, 2048),
-
-                disabled:
-                    false
+                    style === "link"
+                        ? url
+                        : "",
+                disabled: false
             });
 
             await refreshEditor(
@@ -374,32 +331,37 @@ module.exports = {
             );
         }
 
-        // =========================
-        // SELECT MENU
-        // =========================
+        /*
+         * SELECT MENU
+         */
 
         if (id === "embed:select") {
+
+            if (
+                !Array.isArray(
+                    session.data.selectMenus
+                )
+            ) {
+                session.data.selectMenus = [];
+            }
 
             const customId =
                 getValue(
                     interaction,
                     "customId"
-                );
+                ).slice(0, 100);
 
             const placeholder =
                 getValue(
                     interaction,
                     "placeholder"
-                );
+                ).slice(0, 150);
 
             const type =
                 getValue(
                     interaction,
                     "type"
-                )
-                .trim()
-                .toLowerCase() ||
-                "string";
+                ).toLowerCase();
 
             const minValues =
                 parseNumber(
@@ -415,7 +377,7 @@ module.exports = {
                     1
                 );
 
-            const types = [
+            const validTypes = [
                 "string",
                 "user",
                 "role",
@@ -423,7 +385,18 @@ module.exports = {
                 "channel"
             ];
 
-            if (!types.includes(type)) {
+            if (!customId) {
+                return interaction.reply({
+                    embeds: [
+                        interactionEmbeds.modalFailed(
+                            "A Custom ID is required."
+                        )
+                    ],
+                    flags: 64
+                });
+            }
+
+            if (!validTypes.includes(type)) {
                 return interaction.reply({
                     embeds: [
                         interactionEmbeds.modalFailed(
@@ -434,23 +407,11 @@ module.exports = {
                 });
             }
 
-            if (!customId.trim()) {
-                return interaction.reply({
-                    embeds: [
-                        interactionEmbeds.modalFailed(
-                            "The select menu Custom ID cannot be empty."
-                        )
-                    ],
-                    flags: 64
-                });
-            }
-
             if (
                 minValues < 0 ||
-                minValues > 25 ||
                 maxValues < 1 ||
-                maxValues > 25 ||
-                minValues > maxValues
+                minValues > maxValues ||
+                maxValues > 25
             ) {
                 return interaction.reply({
                     embeds: [
@@ -462,41 +423,15 @@ module.exports = {
                 });
             }
 
-            if (!Array.isArray(
-                session.data.selectMenus
-            )) {
-                session.data.selectMenus = [];
-            }
-
-            if (
-                session.data.selectMenus.length >= 5
-            ) {
-                return interaction.reply({
-                    embeds: [
-                        interactionEmbeds.modalFailed(
-                            "You cannot add more than 5 select menus."
-                        )
-                    ],
-                    flags: 64
-                });
-            }
-
             session.data.selectMenus.push({
                 type,
-
-                customId:
-                    customId.slice(0, 100),
-
+                customId,
                 placeholder:
-                    placeholder.slice(0, 150),
-
+                    placeholder ||
+                    "Select an option",
                 minValues,
-
                 maxValues,
-
-                disabled:
-                    false,
-
+                disabled: false,
                 options: []
             });
 
@@ -512,14 +447,10 @@ module.exports = {
             );
         }
 
-        // =========================
-        // INVALID
-        // =========================
-
         return interaction.reply({
             embeds: [
-                interactionEmbeds.modalInvalid(
-                    "This embed editor action is invalid."
+                interactionEmbeds.modalFailed(
+                    "This modal action is invalid."
                 )
             ],
             flags: 64
@@ -527,27 +458,18 @@ module.exports = {
     }
 };
 
-
-// =========================
-// GET VALUE
-// =========================
-
 function getValue(
     interaction,
     id
 ) {
     try {
         return interaction.fields
-            .getTextInputValue(id);
+            .getTextInputValue(id)
+            .trim();
     } catch {
         return "";
     }
 }
-
-
-// =========================
-// NUMBER
-// =========================
 
 function parseNumber(
     interaction,
@@ -555,87 +477,66 @@ function parseNumber(
     fallback
 ) {
     const value =
-        getValue(
-            interaction,
-            id
-        ).trim();
+        Number(
+            getValue(
+                interaction,
+                id
+            )
+        );
 
-    if (!value) {
-        return fallback;
-    }
-
-    const number =
-        Number(value);
-
-    if (
-        !Number.isInteger(number)
-    ) {
-        return fallback;
-    }
-
-    return number;
+    return Number.isFinite(value)
+        ? value
+        : fallback;
 }
-
-
-// =========================
-// GET EMBED
-// =========================
 
 function getEmbed(session) {
 
-    if (!Array.isArray(
-        session.data.embeds
-    )) {
+    if (
+        !Array.isArray(
+            session.data.embeds
+        )
+    ) {
         session.data.embeds = [];
     }
 
     if (!session.data.embeds[0]) {
-
-        session.data.embeds[0] = {
-
+        session.data.embeds.push({
             title: "",
-
             description: "",
-
             url: "",
-
             color: "",
-
             author: {
                 name: "",
                 url: "",
                 iconURL: ""
             },
-
             thumbnail: "",
-
             image: "",
-
             footer: {
                 text: "",
                 iconURL: ""
             },
-
             timestamp: false,
-
             fields: []
-        };
+        });
+    }
+
+    if (
+        !Array.isArray(
+            session.data.embeds[0].fields
+        )
+    ) {
+        session.data.embeds[0].fields = [];
     }
 
     return session.data.embeds[0];
 }
-
-
-// =========================
-// REFRESH EDITOR
-// =========================
 
 async function refreshEditor(
     client,
     session,
     interaction
 ) {
-
     if (
         !session.channelId ||
         !session.messageId
@@ -653,47 +554,33 @@ async function refreshEditor(
     }
 
     try {
-
         const message =
             await channel.messages.fetch(
                 session.messageId
             );
 
-        const builder =
-            require(
-                "../../systems/embed/builder"
-            );
-
         const data =
-            builder.buildMessage(
+            buildMessage(
                 session,
                 interaction
             );
 
         await message.edit({
             content:
-                data.content,
-
+                data.content || null,
             embeds:
                 data.embeds,
-
             components:
                 data.components
         });
 
     } catch (error) {
-
         console.error(
             "[EMBED EDITOR]",
             error
         );
     }
 }
-
-
-// =========================
-// SUCCESS
-// =========================
 
 function success(
     interaction,
