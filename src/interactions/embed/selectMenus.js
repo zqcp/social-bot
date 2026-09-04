@@ -135,7 +135,8 @@ module.exports = {
             if (
                 !Array.isArray(
                     session.data.buttons
-                )
+                ) ||
+                !session.data.buttons.length
             ) {
                 return interaction.reply({
                     embeds: [
@@ -307,9 +308,14 @@ async function refreshEditor(
             );
 
         await message.edit({
-            content: data.content,
-            embeds: data.embeds,
-            components: data.components
+            content:
+                data.content,
+
+            embeds:
+                data.embeds,
+
+            components:
+                data.components
         });
 
     } catch (error) {
