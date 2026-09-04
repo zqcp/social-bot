@@ -10,7 +10,6 @@ const globalEmbeds = require("../../embeds/general/global");
 const embedEmbeds = require("../../embeds/general/embed");
 const webEditor = require("../../systems/embed/webEditor");
 
-
 module.exports = {
     name: "embed create",
     aliases: ["embed c"],
@@ -68,15 +67,7 @@ module.exports = {
             edit: false
         });
 
-        const url = `${getEditorBaseUrl()}/embedbuilder/?token=${encodeURIComponent(session.token)}&data=${encodeURIComponent(
-            Buffer.from(
-                encodeURIComponent(JSON.stringify({
-                    content: "",
-                    embeds: []
-                })),
-                "utf8"
-            ).toString("base64")
-        )}`;
+        const url = "https://glitchii.github.io/embedbuilder/";
 
         const row = new ActionRowBuilder().addComponents(
             new ButtonBuilder()
