@@ -1,20 +1,22 @@
 const {
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle,
     ModalBuilder,
     TextInputBuilder,
-    TextInputStyle,
-    ActionRowBuilder
+    TextInputStyle
 } = require("discord.js");
-
-const Embed =
-    require("../../models/Embed");
 
 const interactionEmbeds =
     require("../../embeds/general/interaction");
 
+const Embed =
+    require("../../models/Embed");
+
 const {
     getSession,
-    deleteSession,
-    buildMessage
+    buildMessage,
+    deleteSession
 } = require("../../systems/embed/builder");
 
 module.exports = {
@@ -23,25 +25,40 @@ module.exports = {
 
     async execute(client, interaction) {
 
-        const session = getSession(
-            interaction.user.id,
-            interaction.guildId
-        );
+        const session =
+            getSession(
+                interaction.user.id,
+                interaction.guildId
+            );
 
         if (!session) {
             return interaction.reply({
                 embeds: [
-                    interactionEmbeds.buttonExpired()
+                    interactionEmbeds.buttonFailed(
+                        "This embed builder session has expired."
+                    )
                 ],
                 flags: 64
             });
         }
 
-        const id = interaction.customId;
+        const id =
+            interaction.customId;
 
-        // =========================
-        // CANCEL
-        // =========================
+        if (!id.startsWith("embed:")) {
+            return interaction.reply({
+                embeds: [
+                    interactionEmbeds.buttonInvalid(
+                        "This embed button action is invalid."
+                    )
+                ],
+                flags: 64
+            });
+        }
+
+        /*
+         * CANCEL
+         */
 
         if (id === "embed:cancel") {
 
@@ -50,19 +67,27 @@ module.exports = {
                 interaction.guildId
             );
 
-            return interaction.update({
-                embeds: [
-                    interactionEmbeds.cancelled(
-                        "The embed builder has been cancelled."
-                    )
-                ],
-                components: []
-            });
+            try {
+                await interaction.update({
+                    content: "Embed builder cancelled.",
+                    embeds: [],
+                    components: []
+                });
+            } catch {
+                if (!interaction.replied) {
+                    await interaction.reply({
+                        content: "Embed builder cancelled.",
+                        flags: 64
+                    });
+                }
+            }
+
+            return;
         }
 
-        // =========================
-        // PREVIEW
-        // =========================
+        /*
+         * PREVIEW
+         */
 
         if (id === "embed:preview") {
 
@@ -72,85 +97,37 @@ module.exports = {
                     interaction
                 );
 
-            if (
-                !data.embeds.length &&
-                !data.content
-            ) {
-                return interaction.reply({
-                    embeds: [
-                        interactionEmbeds.invalid(
-                            "There is nothing to preview yet."
-                        )
-                    ],
-                    flags: 64
-                });
-            }
-
             return interaction.reply({
-                content:
-                    data.content,
-
-                embeds:
-                    data.embeds,
-
-                components:
-                    data.components,
-
+                content: data.content || undefined,
+                embeds: data.embeds,
+                components: data.components,
                 flags: 64
             });
         }
 
-        // =========================
-        // SAVE
-        // =========================
+        /*
+         * SAVE
+         */
 
         if (id === "embed:save") {
-
-            if (!session.data.name) {
-                return interaction.reply({
-                    embeds: [
-                        interactionEmbeds.modalFailed(
-                            "This embed does not have a name."
-                        )
-                    ],
-                    flags: 64
-                });
-            }
 
             try {
 
                 await Embed.findOneAndUpdate(
                     {
-                        guildId:
-                            session.guildId,
-
-                        name:
-                            session.data.name
+                        guildId: interaction.guildId,
+                        name: session.data.name
                     },
                     {
-                        guildId:
-                            session.guildId,
-
-                        name:
-                            session.data.name,
-
-                        channelId:
-                            session.channelId,
-
-                        content:
-                            session.data.content || "",
-
-                        embeds:
-                            session.data.embeds || [],
-
-                        buttons:
-                            session.data.buttons || [],
-
+                        guildId: interaction.guildId,
+                        name: session.data.name,
+                        channelId: session.channelId || null,
+                        content: session.data.content || "",
+                        embeds: session.data.embeds || [],
+                        buttons: session.data.buttons || [],
                         selectMenus:
                             session.data.selectMenus || [],
-
-                        createdBy:
-                            session.userId
+                        createdBy: interaction.user.id
                     },
                     {
                         upsert: true,
@@ -161,8 +138,8 @@ module.exports = {
 
                 return interaction.reply({
                     embeds: [
-                        interactionEmbeds.modalSuccess(
-                            "The embed has been saved."
+                        interactionEmbeds.buttonSuccess(
+                            "Embed saved successfully."
                         )
                     ],
                     flags: 64
@@ -177,8 +154,8 @@ module.exports = {
 
                 return interaction.reply({
                     embeds: [
-                        interactionEmbeds.modalFailed(
-                            "I couldn't save this embed."
+                        interactionEmbeds.buttonFailed(
+                            "The embed could not be saved."
                         )
                     ],
                     flags: 64
@@ -186,9 +163,9 @@ module.exports = {
             }
         }
 
-        // =========================
-        // SEND
-        // =========================
+        /*
+         * SEND
+         */
 
         if (id === "embed:send") {
 
@@ -199,29 +176,14 @@ module.exports = {
                 );
 
             if (
+                !data.content &&
                 !data.embeds.length &&
-                !data.content
+                !data.components.length
             ) {
                 return interaction.reply({
                     embeds: [
-                        interactionEmbeds.invalid(
-                            "There is nothing to send yet."
-                        )
-                    ],
-                    flags: 64
-                });
-            }
-
-            const channel =
-                interaction.guild.channels.cache.get(
-                    session.channelId
-                );
-
-            if (!channel) {
-                return interaction.reply({
-                    embeds: [
-                        interactionEmbeds.invalid(
-                            "The embed channel could not be found."
+                        interactionEmbeds.buttonFailed(
+                            "There is nothing to send."
                         )
                     ],
                     flags: 64
@@ -230,12 +192,28 @@ module.exports = {
 
             try {
 
+                const channel =
+                    client.channels.cache.get(
+                        session.channelId
+                    );
+
+                if (!channel) {
+                    return interaction.reply({
+                        embeds: [
+                            interactionEmbeds.buttonFailed(
+                                "The editor channel could not be found."
+                            )
+                        ],
+                        flags: 64
+                    });
+                }
+
                 await channel.send(data);
 
                 return interaction.reply({
                     embeds: [
-                        interactionEmbeds.modalSuccess(
-                            "The embed has been sent."
+                        interactionEmbeds.buttonSuccess(
+                            "Embed sent successfully."
                         )
                     ],
                     flags: 64
@@ -250,8 +228,8 @@ module.exports = {
 
                 return interaction.reply({
                     embeds: [
-                        interactionEmbeds.modalFailed(
-                            "I couldn't send the embed."
+                        interactionEmbeds.buttonFailed(
+                            "The embed could not be sent."
                         )
                     ],
                     flags: 64
@@ -259,9 +237,9 @@ module.exports = {
             }
         }
 
-        // =========================
-        // CONTENT
-        // =========================
+        /*
+         * CONTENT
+         */
 
         if (id === "embed:content") {
 
@@ -270,205 +248,229 @@ module.exports = {
                 "embed:content",
                 "Message Content",
                 [
-                    {
-                        id: "content",
-                        label: "Content",
-                        value:
-                            session.data.content || "",
-                        style:
-                            TextInputStyle.Paragraph,
-                        required: false
-                    }
+                    input(
+                        "content",
+                        "Content",
+                        session.data.content || "",
+                        TextInputStyle.Paragraph,
+                        false
+                    )
                 ]
             );
         }
 
-        // =========================
-        // EMBED
-        // =========================
+        /*
+         * EMBED
+         */
 
         if (id === "embed:embed") {
 
-            const current =
-                session.data.embeds?.[0] || {};
+            const embed =
+                getEmbed(session);
 
             return showModal(
                 interaction,
                 "embed:embed",
-                "Embed Settings",
+                "Embed",
                 [
-                    {
-                        id: "title",
-                        label: "Title",
-                        value:
-                            current.title || "",
-                        required: false
-                    },
-                    {
-                        id: "description",
-                        label: "Description",
-                        value:
-                            current.description || "",
-                        style:
-                            TextInputStyle.Paragraph,
-                        required: false
-                    },
-                    {
-                        id: "url",
-                        label: "URL",
-                        value:
-                            current.url || "",
-                        required: false
-                    },
-                    {
-                        id: "color",
-                        label: "Color",
-                        value:
-                            current.color || "",
-                        required: false
-                    },
-                    {
-                        id: "timestamp",
-                        label: "Timestamp",
-                        value:
-                            current.timestamp
-                                ? String(
-                                    current.timestamp
-                                )
-                                : "",
-                        required: false
-                    }
+                    input(
+                        "title",
+                        "Title",
+                        embed.title || "",
+                        TextInputStyle.Short,
+                        false
+                    ),
+
+                    input(
+                        "description",
+                        "Description",
+                        embed.description || "",
+                        TextInputStyle.Paragraph,
+                        false
+                    ),
+
+                    input(
+                        "url",
+                        "URL",
+                        embed.url || "",
+                        TextInputStyle.Short,
+                        false
+                    ),
+
+                    input(
+                        "color",
+                        "Color",
+                        embed.color || "",
+                        TextInputStyle.Short,
+                        false
+                    ),
+
+                    input(
+                        "timestamp",
+                        "Timestamp",
+                        embed.timestamp === true
+                            ? "true"
+                            : embed.timestamp || "",
+                        TextInputStyle.Short,
+                        false
+                    )
                 ]
             );
         }
 
-        // =========================
-        // FIELDS
-        // =========================
+        /*
+         * FIELDS
+         */
 
         if (id === "embed:field") {
+
+            const fields =
+                getEmbed(session).fields || [];
 
             return showModal(
                 interaction,
                 "embed:field",
-                "Embed Field",
+                "Add Field",
                 [
-                    {
-                        id: "fieldName",
-                        label: "Field Name",
-                        required: true
-                    },
-                    {
-                        id: "fieldValue",
-                        label: "Field Value",
-                        style:
-                            TextInputStyle.Paragraph,
-                        required: true
-                    },
-                    {
-                        id: "fieldInline",
-                        label: "Inline",
-                        value: "false",
-                        required: false
-                    }
+                    input(
+                        "fieldName",
+                        "Field Name",
+                        "",
+                        TextInputStyle.Short,
+                        true
+                    ),
+
+                    input(
+                        "fieldValue",
+                        "Field Value",
+                        "",
+                        TextInputStyle.Paragraph,
+                        true
+                    ),
+
+                    input(
+                        "fieldInline",
+                        "Inline",
+                        "false",
+                        TextInputStyle.Short,
+                        true
+                    )
                 ]
             );
         }
 
-        // =========================
-        // BUTTONS
-        // =========================
+        /*
+         * BUTTONS
+         */
 
         if (id === "embed:button") {
 
             return showModal(
                 interaction,
                 "embed:button",
-                "Embed Button",
+                "Add Button",
                 [
-                    {
-                        id: "buttonLabel",
-                        label: "Button Label",
-                        required: true
-                    },
-                    {
-                        id: "buttonId",
-                        label: "Button Custom ID",
-                        required: false
-                    },
-                    {
-                        id: "buttonStyle",
-                        label: "Button Style",
-                        value: "secondary",
-                        required: false
-                    },
-                    {
-                        id: "buttonUrl",
-                        label: "Button URL",
-                        required: false
-                    },
-                    {
-                        id: "buttonEmoji",
-                        label: "Button Emoji",
-                        required: false
-                    }
+                    input(
+                        "buttonLabel",
+                        "Label",
+                        "",
+                        TextInputStyle.Short,
+                        true
+                    ),
+
+                    input(
+                        "buttonId",
+                        "Custom ID",
+                        "",
+                        TextInputStyle.Short,
+                        false
+                    ),
+
+                    input(
+                        "buttonStyle",
+                        "Style",
+                        "secondary",
+                        TextInputStyle.Short,
+                        true
+                    ),
+
+                    input(
+                        "buttonUrl",
+                        "URL",
+                        "",
+                        TextInputStyle.Short,
+                        false
+                    ),
+
+                    input(
+                        "buttonEmoji",
+                        "Emoji",
+                        "",
+                        TextInputStyle.Short,
+                        false
+                    )
                 ]
             );
         }
 
-        // =========================
-        // SELECT MENUS
-        // =========================
+        /*
+         * SELECT MENUS
+         */
 
         if (id === "embed:select") {
 
             return showModal(
                 interaction,
                 "embed:select",
-                "Select Menu",
+                "Add Select Menu",
                 [
-                    {
-                        id: "customId",
-                        label: "Custom ID",
-                        required: true
-                    },
-                    {
-                        id: "placeholder",
-                        label: "Placeholder",
-                        value:
-                            "Select an option",
-                        required: false
-                    },
-                    {
-                        id: "type",
-                        label: "Type",
-                        value: "string",
-                        required: false
-                    },
-                    {
-                        id: "minValues",
-                        label: "Minimum Values",
-                        value: "1",
-                        required: false
-                    },
-                    {
-                        id: "maxValues",
-                        label: "Maximum Values",
-                        value: "1",
-                        required: false
-                    }
+                    input(
+                        "customId",
+                        "Custom ID",
+                        "",
+                        TextInputStyle.Short,
+                        true
+                    ),
+
+                    input(
+                        "placeholder",
+                        "Placeholder",
+                        "Select an option",
+                        TextInputStyle.Short,
+                        false
+                    ),
+
+                    input(
+                        "type",
+                        "Type",
+                        "string",
+                        TextInputStyle.Short,
+                        true
+                    ),
+
+                    input(
+                        "minValues",
+                        "Minimum Values",
+                        "1",
+                        TextInputStyle.Short,
+                        true
+                    ),
+
+                    input(
+                        "maxValues",
+                        "Maximum Values",
+                        "1",
+                        TextInputStyle.Short,
+                        true
+                    )
                 ]
             );
         }
 
-        // =========================
-        // INVALID
-        // =========================
-
         return interaction.reply({
             embeds: [
-                interactionEmbeds.invalid(
-                    "This embed builder action is invalid."
+                interactionEmbeds.buttonInvalid(
+                    "This embed button action is invalid."
                 )
             ],
             flags: 64
@@ -476,63 +478,81 @@ module.exports = {
     }
 };
 
+function input(
+    customId,
+    label,
+    value,
+    style,
+    required
+) {
+    const component =
+        new TextInputBuilder()
+            .setCustomId(customId)
+            .setLabel(label)
+            .setStyle(style)
+            .setRequired(required);
 
-// =========================
-// MODAL BUILDER
-// =========================
+    if (value) {
+        component.setValue(
+            String(value).slice(0, 4000)
+        );
+    }
 
-function showModal(
+    return component;
+}
+
+async function showModal(
     interaction,
     customId,
     title,
-    inputs = []
+    inputs
 ) {
-
     const modal =
         new ModalBuilder()
             .setCustomId(customId)
             .setTitle(title);
 
-    for (
-        const inputData of inputs.slice(0, 5)
-    ) {
-
-        const input =
-            new TextInputBuilder()
-                .setCustomId(
-                    inputData.id
-                )
-                .setLabel(
-                    inputData.label
-                )
-                .setStyle(
-                    inputData.style ||
-                    TextInputStyle.Short
-                )
-                .setRequired(
-                    Boolean(
-                        inputData.required
-                    )
-                );
-
-        if (
-            inputData.value !== undefined &&
-            inputData.value !== null
-        ) {
-            input.setValue(
-                String(
-                    inputData.value
-                ).slice(0, 4000)
-            );
-        }
-
+    for (const component of inputs) {
         modal.addComponents(
             new ActionRowBuilder()
-                .addComponents(input)
+                .addComponents(component)
         );
     }
 
-    return interaction.showModal(
-        modal
-    );
+    return interaction.showModal(modal);
+}
+
+function getEmbed(session) {
+
+    if (!Array.isArray(session.data.embeds)) {
+        session.data.embeds = [];
+    }
+
+    if (!session.data.embeds[0]) {
+        session.data.embeds.push({
+            title: "",
+            description: "",
+            url: "",
+            color: "",
+            author: {
+                name: "",
+                url: "",
+                iconURL: ""
+            },
+            thumbnail: "",
+            image: "",
+            footer: {
+                text: "",
+                iconURL: ""
+            },
+            timestamp: false,
+            fields: []
+        });
+    }
+
+    if (!Array.isArray(session.data.embeds[0].fields)) {
+        session.data.embeds[0].fields = [];
+    }
+
+    return session.data.embeds[0];
 }
