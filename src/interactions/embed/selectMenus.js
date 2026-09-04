@@ -1,6 +1,9 @@
-const interactionEmbeds = require("../../embeds/general/interaction");
+const interactionEmbeds =
+    require("../../embeds/general/interaction");
+
 const {
-    getSession
+    getSession,
+    buildMessage
 } = require("../../systems/embed/builder");
 
 module.exports = {
@@ -8,10 +11,12 @@ module.exports = {
     type: "selectMenu",
 
     async execute(client, interaction) {
-        const session = getSession(
-            interaction.user.id,
-            interaction.guildId
-        );
+
+        const session =
+            getSession(
+                interaction.user.id,
+                interaction.guildId
+            );
 
         if (!session) {
             return interaction.reply({
@@ -24,7 +29,8 @@ module.exports = {
             });
         }
 
-        const customId = interaction.customId;
+        const customId =
+            interaction.customId;
 
         if (!customId.startsWith("embed:")) {
             return interaction.reply({
@@ -37,14 +43,17 @@ module.exports = {
             });
         }
 
-        const menuId = customId.slice("embed:".length);
+        const menuId =
+            customId.slice("embed:".length);
 
         // =========================
         // EMBED SELECTOR
         // =========================
 
         if (menuId === "embed") {
-            const value = interaction.values[0];
+
+            const value =
+                interaction.values[0];
 
             if (!value) {
                 return interaction.reply({
@@ -57,12 +66,38 @@ module.exports = {
                 });
             }
 
-            session.data.activeEmbed = Number(value);
+            const index =
+                Number(value);
+
+            if (
+                !Number.isInteger(index) ||
+                index < 0 ||
+                index >=
+                    session.data.embeds.length
+            ) {
+                return interaction.reply({
+                    embeds: [
+                        interactionEmbeds.selectInvalid(
+                            "That embed could not be found."
+                        )
+                    ],
+                    flags: 64
+                });
+            }
+
+            session.data.activeEmbed =
+                index;
+
+            await refreshEditor(
+                client,
+                session,
+                interaction
+            );
 
             return interaction.reply({
                 embeds: [
                     interactionEmbeds.selectSuccess(
-                        `Embed ${Number(value) + 1} selected.`
+                        `Embed ${index + 1} selected.`
                     )
                 ],
                 flags: 64
@@ -74,7 +109,9 @@ module.exports = {
         // =========================
 
         if (menuId === "button-style") {
-            const value = interaction.values[0];
+
+            const value =
+                interaction.values[0];
 
             const styles = [
                 "primary",
@@ -95,7 +132,11 @@ module.exports = {
                 });
             }
 
-            if (!Array.isArray(session.data.buttons)) {
+            if (
+                !Array.isArray(
+                    session.data.buttons
+                )
+            ) {
                 return interaction.reply({
                     embeds: [
                         interactionEmbeds.selectInvalid(
@@ -106,11 +147,13 @@ module.exports = {
                 });
             }
 
-            const index = Number(
-                session.data.activeButton ?? 0
-            );
+            const index =
+                Number(
+                    session.data.activeButton ?? 0
+                );
 
-            const button = session.data.buttons[index];
+            const button =
+                session.data.buttons[index];
 
             if (!button) {
                 return interaction.reply({
@@ -123,7 +166,14 @@ module.exports = {
                 });
             }
 
-            button.style = value;
+            button.style =
+                value;
+
+            await refreshEditor(
+                client,
+                session,
+                interaction
+            );
 
             return interaction.reply({
                 embeds: [
@@ -140,7 +190,9 @@ module.exports = {
         // =========================
 
         if (menuId === "select-type") {
-            const value = interaction.values[0];
+
+            const value =
+                interaction.values[0];
 
             const types = [
                 "string",
@@ -161,11 +213,13 @@ module.exports = {
                 });
             }
 
-            const index = Number(
-                session.data.activeSelectMenu ?? 0
-            );
+            const index =
+                Number(
+                    session.data.activeSelectMenu ?? 0
+                );
 
-            const menu = session.data.selectMenus?.[index];
+            const menu =
+                session.data.selectMenus?.[index];
 
             if (!menu) {
                 return interaction.reply({
@@ -178,7 +232,14 @@ module.exports = {
                 });
             }
 
-            menu.type = value;
+            menu.type =
+                value;
+
+            await refreshEditor(
+                client,
+                session,
+                interaction
+            );
 
             return interaction.reply({
                 embeds: [
@@ -204,3 +265,58 @@ module.exports = {
         });
     }
 };
+
+
+// =========================
+// REFRESH EDITOR
+// =========================
+
+async function refreshEditor(
+    client,
+    session,
+    interaction
+) {
+
+    if (
+        !session.channelId ||
+        !session.messageId
+    ) {
+        return;
+    }
+
+    const channel =
+        client.channels.cache.get(
+            session.channelId
+        );
+
+    if (!channel) {
+        return;
+    }
+
+    try {
+
+        const message =
+            await channel.messages.fetch(
+                session.messageId
+            );
+
+        const data =
+            buildMessage(
+                session,
+                interaction
+            );
+
+        await message.edit({
+            content: data.content,
+            embeds: data.embeds,
+            components: data.components
+        });
+
+    } catch (error) {
+
+        console.error(
+            "[EMBED SELECT MENU]",
+            error
+        );
+    }
+}
