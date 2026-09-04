@@ -5,10 +5,16 @@ const {
     ActionRowBuilder
 } = require("discord.js");
 
-const interactionEmbeds = require("../../embeds/general/interaction");
+const Embed =
+    require("../../models/Embed");
+
+const interactionEmbeds =
+    require("../../embeds/general/interaction");
+
 const {
     getSession,
-    deleteSession
+    deleteSession,
+    buildMessage
 } = require("../../systems/embed/builder");
 
 module.exports = {
@@ -16,6 +22,7 @@ module.exports = {
     type: "button",
 
     async execute(client, interaction) {
+
         const session = getSession(
             interaction.user.id,
             interaction.guildId
@@ -37,6 +44,7 @@ module.exports = {
         // =========================
 
         if (id === "embed:cancel") {
+
             deleteSession(
                 interaction.user.id,
                 interaction.guildId
@@ -57,14 +65,17 @@ module.exports = {
         // =========================
 
         if (id === "embed:preview") {
-            const builder = require("../../systems/embed/builder");
 
-            const embeds = builder.buildEmbeds(
-                session.data.embeds,
-                interaction
-            );
+            const data =
+                buildMessage(
+                    session,
+                    interaction
+                );
 
-            if (!embeds.length && !session.data.content) {
+            if (
+                !data.embeds.length &&
+                !data.content
+            ) {
                 return interaction.reply({
                     embeds: [
                         interactionEmbeds.invalid(
@@ -76,14 +87,9 @@ module.exports = {
             }
 
             return interaction.reply({
-                content: session.data.content
-                    ? builder.replaceVariables(
-                        session.data.content,
-                        interaction
-                    )
-                    : undefined,
-                embeds,
-                components: [],
+                content: data.content,
+                embeds: data.embeds,
+                components: data.components,
                 flags: 64
             });
         }
@@ -93,14 +99,158 @@ module.exports = {
         // =========================
 
         if (id === "embed:save") {
-            return interaction.reply({
-                embeds: [
-                    interactionEmbeds.modalSuccess(
-                        "The embed has been saved."
-                    )
-                ],
-                flags: 64
-            });
+
+            if (!session.data.name) {
+                return interaction.reply({
+                    embeds: [
+                        interactionEmbeds.modalFailed(
+                            "This embed does not have a name."
+                        )
+                    ],
+                    flags: 64
+                });
+            }
+
+            try {
+
+                await Embed.findOneAndUpdate(
+                    {
+                        guildId:
+                            session.guildId,
+
+                        name:
+                            session.data.name
+                    },
+                    {
+                        guildId:
+                            session.guildId,
+
+                        name:
+                            session.data.name,
+
+                        channelId:
+                            session.channelId,
+
+                        content:
+                            session.data.content || "",
+
+                        embeds:
+                            session.data.embeds || [],
+
+                        buttons:
+                            session.data.buttons || [],
+
+                        selectMenus:
+                            session.data.selectMenus || [],
+
+                        createdBy:
+                            session.userId
+                    },
+                    {
+                        upsert: true,
+                        new: true,
+                        setDefaultsOnInsert: true
+                    }
+                );
+
+                return interaction.reply({
+                    embeds: [
+                        interactionEmbeds.modalSuccess(
+                            "The embed has been saved."
+                        )
+                    ],
+                    flags: 64
+                });
+
+            } catch (error) {
+
+                console.error(
+                    "[EMBED SAVE]",
+                    error
+                );
+
+                return interaction.reply({
+                    embeds: [
+                        interactionEmbeds.modalFailed(
+                            "I couldn't save this embed."
+                        )
+                    ],
+                    flags: 64
+                });
+            }
+        }
+
+        // =========================
+        // SEND
+        // =========================
+
+        if (id === "embed:send") {
+
+            const data =
+                buildMessage(
+                    session,
+                    interaction
+                );
+
+            if (
+                !data.embeds.length &&
+                !data.content
+            ) {
+                return interaction.reply({
+                    embeds: [
+                        interactionEmbeds.invalid(
+                            "There is nothing to send yet."
+                        )
+                    ],
+                    flags: 64
+                });
+            }
+
+            const channel =
+                interaction.guild.channels.cache.get(
+                    session.channelId
+                );
+
+            if (!channel) {
+                return interaction.reply({
+                    embeds: [
+                        interactionEmbeds.invalid(
+                            "The embed channel could not be found."
+                        )
+                    ],
+                    flags: 64
+                });
+            }
+
+            try {
+
+                await channel.send(data);
+
+                return interaction.reply({
+                    embeds: [
+                        interactionEmbeds.modalSuccess(
+                            "The embed has been sent."
+                        )
+                    ],
+                    flags: 64
+                });
+
+            } catch (error) {
+
+                console.error(
+                    "[EMBED SEND]",
+                    error
+                );
+
+                return interaction.reply({
+                    embeds: [
+                        interactionEmbeds.modalFailed(
+                            "I couldn't send the embed."
+                        )
+                    ],
+                    flags: 64
+                });
+            }
         }
 
         // =========================
@@ -108,12 +258,13 @@ module.exports = {
         // =========================
 
         if (id === "embed:content") {
+
             return showModal(
                 interaction,
                 "embed:content",
-                "Edit Message Content",
+                "Message Content",
                 "content",
-                "Message content",
+                "Content",
                 session.data.content || "",
                 false
             );
@@ -124,26 +275,30 @@ module.exports = {
         // =========================
 
         if (id === "embed:embed") {
+
             return showModal(
                 interaction,
                 "embed:embed",
-                "Edit Embed",
+                "Embed",
+                "title",
+                "Title",
+                session.data.embeds[0]?.title || "",
+                false,
                 "description",
-                "Embed description",
-                session.data.embeds[0]?.description || "",
-                true
+                "Description"
             );
         }
 
         // =========================
-        // FIELD
+        // FIELDS
         // =========================
 
         if (id === "embed:field") {
+
             return showModal(
                 interaction,
                 "embed:field",
-                "Add Embed Field",
+                "Embed Fields",
                 "fieldName",
                 "Field Name",
                 "",
@@ -154,38 +309,44 @@ module.exports = {
         }
 
         // =========================
-        // BUTTON
+        // BUTTONS
         // =========================
 
         if (id === "embed:button") {
+
             return showModal(
                 interaction,
                 "embed:button",
-                "Add Button",
+                "Embed Buttons",
                 "buttonLabel",
                 "Button Label",
                 "",
-                false,
+                true,
                 "buttonId",
-                "Custom ID / Action"
+                "Button Custom ID"
             );
         }
 
         // =========================
-        // SELECT MENU
+        // SELECT MENUS
         // =========================
 
         if (id === "embed:select") {
+
             return showModal(
                 interaction,
                 "embed:select",
-                "Add Select Menu",
+                "Select Menus",
                 "customId",
-                "Custom ID",
+                "Select Menu Custom ID",
                 "",
-                false
+                true
             );
         }
+
+        // =========================
+        // INVALID
+        // =========================
 
         return interaction.reply({
             embeds: [
@@ -198,8 +359,9 @@ module.exports = {
     }
 };
 
+
 // =========================
-// MODAL HELPER
+// MODAL BUILDER
 // =========================
 
 function showModal(
@@ -213,15 +375,20 @@ function showModal(
     secondId = null,
     secondLabel = null
 ) {
-    const modal = new ModalBuilder()
-        .setCustomId(customId)
-        .setTitle(title);
 
-    const firstInput = new TextInputBuilder()
-        .setCustomId(firstId)
-        .setLabel(firstLabel)
-        .setStyle(TextInputStyle.Paragraph)
-        .setRequired(required);
+    const modal =
+        new ModalBuilder()
+            .setCustomId(customId)
+            .setTitle(title);
+
+    const firstInput =
+        new TextInputBuilder()
+            .setCustomId(firstId)
+            .setLabel(firstLabel)
+            .setStyle(
+                TextInputStyle.Paragraph
+            )
+            .setRequired(required);
 
     if (firstValue) {
         firstInput.setValue(
@@ -230,18 +397,27 @@ function showModal(
     }
 
     modal.addComponents(
-        new ActionRowBuilder().addComponents(firstInput)
+        new ActionRowBuilder()
+            .addComponents(firstInput)
     );
 
-    if (secondId && secondLabel) {
-        const secondInput = new TextInputBuilder()
-            .setCustomId(secondId)
-            .setLabel(secondLabel)
-            .setStyle(TextInputStyle.Paragraph)
-            .setRequired(true);
+    if (
+        secondId &&
+        secondLabel
+    ) {
+
+        const secondInput =
+            new TextInputBuilder()
+                .setCustomId(secondId)
+                .setLabel(secondLabel)
+                .setStyle(
+                    TextInputStyle.Paragraph
+                )
+                .setRequired(true);
 
         modal.addComponents(
-            new ActionRowBuilder().addComponents(secondInput)
+            new ActionRowBuilder()
+                .addComponents(secondInput)
         );
     }
 
