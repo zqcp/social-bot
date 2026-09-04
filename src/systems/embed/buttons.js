@@ -1,216 +1,270 @@
-const {
-    ButtonBuilder,
-    ButtonStyle
-} = require("discord.js");
+// ============================================================
+// EMBED BUTTONS SYSTEM
+// ============================================================
 
 const BUTTON_STYLES = {
-    primary: ButtonStyle.Primary,
-    secondary: ButtonStyle.Secondary,
-    success: ButtonStyle.Success,
-    danger: ButtonStyle.Danger,
-    link: ButtonStyle.Link
+    primary: "primary",
+    secondary: "secondary",
+    success: "success",
+    danger: "danger",
+    link: "link"
 };
 
 const BUTTON_ACTIONS = {
     none: "none",
-    addRole: "add_role",
-    removeRole: "remove_role"
+    add_role: "add_role",
+    remove_role: "remove_role"
 };
 
+
+// ============================================================
+// CREATE
+// ============================================================
+
 function createButton(data = {}) {
-    const style = String(data.style || "secondary").toLowerCase();
-
-    const button = new ButtonBuilder()
-        .setStyle(BUTTON_STYLES[style] || ButtonStyle.Secondary)
-        .setLabel(data.label || "Button")
-        .setDisabled(Boolean(data.disabled));
-
-    if (data.emoji) {
-        button.setEmoji(data.emoji);
-    }
-
-    if (style === "link") {
-        if (data.url) {
-            button.setURL(data.url);
-        }
-    } else {
-        button.setCustomId(
-            data.customId || `embed_button_${Date.now()}`
-        );
-    }
-
-    return button;
-}
-
-function createButtons(buttons = []) {
-    return buttons.map(createButton);
-}
-
-function addButton(session, data = {}) {
-    if (!Array.isArray(session.data.buttons)) {
-        session.data.buttons = [];
-    }
-
-    const button = {
-        label: data.label || "Button",
+    return {
+        label: data.label || "",
         emoji: data.emoji || "",
-        style: String(data.style || "secondary").toLowerCase(),
+        style: data.style || BUTTON_STYLES.secondary,
         customId: data.customId || "",
         url: data.url || "",
         disabled: Boolean(data.disabled),
-
         action: data.action || BUTTON_ACTIONS.none,
-        roleId: data.roleId || null
+        roleId: data.roleId || ""
     };
+}
 
-    if (!BUTTON_STYLES[button.style]) {
-        button.style = "secondary";
-    }
 
-    if (button.action !== BUTTON_ACTIONS.none && !button.roleId) {
+// ============================================================
+// ADD
+// ============================================================
+
+function addButton(session, data = {}) {
+    if (!session?.data) {
         return null;
     }
 
-    if (button.style === "link") {
-        button.customId = "";
-    } else {
-        button.url = "";
-    }
+    const button = createButton(data);
 
     session.data.buttons.push(button);
+
+    session.data.activeButton =
+        session.data.buttons.length - 1;
+
     session.updatedAt = Date.now();
 
     return button;
 }
 
+
+// ============================================================
+// EDIT
+// ============================================================
+
 function editButton(session, index, changes = {}) {
     if (!session?.data?.buttons?.[index]) {
-        return false;
+        return null;
     }
 
-    const button = session.data.buttons[index];
-
-    if (changes.style !== undefined) {
-        const style = String(changes.style).toLowerCase();
-
-        if (!BUTTON_STYLES[style]) {
-            return false;
-        }
-
-        button.style = style;
-    }
+    const button =
+        session.data.buttons[index];
 
     if (changes.label !== undefined) {
-        button.label = changes.label;
+        button.label = String(changes.label);
     }
 
     if (changes.emoji !== undefined) {
-        button.emoji = changes.emoji;
+        button.emoji = String(changes.emoji);
+    }
+
+    if (changes.style !== undefined) {
+        button.style =
+            BUTTON_STYLES[changes.style]
+                ? changes.style
+                : BUTTON_STYLES.secondary;
     }
 
     if (changes.customId !== undefined) {
-        button.customId = changes.customId;
+        button.customId =
+            String(changes.customId);
     }
 
     if (changes.url !== undefined) {
-        button.url = changes.url;
+        button.url =
+            String(changes.url);
     }
 
     if (changes.disabled !== undefined) {
-        button.disabled = Boolean(changes.disabled);
+        button.disabled =
+            Boolean(changes.disabled);
     }
 
     if (changes.action !== undefined) {
-        if (!BUTTON_ACTIONS[changes.action]) {
-            return false;
-        }
-
-        button.action = changes.action;
+        button.action =
+            BUTTON_ACTIONS[changes.action]
+                ? changes.action
+                : BUTTON_ACTIONS.none;
     }
 
     if (changes.roleId !== undefined) {
-        button.roleId = changes.roleId;
+        button.roleId =
+            String(changes.roleId);
     }
 
-    if (button.style === "link") {
-        button.customId = "";
-    } else {
-        button.url = "";
-    }
-
+    session.data.activeButton = index;
     session.updatedAt = Date.now();
 
-    return true;
+    return button;
 }
+
+
+// ============================================================
+// REMOVE
+// ============================================================
 
 function removeButton(session, index) {
     if (!session?.data?.buttons?.[index]) {
-        return false;
+        return null;
     }
 
-    session.data.buttons.splice(index, 1);
+    const removed =
+        session.data.buttons.splice(index, 1)[0];
+
+    if (!session.data.buttons.length) {
+        session.data.activeButton = 0;
+    } else {
+        session.data.activeButton =
+            Math.min(
+                index,
+                session.data.buttons.length - 1
+            );
+    }
+
     session.updatedAt = Date.now();
 
-    return true;
+    return removed;
 }
 
-function moveButton(session, index, direction) {
-    if (!session?.data?.buttons?.[index]) {
+
+// ============================================================
+// MOVE
+// ============================================================
+
+function moveButton(session, from, to) {
+    if (!session?.data?.buttons?.length) {
         return false;
     }
 
-    const newIndex =
-        direction === "up"
-            ? index - 1
-            : index + 1;
+    from = Number(from);
+    to = Number(to);
 
     if (
-        newIndex < 0 ||
-        newIndex >= session.data.buttons.length
+        !Number.isInteger(from) ||
+        !Number.isInteger(to) ||
+        from < 0 ||
+        from >= session.data.buttons.length ||
+        to < 0 ||
+        to >= session.data.buttons.length
     ) {
         return false;
     }
 
-    [
-        session.data.buttons[index],
-        session.data.buttons[newIndex]
-    ] = [
-        session.data.buttons[newIndex],
-        session.data.buttons[index]
-    ];
+    if (from === to) {
+        return true;
+    }
 
+    const [button] =
+        session.data.buttons.splice(from, 1);
+
+    session.data.buttons.splice(
+        to,
+        0,
+        button
+    );
+
+    session.data.activeButton = to;
     session.updatedAt = Date.now();
 
     return true;
 }
 
-function buildButtonRows(buttons = []) {
-    const rows = [];
 
-    for (let i = 0; i < buttons.length; i += 5) {
-        const chunk = buttons.slice(i, i + 5);
+// ============================================================
+// GET
+// ============================================================
 
-        rows.push({
-            type: 1,
-            components: createButtons(chunk).map(button =>
-                button.toJSON()
-            )
-        });
+function getButtons(session) {
+    return session?.data?.buttons || [];
+}
+
+function getButton(session, index) {
+    return session?.data?.buttons?.[index] || null;
+}
+
+
+// ============================================================
+// ACTIVE BUTTON
+// ============================================================
+
+function setActiveButton(session, index) {
+    if (!session?.data?.buttons?.[index]) {
+        return false;
     }
 
-    return rows.slice(0, 5);
+    session.data.activeButton = Number(index);
+    session.updatedAt = Date.now();
+
+    return true;
 }
+
+
+// ============================================================
+// VALIDATE
+// ============================================================
+
+function validateButton(button) {
+    if (!button) {
+        return false;
+    }
+
+    if (!button.label && button.style !== "link") {
+        return false;
+    }
+
+    if (button.style === "link" && !button.url) {
+        return false;
+    }
+
+    if (
+        button.action !== BUTTON_ACTIONS.none &&
+        !button.roleId
+    ) {
+        return false;
+    }
+
+    return true;
+}
+
+
+// ============================================================
+// EXPORTS
+// ============================================================
 
 module.exports = {
     BUTTON_STYLES,
     BUTTON_ACTIONS,
 
     createButton,
-    createButtons,
-    buildButtonRows,
 
     addButton,
     editButton,
     removeButton,
-    moveButton
+    moveButton,
+
+    getButtons,
+    getButton,
+
+    setActiveButton,
+
+    validateButton
 };
