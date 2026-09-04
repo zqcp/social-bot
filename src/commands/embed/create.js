@@ -1,9 +1,12 @@
 const {
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle,
     PermissionFlagsBits
 } = require("discord.js");
 
-const builder =
-    require("../../systems/embed/builder");
+const Embed =
+    require("../../models/Embed");
 
 const globalEmbeds =
     require("../../embeds/general/global");
@@ -11,15 +14,24 @@ const globalEmbeds =
 const embedEmbeds =
     require("../../embeds/general/embed");
 
+const builder =
+    require("../../systems/embed/builder");
+
 
 // ============================================================
 // CREATE
 // ============================================================
 
 module.exports = {
+
     name: "embed create",
 
+    aliases: ["embed c"],
+
     async execute(client, message, args) {
+
+        if (!message.guild) return;
+
 
         // ======================================================
         // USER PERMISSION
@@ -67,7 +79,7 @@ module.exports = {
 
 
         // ======================================================
-        // EMBED NAME
+        // NAME
         // ======================================================
 
         const name =
@@ -76,27 +88,68 @@ module.exports = {
         if (!name) {
             return message.channel.send({
                 embeds: [
-                    embedEmbeds.noName()
+                    embedEmbeds.noName(
+                        message.author
+                    )
+                ]
+            });
+        }
+
+        if (name.length > 100) {
+            return message.channel.send({
+                embeds: [
+                    embedEmbeds.invalidName(
+                        message.author
+                    )
                 ]
             });
         }
 
 
         // ======================================================
-        // CHECK ACTIVE SESSION
+        // CHECK EXISTING EMBED
         // ======================================================
 
+        const existing =
+            await Embed.findOne({
+                guildId: message.guild.id,
+                name
+            });
+
+        if (existing) {
+            return message.channel.send({
+                embeds: [
+                    embedEmbeds.alreadyExists(
+                        message.author,
+                        name
+                    )
+                ]
+            });
+        }
+
+
+        // ======================================================
+        // CHECK EXISTING SESSION
+        // ======================================================
+
+        if (!builder.sessions) {
+            builder.sessions = new Map();
+        }
+
         const existingSession =
-            builder.getSession(
-                message.author.id,
-                message.guild.id
+            builder.sessions.get(
+                message.author.id
             );
 
-        if (existingSession) {
+        if (
+            existingSession &&
+            existingSession.guildId === message.guild.id
+        ) {
             return message.channel.send({
                 embeds: [
                     embedEmbeds.invalid(
-                        "You already have an active embed editor session."
+                        message.author,
+                        "You already have an active embed editor."
                     )
                 ]
             });
@@ -107,74 +160,141 @@ module.exports = {
         // CREATE SESSION
         // ======================================================
 
-        const session =
-            builder.createSession(
+        const session = {
+
+            userId:
                 message.author.id,
-                message.guild.id
-            );
 
-        if (!session) {
-            return message.channel.send({
+            guildId:
+                message.guild.id,
+
+            messageId:
+                null,
+
+            channelId:
+                message.channel.id,
+
+            createdAt:
+                Date.now(),
+
+            updatedAt:
+                Date.now(),
+
+            data: {
+
+                name,
+
+                content: "",
+
                 embeds: [
-                    embedEmbeds.failed(
-                        "create the embed editor"
-                    )
-                ]
-            });
-        }
+                    {
+                        title: "",
+                        description: "",
+                        url: "",
+                        color: null,
+
+                        author: {
+                            name: "",
+                            url: "",
+                            iconURL: ""
+                        },
+
+                        thumbnail: "",
+                        image: "",
+
+                        footer: {
+                            text: "",
+                            iconURL: ""
+                        },
+
+                        timestamp: false,
+
+                        fields: []
+                    }
+                ],
+
+                activeEmbed: 0,
+
+                buttons: [],
+
+                activeButton: null,
+
+                selectMenus: [],
+
+                activeSelectMenu: null
+            }
+        };
 
 
         // ======================================================
-        // SESSION DATA
+        // STORE SESSION
         // ======================================================
 
-        session.data.name =
-            name;
-
-        session.data.guildId =
-            message.guild.id;
-
-        session.data.channelId =
-            message.channel.id;
-
-        session.data.content =
-            "";
-
-        session.data.embeds =
-            [];
-
-        session.data.buttons =
-            [];
-
-        session.data.selectMenus =
-            [];
-
-        session.data.activeEmbed =
-            0;
-
-        session.data.activeField =
-            0;
-
-        session.data.activeButton =
-            0;
-
-        session.data.activeSelectMenu =
-            0;
-
-        session.data.mode =
-            "create";
-
-        session.ui =
-            "main";
-
-
-        // ======================================================
-        // UPDATE SESSION
-        // ======================================================
-
-        builder.updateSession(
+        builder.sessions.set(
+            message.author.id,
             session
         );
+
+
+        // ======================================================
+        // MAIN EDITOR
+        // ======================================================
+
+        const row1 =
+            new ActionRowBuilder()
+                .addComponents(
+
+                    new ButtonBuilder()
+                        .setCustomId("embed:content")
+                        .setLabel("Content")
+                        .setStyle(ButtonStyle.Secondary),
+
+                    new ButtonBuilder()
+                        .setCustomId("embed:embeds")
+                        .setLabel("Embeds")
+                        .setStyle(ButtonStyle.Secondary),
+
+                    new ButtonBuilder()
+                        .setCustomId("embed:fields")
+                        .setLabel("Fields")
+                        .setStyle(ButtonStyle.Secondary),
+
+                    new ButtonBuilder()
+                        .setCustomId("embed:buttons")
+                        .setLabel("Buttons")
+                        .setStyle(ButtonStyle.Secondary),
+
+                    new ButtonBuilder()
+                        .setCustomId("embed:selects")
+                        .setLabel("Select Menus")
+                        .setStyle(ButtonStyle.Secondary)
+                );
+
+
+        const row2 =
+            new ActionRowBuilder()
+                .addComponents(
+
+                    new ButtonBuilder()
+                        .setCustomId("embed:preview")
+                        .setLabel("Preview")
+                        .setStyle(ButtonStyle.Secondary),
+
+                    new ButtonBuilder()
+                        .setCustomId("embed:save")
+                        .setLabel("Save")
+                        .setStyle(ButtonStyle.Success),
+
+                    new ButtonBuilder()
+                        .setCustomId("embed:send")
+                        .setLabel("Send")
+                        .setStyle(ButtonStyle.Primary),
+
+                    new ButtonBuilder()
+                        .setCustomId("embed:cancel")
+                        .setLabel("Cancel")
+                        .setStyle(ButtonStyle.Danger)
+                );
 
 
         // ======================================================
@@ -186,11 +306,16 @@ module.exports = {
         try {
 
             editor =
-                await message.channel.send(
-                    builder.renderEditor(
-                        session
-                    )
-                );
+                await message.channel.send({
+
+                    content:
+                        `**Embed Editor:** \`${name}\``,
+
+                    components: [
+                        row1,
+                        row2
+                    ]
+                });
 
         } catch (error) {
 
@@ -199,9 +324,8 @@ module.exports = {
                 error
             );
 
-            builder.deleteSession(
-                message.author.id,
-                message.guild.id
+            builder.sessions.delete(
+                message.author.id
             );
 
             return message.channel.send({
@@ -218,15 +342,11 @@ module.exports = {
         // STORE EDITOR MESSAGE
         // ======================================================
 
-        session.editorMessageId =
+        session.messageId =
             editor.id;
 
-        session.editorChannelId =
-            message.channel.id;
-
-        builder.updateSession(
-            session
-        );
+        session.updatedAt =
+            Date.now();
 
 
         // ======================================================
