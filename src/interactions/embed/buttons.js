@@ -87,9 +87,15 @@ module.exports = {
             }
 
             return interaction.reply({
-                content: data.content,
-                embeds: data.embeds,
-                components: data.components,
+                content:
+                    data.content,
+
+                embeds:
+                    data.embeds,
+
+                components:
+                    data.components,
+
                 flags: 64
             });
         }
@@ -263,10 +269,17 @@ module.exports = {
                 interaction,
                 "embed:content",
                 "Message Content",
-                "content",
-                "Content",
-                session.data.content || "",
-                false
+                [
+                    {
+                        id: "content",
+                        label: "Content",
+                        value:
+                            session.data.content || "",
+                        style:
+                            TextInputStyle.Paragraph,
+                        required: false
+                    }
+                ]
             );
         }
 
@@ -276,16 +289,56 @@ module.exports = {
 
         if (id === "embed:embed") {
 
+            const current =
+                session.data.embeds?.[0] || {};
+
             return showModal(
                 interaction,
                 "embed:embed",
-                "Embed",
-                "title",
-                "Title",
-                session.data.embeds[0]?.title || "",
-                false,
-                "description",
-                "Description"
+                "Embed Settings",
+                [
+                    {
+                        id: "title",
+                        label: "Title",
+                        value:
+                            current.title || "",
+                        required: false
+                    },
+                    {
+                        id: "description",
+                        label: "Description",
+                        value:
+                            current.description || "",
+                        style:
+                            TextInputStyle.Paragraph,
+                        required: false
+                    },
+                    {
+                        id: "url",
+                        label: "URL",
+                        value:
+                            current.url || "",
+                        required: false
+                    },
+                    {
+                        id: "color",
+                        label: "Color",
+                        value:
+                            current.color || "",
+                        required: false
+                    },
+                    {
+                        id: "timestamp",
+                        label: "Timestamp",
+                        value:
+                            current.timestamp
+                                ? String(
+                                    current.timestamp
+                                )
+                                : "",
+                        required: false
+                    }
+                ]
             );
         }
 
@@ -298,13 +351,27 @@ module.exports = {
             return showModal(
                 interaction,
                 "embed:field",
-                "Embed Fields",
-                "fieldName",
-                "Field Name",
-                "",
-                true,
-                "fieldValue",
-                "Field Value"
+                "Embed Field",
+                [
+                    {
+                        id: "fieldName",
+                        label: "Field Name",
+                        required: true
+                    },
+                    {
+                        id: "fieldValue",
+                        label: "Field Value",
+                        style:
+                            TextInputStyle.Paragraph,
+                        required: true
+                    },
+                    {
+                        id: "fieldInline",
+                        label: "Inline",
+                        value: "false",
+                        required: false
+                    }
+                ]
             );
         }
 
@@ -317,13 +384,35 @@ module.exports = {
             return showModal(
                 interaction,
                 "embed:button",
-                "Embed Buttons",
-                "buttonLabel",
-                "Button Label",
-                "",
-                true,
-                "buttonId",
-                "Button Custom ID"
+                "Embed Button",
+                [
+                    {
+                        id: "buttonLabel",
+                        label: "Button Label",
+                        required: true
+                    },
+                    {
+                        id: "buttonId",
+                        label: "Button Custom ID",
+                        required: false
+                    },
+                    {
+                        id: "buttonStyle",
+                        label: "Button Style",
+                        value: "secondary",
+                        required: false
+                    },
+                    {
+                        id: "buttonUrl",
+                        label: "Button URL",
+                        required: false
+                    },
+                    {
+                        id: "buttonEmoji",
+                        label: "Button Emoji",
+                        required: false
+                    }
+                ]
             );
         }
 
@@ -336,11 +425,39 @@ module.exports = {
             return showModal(
                 interaction,
                 "embed:select",
-                "Select Menus",
-                "customId",
-                "Select Menu Custom ID",
-                "",
-                true
+                "Select Menu",
+                [
+                    {
+                        id: "customId",
+                        label: "Custom ID",
+                        required: true
+                    },
+                    {
+                        id: "placeholder",
+                        label: "Placeholder",
+                        value:
+                            "Select an option",
+                        required: false
+                    },
+                    {
+                        id: "type",
+                        label: "Type",
+                        value: "string",
+                        required: false
+                    },
+                    {
+                        id: "minValues",
+                        label: "Minimum Values",
+                        value: "1",
+                        required: false
+                    },
+                    {
+                        id: "maxValues",
+                        label: "Maximum Values",
+                        value: "1",
+                        required: false
+                    }
+                ]
             );
         }
 
@@ -368,12 +485,7 @@ function showModal(
     interaction,
     customId,
     title,
-    firstId,
-    firstLabel,
-    firstValue = "",
-    required = true,
-    secondId = null,
-    secondLabel = null
+    inputs = []
 ) {
 
     const modal =
@@ -381,45 +493,46 @@ function showModal(
             .setCustomId(customId)
             .setTitle(title);
 
-    const firstInput =
-        new TextInputBuilder()
-            .setCustomId(firstId)
-            .setLabel(firstLabel)
-            .setStyle(
-                TextInputStyle.Paragraph
-            )
-            .setRequired(required);
-
-    if (firstValue) {
-        firstInput.setValue(
-            String(firstValue).slice(0, 4000)
-        );
-    }
-
-    modal.addComponents(
-        new ActionRowBuilder()
-            .addComponents(firstInput)
-    );
-
-    if (
-        secondId &&
-        secondLabel
+    for (
+        const inputData of inputs.slice(0, 5)
     ) {
 
-        const secondInput =
+        const input =
             new TextInputBuilder()
-                .setCustomId(secondId)
-                .setLabel(secondLabel)
-                .setStyle(
-                    TextInputStyle.Paragraph
+                .setCustomId(
+                    inputData.id
                 )
-                .setRequired(true);
+                .setLabel(
+                    inputData.label
+                )
+                .setStyle(
+                    inputData.style ||
+                    TextInputStyle.Short
+                )
+                .setRequired(
+                    Boolean(
+                        inputData.required
+                    )
+                );
+
+        if (
+            inputData.value !== undefined &&
+            inputData.value !== null
+        ) {
+            input.setValue(
+                String(
+                    inputData.value
+                ).slice(0, 4000)
+            );
+        }
 
         modal.addComponents(
             new ActionRowBuilder()
-                .addComponents(secondInput)
+                .addComponents(input)
         );
     }
 
-    return interaction.showModal(modal);
+    return interaction.showModal(
+        modal
+    );
 }
