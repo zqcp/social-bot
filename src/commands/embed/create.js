@@ -1,30 +1,29 @@
 const {
-    ActionRowBuilder,
-    ButtonBuilder,
-    ButtonStyle,
     PermissionFlagsBits
 } = require("discord.js");
 
-const Embed = require("../../models/Embed");
-const config = require("../../config");
+const builder =
+    require("../../systems/embed/builder");
 
-const globalEmbeds = require("../../embeds/general/global");
-const embedEmbeds = require("../../embeds/general/embed");
+const globalEmbeds =
+    require("../../embeds/general/global");
 
-const builder = require("../../systems/embed/builder");
+const embedEmbeds =
+    require("../../embeds/general/embed");
+
+
+// ============================================================
+// CREATE
+// ============================================================
 
 module.exports = {
-
     name: "embed create",
-    aliases: ["embed c"],
 
     async execute(client, message, args) {
 
-        if (!message.guild) return;
-
-        // =========================
-        // PERMISSION
-        // =========================
+        // ======================================================
+        // USER PERMISSION
+        // ======================================================
 
         if (
             !message.member.permissions.has(
@@ -41,329 +40,206 @@ module.exports = {
             });
         }
 
-        // =========================
-        // NAME
-        // =========================
 
-        const name = args.join(" ").trim();
+        // ======================================================
+        // BOT PERMISSIONS
+        // ======================================================
 
-        if (!name) {
+        const botPermissions = [
+            PermissionFlagsBits.SendMessages,
+            PermissionFlagsBits.EmbedLinks
+        ];
+
+        if (
+            !message.guild.members.me.permissions.has(
+                botPermissions
+            )
+        ) {
             return message.channel.send({
                 embeds: [
-                    embedEmbeds.noName(message.author)
-                ]
-            });
-        }
-
-        if (name.length > 100) {
-            return message.channel.send({
-                embeds: [
-                    embedEmbeds.invalidName(message.author)
-                ]
-            });
-        }
-
-        // =========================
-        // CHECK EXISTING
-        // =========================
-
-        const existing = await Embed.findOne({
-            guildId: message.guild.id,
-            name
-        });
-
-        if (existing) {
-            return message.channel.send({
-                embeds: [
-                    embedEmbeds.alreadyExists(
+                    globalEmbeds.botPermission(
                         message.author,
-                        name
+                        botPermissions
                     )
                 ]
             });
         }
 
-        // =========================
-        // CREATE SESSION
-        // =========================
 
-        const session = {
+        // ======================================================
+        // EMBED NAME
+        // ======================================================
 
-            userId: message.author.id,
+        const name =
+            args.join(" ").trim();
 
-            guildId: message.guild.id,
-
-            messageId: null,
-
-            channelId: message.channel.id,
-
-            createdAt: Date.now(),
-
-            updatedAt: Date.now(),
-
-            data: {
-
-                name,
-
-                content: "",
-
+        if (!name) {
+            return message.channel.send({
                 embeds: [
-                    {
-                        title: "",
-                        description: "",
-                        url: "",
-                        color: null,
-
-                        author: {
-                            name: "",
-                            url: "",
-                            iconURL: ""
-                        },
-
-                        thumbnail: "",
-                        image: "",
-
-                        footer: {
-                            text: "",
-                            iconURL: ""
-                        },
-
-                        timestamp: false,
-
-                        fields: []
-                    }
-                ],
-
-                activeEmbed: 0,
-
-                buttons: [],
-
-                activeButton: null,
-
-                selectMenus: [],
-
-                activeSelectMenu: null
-            }
-        };
-
-        // =========================
-        // SESSION STORAGE
-        // =========================
-
-        if (!builder.sessions) {
-            builder.sessions = new Map();
+                    embedEmbeds.noName()
+                ]
+            });
         }
 
-        builder.sessions.set(
-            message.author.id,
+
+        // ======================================================
+        // CHECK ACTIVE SESSION
+        // ======================================================
+
+        const existingSession =
+            builder.getSession(
+                message.author.id,
+                message.guild.id
+            );
+
+        if (existingSession) {
+            return message.channel.send({
+                embeds: [
+                    embedEmbeds.invalid(
+                        "You already have an active embed editor session."
+                    )
+                ]
+            });
+        }
+
+
+        // ======================================================
+        // CREATE SESSION
+        // ======================================================
+
+        const session =
+            builder.createSession(
+                message.author.id,
+                message.guild.id
+            );
+
+        if (!session) {
+            return message.channel.send({
+                embeds: [
+                    embedEmbeds.failed(
+                        "create the embed editor"
+                    )
+                ]
+            });
+        }
+
+
+        // ======================================================
+        // SESSION DATA
+        // ======================================================
+
+        session.data.name =
+            name;
+
+        session.data.guildId =
+            message.guild.id;
+
+        session.data.channelId =
+            message.channel.id;
+
+        session.data.content =
+            "";
+
+        session.data.embeds =
+            [];
+
+        session.data.buttons =
+            [];
+
+        session.data.selectMenus =
+            [];
+
+        session.data.activeEmbed =
+            0;
+
+        session.data.activeField =
+            0;
+
+        session.data.activeButton =
+            0;
+
+        session.data.activeSelectMenu =
+            0;
+
+        session.data.mode =
+            "create";
+
+        session.ui =
+            "main";
+
+
+        // ======================================================
+        // UPDATE SESSION
+        // ======================================================
+
+        builder.updateSession(
             session
         );
 
-        // =========================
-        // MAIN CONTROLS
-        // =========================
 
-        const row1 = new ActionRowBuilder()
-            .addComponents(
-
-                new ButtonBuilder()
-                    .setCustomId("embed:content")
-                    .setLabel("Content")
-                    .setStyle(ButtonStyle.Secondary),
-
-                new ButtonBuilder()
-                    .setCustomId("embed:embed")
-                    .setLabel("Embeds")
-                    .setStyle(ButtonStyle.Secondary),
-
-                new ButtonBuilder()
-                    .setCustomId("embed:field")
-                    .setLabel("Fields")
-                    .setStyle(ButtonStyle.Secondary),
-
-                new ButtonBuilder()
-                    .setCustomId("embed:button")
-                    .setLabel("Buttons")
-                    .setStyle(ButtonStyle.Secondary),
-
-                new ButtonBuilder()
-                    .setCustomId("embed:select")
-                    .setLabel("Select Menus")
-                    .setStyle(ButtonStyle.Secondary)
-
-            );
-
-        // =========================
-        // EMBED CONTROLS
-        // =========================
-
-        const row2 = new ActionRowBuilder()
-            .addComponents(
-
-                new ButtonBuilder()
-                    .setCustomId("embed:add")
-                    .setLabel("Add Embed")
-                    .setStyle(ButtonStyle.Secondary),
-
-                new ButtonBuilder()
-                    .setCustomId("embed:edit")
-                    .setLabel("Edit Embed")
-                    .setStyle(ButtonStyle.Secondary),
-
-                new ButtonBuilder()
-                    .setCustomId("embed:remove")
-                    .setLabel("Remove Embed")
-                    .setStyle(ButtonStyle.Danger),
-
-                new ButtonBuilder()
-                    .setCustomId("embed:previous")
-                    .setLabel("Previous")
-                    .setStyle(ButtonStyle.Secondary),
-
-                new ButtonBuilder()
-                    .setCustomId("embed:next")
-                    .setLabel("Next")
-                    .setStyle(ButtonStyle.Secondary)
-
-            );
-
-        // =========================
-        // FIELD CONTROLS
-        // =========================
-
-        const row3 = new ActionRowBuilder()
-            .addComponents(
-
-                new ButtonBuilder()
-                    .setCustomId("embed:add_field")
-                    .setLabel("Add Field")
-                    .setStyle(ButtonStyle.Secondary),
-
-                new ButtonBuilder()
-                    .setCustomId("embed:edit_field")
-                    .setLabel("Edit Field")
-                    .setStyle(ButtonStyle.Secondary),
-
-                new ButtonBuilder()
-                    .setCustomId("embed:remove_field")
-                    .setLabel("Remove Field")
-                    .setStyle(ButtonStyle.Danger),
-
-                new ButtonBuilder()
-                    .setCustomId("embed:move_field")
-                    .setLabel("Move Field")
-                    .setStyle(ButtonStyle.Secondary),
-
-                new ButtonBuilder()
-                    .setCustomId("embed:preview")
-                    .setLabel("Preview")
-                    .setStyle(ButtonStyle.Secondary)
-
-            );
-
-        // =========================
-        // BUTTON CONTROLS
-        // =========================
-
-        const row4 = new ActionRowBuilder()
-            .addComponents(
-
-                new ButtonBuilder()
-                    .setCustomId("embed:add_button")
-                    .setLabel("Add Button")
-                    .setStyle(ButtonStyle.Secondary),
-
-                new ButtonBuilder()
-                    .setCustomId("embed:edit_button")
-                    .setLabel("Edit Button")
-                    .setStyle(ButtonStyle.Secondary),
-
-                new ButtonBuilder()
-                    .setCustomId("embed:remove_button")
-                    .setLabel("Remove Button")
-                    .setStyle(ButtonStyle.Danger),
-
-                new ButtonBuilder()
-                    .setCustomId("embed:move_button")
-                    .setLabel("Move Button")
-                    .setStyle(ButtonStyle.Secondary),
-
-                new ButtonBuilder()
-                    .setCustomId("embed:save")
-                    .setLabel("Save")
-                    .setStyle(ButtonStyle.Success)
-
-            );
-
-        // =========================
-        // SELECT MENU CONTROLS
-        // =========================
-
-        const row5 = new ActionRowBuilder()
-            .addComponents(
-
-                new ButtonBuilder()
-                    .setCustomId("embed:add_select")
-                    .setLabel("Add Select Menu")
-                    .setStyle(ButtonStyle.Secondary),
-
-                new ButtonBuilder()
-                    .setCustomId("embed:edit_select")
-                    .setLabel("Edit Select Menu")
-                    .setStyle(ButtonStyle.Secondary),
-
-                new ButtonBuilder()
-                    .setCustomId("embed:remove_select")
-                    .setLabel("Remove Select Menu")
-                    .setStyle(ButtonStyle.Danger),
-
-                new ButtonBuilder()
-                    .setCustomId("embed:options")
-                    .setLabel("Options")
-                    .setStyle(ButtonStyle.Secondary),
-
-                new ButtonBuilder()
-                    .setCustomId("embed:cancel")
-                    .setLabel("Cancel")
-                    .setStyle(ButtonStyle.Danger)
-
-            );
-
-        // =========================
+        // ======================================================
         // SEND EDITOR
-        // =========================
+        // ======================================================
 
-        const editorMessage = await message.channel.send({
+        let editor;
 
-            content:
-                `**Embed Builder**\n` +
-                `Editing: \`${name}\``,
+        try {
 
-            components: [
-                row1,
-                row2,
-                row3,
-                row4,
-                row5
-            ]
+            editor =
+                await message.channel.send(
+                    builder.renderEditor(
+                        session
+                    )
+                );
 
-        });
+        } catch (error) {
 
-        // =========================
-        // SAVE MESSAGE DATA
-        // =========================
+            console.error(
+                "Embed editor error:",
+                error
+            );
 
-        session.messageId = editorMessage.id;
+            builder.deleteSession(
+                message.author.id,
+                message.guild.id
+            );
 
-        session.channelId = message.channel.id;
+            return message.channel.send({
+                embeds: [
+                    embedEmbeds.failed(
+                        "open the embed editor"
+                    )
+                ]
+            });
+        }
 
-        session.updatedAt = Date.now();
 
-        builder.sessions.set(
-            message.author.id,
+        // ======================================================
+        // STORE EDITOR MESSAGE
+        // ======================================================
+
+        session.editorMessageId =
+            editor.id;
+
+        session.editorChannelId =
+            message.channel.id;
+
+        builder.updateSession(
             session
         );
 
-    }
 
+        // ======================================================
+        // CREATED
+        // ======================================================
+
+        return message.channel.send({
+            embeds: [
+                embedEmbeds.created(
+                    message.author,
+                    name
+                )
+            ]
+        });
+    }
 };
