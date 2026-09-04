@@ -15,6 +15,10 @@ function createSession(userId, guildId) {
     const session = {
         userId,
         guildId,
+
+        messageId: null,
+        channelId: null,
+
         createdAt: Date.now(),
         updatedAt: Date.now(),
 
