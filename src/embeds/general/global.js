@@ -11,7 +11,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.error)
             .setDescription(
-                `${config.emojis.error} ${user}: You're **missing** permission: \`${permission}\`.`
+                `${config.emojis.error} ${user}: Missing \`${permission}\`.`
             );
     },
 
@@ -19,9 +19,9 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.error)
             .setDescription(
-                `${config.emojis.error} ${user}: I do not have ${permissions
+                `${config.emojis.error} ${user}: I'm missing: ${permissions
                     .map(permission => `\`${permission}\``)
-                    .join(", ")} permissions.`
+                    .join(", ")}.`
             );
     },
 
@@ -44,7 +44,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.error)
             .setDescription(
-                `${config.emojis.error} ${user}: You can't perform this action on yourself.`
+                `${config.emojis.error} ${user}: You can't do this to **yourself**.`
             );
     },
 
@@ -52,7 +52,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.error)
             .setDescription(
-                `${config.emojis.error} ${user}: You can't perform this action on the server owner.`
+                `${config.emojis.error} ${user}: You can't do this to the **server owner**.`
             );
     },
 
@@ -60,7 +60,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.error)
             .setDescription(
-                `${config.emojis.error} ${user}: That member has an equal or higher role than you.`
+                `${config.emojis.error} ${user}: That member has an **equal or higher role** than you.`
             );
     },
 
@@ -68,7 +68,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.error)
             .setDescription(
-                `${config.emojis.error} ${user}: I can't perform this action because their role is higher than mine.`
+                `${config.emojis.error} ${user}: My role is too low to manage **that member**.`
             );
     },
 
@@ -81,7 +81,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.error)
             .setDescription(
-                `${config.emojis.error} ${user}: I couldn't find that user. Check the username or ID and try again.`
+                `${config.emojis.error} ${user}: Couldn't find that **user**.`
             );
     },
 
@@ -89,7 +89,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.error)
             .setDescription(
-                `${config.emojis.error} ${user}: I couldn't find **${value}**. Check the username, mention, or ID and try again.`
+                `${config.emojis.error} ${user}: Couldn't find that **user** matching \`${value}\`.`
             );
     },
 
@@ -97,7 +97,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.error)
             .setDescription(
-                `${config.emojis.error} ${user}: I couldn't find the channel ${channel}.`
+                `${config.emojis.error} ${user}: Couldn't find ${channel}.`
             );
     },
 
@@ -105,7 +105,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.error)
             .setDescription(
-                `${config.emojis.error} ${user}: I couldn't find the role ${role}.`
+                `${config.emojis.error} ${user}: Couldn't find ${role}.`
             );
     },
 
@@ -114,11 +114,11 @@ module.exports = {
     // SUCCESS
     // =========================
 
-    success(user, action, username, reason) {
+    success(user, action, target, reason) {
         return new EmbedBuilder()
             .setColor(config.colors.success)
             .setDescription(
-                `${config.emojis.success} ${user}: ${action} **${username}** for \`${reason || "No reason provided"}\`.`
+                `${config.emojis.success} ${user}: **${action}** ${target}${reason ? ` for \`${reason}\`` : ""}.`
             );
     },
 
@@ -126,7 +126,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.success)
             .setDescription(
-                `${config.emojis.success} ${user}: ${action} **${target}**.`
+                `${config.emojis.success} ${user}: **${action}** ${target}.`
             );
     },
 
@@ -134,7 +134,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.success)
             .setDescription(
-                `${config.emojis.success} ${user}: Successfully created ${type} **${name}**.`
+                `${config.emojis.success} ${user}: **${type}** ${name} was created.`
             );
     },
 
@@ -142,7 +142,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.success)
             .setDescription(
-                `${config.emojis.success} ${user}: Successfully updated ${type} **${name}**.`
+                `${config.emojis.success} ${user}: **${type}** ${name} was updated.`
             );
     },
 
@@ -150,7 +150,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.success)
             .setDescription(
-                `${config.emojis.success} ${user}: Successfully deleted ${type} **${name}**.`
+                `${config.emojis.success} ${user}: **${type}** ${name} was deleted.`
             );
     },
 
@@ -159,11 +159,11 @@ module.exports = {
     // FAILED
     // =========================
 
-    failed(user, action, username) {
+    failed(user, action, target) {
         return new EmbedBuilder()
             .setColor(config.colors.failed)
             .setDescription(
-                `${config.emojis.failed} ${user}: ${action} **${username}** failed. Please try again.`
+                `${config.emojis.failed} ${user}: Failed to **${action}** ${target}.`
             );
     },
 
@@ -171,7 +171,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.failed)
             .setDescription(
-                `${config.emojis.failed} ${user}: **${action}** failed. Please try again.`
+                `${config.emojis.failed} ${user}: Failed to **${action}**.`
             );
     },
 
@@ -200,7 +200,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.error)
             .setDescription(
-                `${config.emojis.error} ${user}: You're missing \`${value}\`.`
+                `${config.emojis.error} ${user}: Missing **${value}**.`
             );
     },
 
@@ -216,7 +216,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.error)
             .setDescription(
-                `${config.emojis.error} ${user}: **${value}** is currently unavailable.`
+                `${config.emojis.error} ${user}: **${value}** is unavailable.`
             );
     },
 
@@ -233,7 +233,7 @@ module.exports = {
             );
     },
 
-    cancelled(user, description = "The action has been cancelled.") {
+    cancelled(user, description = "Action cancelled.") {
         return new EmbedBuilder()
             .setColor(config.colors.failed)
             .setDescription(
@@ -250,7 +250,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.error)
             .setDescription(
-                `${config.emojis.error} ${user}: Please wait \`${seconds}s\` before using this again.`
+                `${config.emojis.error} ${user}: Try again in \`${seconds}s\`.`
             );
     },
 
