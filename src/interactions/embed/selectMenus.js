@@ -46,25 +46,14 @@ module.exports = {
         const menuId =
             customId.slice("embed:".length);
 
-        // =========================
-        // EMBED SELECTOR
-        // =========================
+        const value =
+            interaction.values[0];
+
+        /*
+         * EMBED SELECTOR
+         */
 
         if (menuId === "embed") {
-
-            const value =
-                interaction.values[0];
-
-            if (!value) {
-                return interaction.reply({
-                    embeds: [
-                        interactionEmbeds.selectRequired(
-                            "Please select an embed."
-                        )
-                    ],
-                    flags: 64
-                });
-            }
 
             const index =
                 Number(value);
@@ -72,13 +61,12 @@ module.exports = {
             if (
                 !Number.isInteger(index) ||
                 index < 0 ||
-                index >=
-                    session.data.embeds.length
+                index >= session.data.embeds.length
             ) {
                 return interaction.reply({
                     embeds: [
                         interactionEmbeds.selectInvalid(
-                            "That embed could not be found."
+                            "That embed could not be selected."
                         )
                     ],
                     flags: 64
@@ -104,14 +92,46 @@ module.exports = {
             });
         }
 
-        // =========================
-        // BUTTON STYLE
-        // =========================
+        /*
+         * BUTTON STYLE
+         */
 
         if (menuId === "button-style") {
 
-            const value =
-                interaction.values[0];
+            if (
+                !Array.isArray(
+                    session.data.buttons
+                ) ||
+                !session.data.buttons.length
+            ) {
+                return interaction.reply({
+                    embeds: [
+                        interactionEmbeds.selectInvalid(
+                            "There are no buttons to edit."
+                        )
+                    ],
+                    flags: 64
+                });
+            }
+
+            const index =
+                Number(
+                    session.data.activeButton
+                );
+
+            if (
+                !Number.isInteger(index) ||
+                !session.data.buttons[index]
+            ) {
+                return interaction.reply({
+                    embeds: [
+                        interactionEmbeds.selectInvalid(
+                            "No button is currently selected."
+                        )
+                    ],
+                    flags: 64
+                });
+            }
 
             const styles = [
                 "primary",
@@ -132,43 +152,16 @@ module.exports = {
                 });
             }
 
-            if (
-                !Array.isArray(
-                    session.data.buttons
-                ) ||
-                !session.data.buttons.length
-            ) {
-                return interaction.reply({
-                    embeds: [
-                        interactionEmbeds.selectInvalid(
-                            "There are no buttons to edit."
-                        )
-                    ],
-                    flags: 64
-                });
-            }
-
-            const index =
-                Number(
-                    session.data.activeButton ?? 0
-                );
-
-            const button =
-                session.data.buttons[index];
-
-            if (!button) {
-                return interaction.reply({
-                    embeds: [
-                        interactionEmbeds.selectInvalid(
-                            "That button could not be found."
-                        )
-                    ],
-                    flags: 64
-                });
-            }
-
-            button.style =
+            session.data.buttons[index].style =
                 value;
+
+            if (value === "link") {
+                session.data.buttons[index].customId =
+                    "";
+            } else {
+                session.data.buttons[index].url =
+                    "";
+            }
 
             await refreshEditor(
                 client,
@@ -186,14 +179,46 @@ module.exports = {
             });
         }
 
-        // =========================
-        // SELECT MENU TYPE
-        // =========================
+        /*
+         * SELECT MENU TYPE
+         */
 
         if (menuId === "select-type") {
 
-            const value =
-                interaction.values[0];
+            if (
+                !Array.isArray(
+                    session.data.selectMenus
+                ) ||
+                !session.data.selectMenus.length
+            ) {
+                return interaction.reply({
+                    embeds: [
+                        interactionEmbeds.selectInvalid(
+                            "There are no select menus to edit."
+                        )
+                    ],
+                    flags: 64
+                });
+            }
+
+            const index =
+                Number(
+                    session.data.activeSelectMenu
+                );
+
+            if (
+                !Number.isInteger(index) ||
+                !session.data.selectMenus[index]
+            ) {
+                return interaction.reply({
+                    embeds: [
+                        interactionEmbeds.selectInvalid(
+                            "No select menu is currently selected."
+                        )
+                    ],
+                    flags: 64
+                });
+            }
 
             const types = [
                 "string",
@@ -214,27 +239,12 @@ module.exports = {
                 });
             }
 
-            const index =
-                Number(
-                    session.data.activeSelectMenu ?? 0
-                );
-
-            const menu =
-                session.data.selectMenus?.[index];
-
-            if (!menu) {
-                return interaction.reply({
-                    embeds: [
-                        interactionEmbeds.selectInvalid(
-                            "That select menu could not be found."
-                        )
-                    ],
-                    flags: 64
-                });
-            }
-
-            menu.type =
+            session.data.selectMenus[index].type =
                 value;
+
+            if (value !== "string") {
+                session.data.selectMenus[index].options = [];
+            }
 
             await refreshEditor(
                 client,
@@ -252,14 +262,10 @@ module.exports = {
             });
         }
 
-        // =========================
-        // UNKNOWN MENU
-        // =========================
-
         return interaction.reply({
             embeds: [
                 interactionEmbeds.selectInvalid(
-                    "This select menu action is not available."
+                    "This select menu action is invalid."
                 )
             ],
             flags: 64
@@ -267,17 +273,11 @@ module.exports = {
     }
 };
 
-
-// =========================
-// REFRESH EDITOR
-// =========================
-
 async function refreshEditor(
     client,
     session,
     interaction
 ) {
-
     if (
         !session.channelId ||
         !session.messageId
@@ -295,7 +295,6 @@ async function refreshEditor(
     }
 
     try {
-
         const message =
             await channel.messages.fetch(
                 session.messageId
@@ -309,17 +308,14 @@ async function refreshEditor(
 
         await message.edit({
             content:
-                data.content,
-
+                data.content || null,
             embeds:
                 data.embeds,
-
             components:
                 data.components
         });
 
     } catch (error) {
-
         console.error(
             "[EMBED SELECT MENU]",
             error
