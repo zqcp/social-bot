@@ -11,7 +11,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.error)
             .setDescription(
-                `${config.emojis.error} ${user}: Missing \`${permission}\`.`
+                `${config.emojis.error} ${user}: You're missing permission: \`${permission}\`.`
             );
     },
 
@@ -19,7 +19,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.error)
             .setDescription(
-                `${config.emojis.error} ${user}: I'm missing: ${permissions
+                `${config.emojis.error} ${user}: I'm missing permission: ${permissions
                     .map(permission => `\`${permission}\``)
                     .join(", ")}.`
             );
@@ -163,7 +163,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.failed)
             .setDescription(
-                `${config.emojis.failed} ${user}: Failed to **${action}** ${target}.`
+                `${config.emojis.failed} ${user}: Failed to ${action} ${target}. Please try again.`
             );
     },
 
@@ -171,7 +171,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.failed)
             .setDescription(
-                `${config.emojis.failed} ${user}: Failed to **${action}**.`
+                `${config.emojis.failed} ${user}: Failed to ${action}. Please try again.`
             );
     },
 
