@@ -11,10 +11,11 @@ module.exports = {
 
     async execute(client, interaction) {
 
-        const session = getSession(
-            interaction.user.id,
-            interaction.guildId
-        );
+        const session =
+            getSession(
+                interaction.user.id,
+                interaction.guildId
+            );
 
         if (!session) {
             return interaction.reply({
@@ -27,7 +28,8 @@ module.exports = {
             });
         }
 
-        const id = interaction.customId;
+        const id =
+            interaction.customId;
 
         // =========================
         // MESSAGE CONTENT
@@ -36,7 +38,8 @@ module.exports = {
         if (id === "embed:content") {
 
             session.data.content =
-                interaction.fields.getTextInputValue(
+                getValue(
+                    interaction,
                     "content"
                 );
 
@@ -58,17 +61,67 @@ module.exports = {
 
         if (id === "embed:embed") {
 
-            const embed = getEmbed(session);
+            const embed =
+                getEmbed(session);
 
             embed.title =
-                interaction.fields.getTextInputValue(
+                getValue(
+                    interaction,
                     "title"
                 ).slice(0, 256);
 
             embed.description =
-                interaction.fields.getTextInputValue(
+                getValue(
+                    interaction,
                     "description"
                 ).slice(0, 4096);
+
+            embed.url =
+                getValue(
+                    interaction,
+                    "url"
+                ).slice(0, 2048);
+
+            embed.color =
+                getValue(
+                    interaction,
+                    "color"
+                ).slice(0, 20);
+
+            const timestamp =
+                getValue(
+                    interaction,
+                    "timestamp"
+                ).trim();
+
+            if (!timestamp) {
+                embed.timestamp = false;
+            } else if (
+                timestamp.toLowerCase() === "true"
+            ) {
+                embed.timestamp = true;
+            } else {
+                const date =
+                    new Date(timestamp);
+
+                if (
+                    Number.isNaN(
+                        date.getTime()
+                    )
+                ) {
+                    return interaction.reply({
+                        embeds: [
+                            interactionEmbeds.modalFailed(
+                                "The timestamp is invalid. Use `true` or a valid date/time."
+                            )
+                        ],
+                        flags: 64
+                    });
+                }
+
+                embed.timestamp =
+                    date.toISOString();
+            }
 
             await refreshEditor(
                 client,
@@ -78,7 +131,7 @@ module.exports = {
 
             return success(
                 interaction,
-                "Embed updated."
+                "Embed settings updated."
             );
         }
 
@@ -89,22 +142,34 @@ module.exports = {
         if (id === "embed:field") {
 
             const name =
-                interaction.fields.getTextInputValue(
+                getValue(
+                    interaction,
                     "fieldName"
                 );
 
             const value =
-                interaction.fields.getTextInputValue(
+                getValue(
+                    interaction,
                     "fieldValue"
                 );
 
-            const embed = getEmbed(session);
+            const inlineValue =
+                getValue(
+                    interaction,
+                    "fieldInline"
+                ).trim()
+                .toLowerCase();
+
+            const embed =
+                getEmbed(session);
 
             if (!Array.isArray(embed.fields)) {
                 embed.fields = [];
             }
 
-            if (embed.fields.length >= 25) {
+            if (
+                embed.fields.length >= 25
+            ) {
                 return interaction.reply({
                     embeds: [
                         interactionEmbeds.modalFailed(
@@ -115,10 +180,39 @@ module.exports = {
                 });
             }
 
+            if (!name.trim()) {
+                return interaction.reply({
+                    embeds: [
+                        interactionEmbeds.modalFailed(
+                            "The field name cannot be empty."
+                        )
+                    ],
+                    flags: 64
+                });
+            }
+
+            if (!value.trim()) {
+                return interaction.reply({
+                    embeds: [
+                        interactionEmbeds.modalFailed(
+                            "The field value cannot be empty."
+                        )
+                    ],
+                    flags: 64
+                });
+            }
+
             embed.fields.push({
-                name: name.slice(0, 256),
-                value: value.slice(0, 1024),
-                inline: false
+                name:
+                    name.slice(0, 256),
+
+                value:
+                    value.slice(0, 1024),
+
+                inline:
+                    inlineValue === "true" ||
+                    inlineValue === "yes" ||
+                    inlineValue === "1"
             });
 
             await refreshEditor(
@@ -140,20 +234,105 @@ module.exports = {
         if (id === "embed:button") {
 
             const label =
-                interaction.fields.getTextInputValue(
+                getValue(
+                    interaction,
                     "buttonLabel"
                 );
 
             const customId =
-                interaction.fields.getTextInputValue(
+                getValue(
+                    interaction,
                     "buttonId"
                 );
 
-            if (!Array.isArray(session.data.buttons)) {
+            const style =
+                getValue(
+                    interaction,
+                    "buttonStyle"
+                )
+                .trim()
+                .toLowerCase() ||
+                "secondary";
+
+            const url =
+                getValue(
+                    interaction,
+                    "buttonUrl"
+                );
+
+            const emoji =
+                getValue(
+                    interaction,
+                    "buttonEmoji"
+                );
+
+            if (!label.trim()) {
+                return interaction.reply({
+                    embeds: [
+                        interactionEmbeds.modalFailed(
+                            "The button label cannot be empty."
+                        )
+                    ],
+                    flags: 64
+                });
+            }
+
+            const styles = [
+                "primary",
+                "secondary",
+                "success",
+                "danger",
+                "link"
+            ];
+
+            if (!styles.includes(style)) {
+                return interaction.reply({
+                    embeds: [
+                        interactionEmbeds.modalFailed(
+                            "Invalid button style. Use `primary`, `secondary`, `success`, `danger`, or `link`."
+                        )
+                    ],
+                    flags: 64
+                });
+            }
+
+            if (
+                style === "link" &&
+                !url.trim()
+            ) {
+                return interaction.reply({
+                    embeds: [
+                        interactionEmbeds.modalFailed(
+                            "Link buttons require a URL."
+                        )
+                    ],
+                    flags: 64
+                });
+            }
+
+            if (
+                style !== "link" &&
+                !customId.trim()
+            ) {
+                return interaction.reply({
+                    embeds: [
+                        interactionEmbeds.modalFailed(
+                            "This button requires a Custom ID."
+                        )
+                    ],
+                    flags: 64
+                });
+            }
+
+            if (!Array.isArray(
+                session.data.buttons
+            )) {
                 session.data.buttons = [];
             }
 
-            if (session.data.buttons.length >= 25) {
+            if (
+                session.data.buttons.length >= 25
+            ) {
                 return interaction.reply({
                     embeds: [
                         interactionEmbeds.modalFailed(
@@ -165,12 +344,22 @@ module.exports = {
             }
 
             session.data.buttons.push({
-                label: label.slice(0, 80),
-                emoji: "",
-                style: "secondary",
-                customId: customId.slice(0, 100),
-                url: "",
-                disabled: false
+                label:
+                    label.slice(0, 80),
+
+                emoji:
+                    emoji.slice(0, 100),
+
+                style,
+
+                customId:
+                    customId.slice(0, 100),
+
+                url:
+                    url.slice(0, 2048),
+
+                disabled:
+                    false
             });
 
             await refreshEditor(
@@ -192,15 +381,96 @@ module.exports = {
         if (id === "embed:select") {
 
             const customId =
-                interaction.fields.getTextInputValue(
+                getValue(
+                    interaction,
                     "customId"
                 );
 
-            if (!Array.isArray(session.data.selectMenus)) {
+            const placeholder =
+                getValue(
+                    interaction,
+                    "placeholder"
+                );
+
+            const type =
+                getValue(
+                    interaction,
+                    "type"
+                )
+                .trim()
+                .toLowerCase() ||
+                "string";
+
+            const minValues =
+                parseNumber(
+                    interaction,
+                    "minValues",
+                    1
+                );
+
+            const maxValues =
+                parseNumber(
+                    interaction,
+                    "maxValues",
+                    1
+                );
+
+            const types = [
+                "string",
+                "user",
+                "role",
+                "mentionable",
+                "channel"
+            ];
+
+            if (!types.includes(type)) {
+                return interaction.reply({
+                    embeds: [
+                        interactionEmbeds.modalFailed(
+                            "Invalid select menu type."
+                        )
+                    ],
+                    flags: 64
+                });
+            }
+
+            if (!customId.trim()) {
+                return interaction.reply({
+                    embeds: [
+                        interactionEmbeds.modalFailed(
+                            "The select menu Custom ID cannot be empty."
+                        )
+                    ],
+                    flags: 64
+                });
+            }
+
+            if (
+                minValues < 0 ||
+                minValues > 25 ||
+                maxValues < 1 ||
+                maxValues > 25 ||
+                minValues > maxValues
+            ) {
+                return interaction.reply({
+                    embeds: [
+                        interactionEmbeds.modalFailed(
+                            "Invalid minimum or maximum values."
+                        )
+                    ],
+                    flags: 64
+                });
+            }
+
+            if (!Array.isArray(
+                session.data.selectMenus
+            )) {
                 session.data.selectMenus = [];
             }
 
-            if (session.data.selectMenus.length >= 5) {
+            if (
+                session.data.selectMenus.length >= 5
+            ) {
                 return interaction.reply({
                     embeds: [
                         interactionEmbeds.modalFailed(
@@ -212,12 +482,21 @@ module.exports = {
             }
 
             session.data.selectMenus.push({
-                type: "string",
-                customId: customId.slice(0, 100),
-                placeholder: "Select an option",
-                minValues: 1,
-                maxValues: 1,
-                disabled: false,
+                type,
+
+                customId:
+                    customId.slice(0, 100),
+
+                placeholder:
+                    placeholder.slice(0, 150),
+
+                minValues,
+
+                maxValues,
+
+                disabled:
+                    false,
+
                 options: []
             });
 
@@ -233,6 +512,10 @@ module.exports = {
             );
         }
 
+        // =========================
+        // INVALID
+        // =========================
+
         return interaction.reply({
             embeds: [
                 interactionEmbeds.modalInvalid(
@@ -246,33 +529,95 @@ module.exports = {
 
 
 // =========================
+// GET VALUE
+// =========================
+
+function getValue(
+    interaction,
+    id
+) {
+    try {
+        return interaction.fields
+            .getTextInputValue(id);
+    } catch {
+        return "";
+    }
+}
+
+
+// =========================
+// NUMBER
+// =========================
+
+function parseNumber(
+    interaction,
+    id,
+    fallback
+) {
+    const value =
+        getValue(
+            interaction,
+            id
+        ).trim();
+
+    if (!value) {
+        return fallback;
+    }
+
+    const number =
+        Number(value);
+
+    if (
+        !Number.isInteger(number)
+    ) {
+        return fallback;
+    }
+
+    return number;
+}
+
+
+// =========================
 // GET EMBED
 // =========================
 
 function getEmbed(session) {
 
-    if (!Array.isArray(session.data.embeds)) {
+    if (!Array.isArray(
+        session.data.embeds
+    )) {
         session.data.embeds = [];
     }
 
     if (!session.data.embeds[0]) {
+
         session.data.embeds[0] = {
+
             title: "",
+
             description: "",
+
             url: "",
+
             color: "",
+
             author: {
                 name: "",
                 url: "",
                 iconURL: ""
             },
+
             thumbnail: "",
+
             image: "",
+
             footer: {
                 text: "",
                 iconURL: ""
             },
+
             timestamp: false,
+
             fields: []
         };
     }
@@ -315,7 +660,9 @@ async function refreshEditor(
             );
 
         const builder =
-            require("../../systems/embed/builder");
+            require(
+                "../../systems/embed/builder"
+            );
 
         const data =
             builder.buildMessage(
@@ -324,9 +671,14 @@ async function refreshEditor(
             );
 
         await message.edit({
-            content: data.content,
-            embeds: data.embeds,
-            components: data.components
+            content:
+                data.content,
+
+            embeds:
+                data.embeds,
+
+            components:
+                data.components
         });
 
     } catch (error) {
