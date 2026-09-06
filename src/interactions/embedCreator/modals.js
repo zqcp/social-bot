@@ -39,7 +39,11 @@ async function updatePanel(
 ) {
     const view = panel.build(session);
 
-    await interaction.editReply(view);
+    if (interaction.message) {
+        await interaction.message.edit(view);
+    }
+
+    await interaction.deleteReply();
 }
 
 // =========================
@@ -360,6 +364,20 @@ function updateComponent(
                 .trim()
                 .toLowerCase();
 
+        if (
+            ![
+                "primary",
+                "secondary",
+                "success",
+                "danger",
+                "link"
+            ].includes(style)
+        ) {
+            throw new Error(
+                "Invalid button style."
+            );
+        }
+
         components[index] = {
             ...component,
             type: "button",
@@ -381,7 +399,9 @@ function updateComponent(
                 "url"
             ).trim()
         };
-    } else {
+    } else if (
+        component.type === "select"
+    ) {
         const type =
             getValue(
                 interaction,
@@ -389,6 +409,20 @@ function updateComponent(
             )
                 .trim()
                 .toLowerCase();
+
+        if (
+            ![
+                "string",
+                "user",
+                "role",
+                "channel",
+                "mentionable"
+            ].includes(type)
+        ) {
+            throw new Error(
+                "Invalid select menu type."
+            );
+        }
 
         const minValues =
             Number(
@@ -406,6 +440,22 @@ function updateComponent(
                 )
             );
 
+        const min =
+            Number.isInteger(
+                minValues
+            ) &&
+            minValues >= 0
+                ? minValues
+                : 1;
+
+        const max =
+            Number.isInteger(
+                maxValues
+            ) &&
+            maxValues >= min
+                ? maxValues
+                : min;
+
         components[index] = {
             ...component,
             type: "select",
@@ -418,19 +468,13 @@ function updateComponent(
                 interaction,
                 "placeholder"
             ).trim(),
-            minValues:
-                Number.isInteger(
-                    minValues
-                )
-                    ? minValues
-                    : 1,
-            maxValues:
-                Number.isInteger(
-                    maxValues
-                )
-                    ? maxValues
-                    : 1
+            minValues: min,
+            maxValues: max
         };
+    } else {
+        throw new Error(
+            "Invalid component type."
+        );
     }
 
     state.update(
@@ -474,6 +518,38 @@ function addButton(
         "url"
     ).trim();
 
+    if (
+        ![
+            "primary",
+            "secondary",
+            "success",
+            "danger",
+            "link"
+        ].includes(style)
+    ) {
+        throw new Error(
+            "Invalid button style."
+        );
+    }
+
+    if (
+        style === "link" &&
+        !url
+    ) {
+        throw new Error(
+            "A link button requires a URL."
+        );
+    }
+
+    if (
+        style !== "link" &&
+        !customId
+    ) {
+        throw new Error(
+            "This button requires a custom ID."
+        );
+    }
+
     componentManager.add(
         session.userId,
         {
@@ -501,6 +577,20 @@ function addSelect(
         "type"
     ).trim().toLowerCase();
 
+    if (
+        ![
+            "string",
+            "user",
+            "role",
+            "channel",
+            "mentionable"
+        ].includes(type)
+    ) {
+        throw new Error(
+            "Invalid select menu type."
+        );
+    }
+
     const customId = getValue(
         interaction,
         "customId"
@@ -510,6 +600,12 @@ function addSelect(
         interaction,
         "placeholder"
     ).trim();
+
+    if (!customId) {
+        throw new Error(
+            "A select menu requires a custom ID."
+        );
+    }
 
     const minValues =
         Number(
@@ -527,6 +623,22 @@ function addSelect(
             )
         );
 
+    const min =
+        Number.isInteger(
+            minValues
+        ) &&
+        minValues >= 0
+            ? minValues
+            : 1;
+
+    const max =
+        Number.isInteger(
+            maxValues
+        ) &&
+        maxValues >= min
+            ? maxValues
+            : min;
+
     componentManager.add(
         session.userId,
         {
@@ -534,18 +646,8 @@ function addSelect(
             selectType: type,
             customId,
             placeholder,
-            minValues:
-                Number.isInteger(
-                    minValues
-                )
-                    ? minValues
-                    : 1,
-            maxValues:
-                Number.isInteger(
-                    maxValues
-                )
-                    ? maxValues
-                    : 1,
+            minValues: min,
+            maxValues: max,
             options: [],
             disabled: false
         }
