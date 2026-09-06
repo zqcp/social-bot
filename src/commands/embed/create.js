@@ -8,32 +8,20 @@ const globalEmbeds =
 const embedEmbeds =
     require("../../embeds/general/embed");
 
+const Embed =
+    require("../../models/Embed");
+
 const embedCreator =
     require("../../systems/embedCreator");
 
 const panel =
     require("../../systems/embedCreator/panel");
 
-// =========================
-// COMMAND
-// =========================
-
 module.exports = {
-
     name: "embed create",
-
     aliases: [],
 
-    async execute(
-        client,
-        message,
-        args
-    ) {
-
-        // =========================
-        // GUILD CHECK
-        // =========================
-
+    async execute(client, message, args) {
         if (!message.guild) {
             return message.channel.send({
                 embeds: [
@@ -43,10 +31,6 @@ module.exports = {
                 ]
             });
         }
-
-        // =========================
-        // USER PERMISSION
-        // =========================
 
         if (
             !message.member.permissions.has(
@@ -63,12 +47,7 @@ module.exports = {
             });
         }
 
-        // =========================
-        // BOT PERMISSIONS
-        // =========================
-
-        const botMember =
-            message.guild.members.me;
+        const botMember = message.guild.members.me;
 
         const requiredPermissions = [
             PermissionFlagsBits.ViewChannel,
@@ -106,12 +85,7 @@ module.exports = {
             });
         }
 
-        // =========================
-        // NAME
-        // =========================
-
-        const name =
-            args.join(" ").trim();
+        const name = args.join(" ").trim();
 
         if (!name) {
             return message.channel.send({
@@ -123,14 +97,7 @@ module.exports = {
             });
         }
 
-        // =========================
-        // VALIDATE NAME
-        // =========================
-
-        if (
-            name.length < 1 ||
-            name.length > 100
-        ) {
+        if (name.length > 100) {
             return message.channel.send({
                 embeds: [
                     embedEmbeds.invalidName(
@@ -140,11 +107,32 @@ module.exports = {
             });
         }
 
-        // =========================
-        // START CREATOR
-        // =========================
-
         try {
+            const existing =
+                await Embed.findOne({
+                    guildId: message.guild.id,
+                    name
+                });
+
+            if (existing) {
+                return message.channel.send({
+                    embeds: [
+                        embedEmbeds.invalidName(
+                            message.author
+                        )
+                    ]
+                });
+            }
+
+            await Embed.create({
+                guildId: message.guild.id,
+                userId: message.author.id,
+                name,
+                content: "",
+                embed: {},
+                components: [],
+                sentMessages: []
+            });
 
             const session =
                 await embedCreator.start(
@@ -154,6 +142,12 @@ module.exports = {
                 );
 
             if (!session) {
+                await Embed.deleteOne({
+                    guildId: message.guild.id,
+                    userId: message.author.id,
+                    name
+                });
+
                 return message.channel.send({
                     embeds: [
                         embedEmbeds.failed(
@@ -170,10 +164,6 @@ module.exports = {
                 }
             );
 
-            // =========================
-            // CREATOR PANEL
-            // =========================
-
             return message.channel.send(
                 panel.build(
                     embedCreator.get(
@@ -183,7 +173,6 @@ module.exports = {
             );
 
         } catch (error) {
-
             console.error(
                 "Embed Create Error:",
                 error
@@ -196,9 +185,6 @@ module.exports = {
                     )
                 ]
             });
-
         }
-
     }
-
 };
