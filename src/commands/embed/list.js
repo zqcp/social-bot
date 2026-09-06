@@ -139,11 +139,17 @@ module.exports = {
                     )
                     .join("\n");
 
+            const embed =
+                globalEmbeds.regular();
+
+            embed.addFields({
+                name: "**Saved Embeds**",
+                value: description
+            });
+
             return message.channel.send({
                 embeds: [
-                    globalEmbeds.regular(
-                        `**Saved Embeds**\n\n${description}`
-                    )
+                    embed
                 ]
             });
 
