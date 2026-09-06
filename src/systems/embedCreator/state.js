@@ -42,8 +42,9 @@ function create(userId, guildId, data = {}) {
             ? [...data.components]
             : [],
 
-        messageId: null,
-        channelId: null,
+        sentMessages: Array.isArray(data.sentMessages)
+            ? [...data.sentMessages]
+            : [],
 
         createdAt: Date.now(),
         updatedAt: Date.now()
@@ -110,19 +111,10 @@ function update(userId, changes = {}) {
     if (
         Object.prototype.hasOwnProperty.call(
             changes,
-            "messageId"
+            "sentMessages"
         )
     ) {
-        state.messageId = changes.messageId;
-    }
-
-    if (
-        Object.prototype.hasOwnProperty.call(
-            changes,
-            "channelId"
-        )
-    ) {
-        state.channelId = changes.channelId;
+        state.sentMessages = changes.sentMessages;
     }
 
     state.updatedAt = Date.now();
@@ -148,7 +140,7 @@ function updateEmbed(userId, property, value) {
 }
 
 // =========================
-// UPDATE NESTED EMBED DATA
+// UPDATE AUTHOR
 // =========================
 
 function updateAuthor(userId, changes = {}) {
@@ -168,6 +160,10 @@ function updateAuthor(userId, changes = {}) {
     return state;
 }
 
+// =========================
+// UPDATE FOOTER
+// =========================
+
 function updateFooter(userId, changes = {}) {
     const state = sessions.get(userId);
 
@@ -179,6 +175,65 @@ function updateFooter(userId, changes = {}) {
         state.embed.footer,
         changes
     );
+
+    state.updatedAt = Date.now();
+
+    return state;
+}
+
+// =========================
+// ADD SENT MESSAGE
+// =========================
+
+function addSentMessage(
+    userId,
+    message
+) {
+    const state = sessions.get(userId);
+
+    if (!state || !message) {
+        return null;
+    }
+
+    const exists = state.sentMessages.some(
+        entry =>
+            entry.guildId === message.guildId &&
+            entry.channelId === message.channelId &&
+            entry.messageId === message.messageId
+    );
+
+    if (!exists) {
+        state.sentMessages.push({
+            guildId: message.guildId,
+            channelId: message.channelId,
+            messageId: message.messageId
+        });
+    }
+
+    state.updatedAt = Date.now();
+
+    return state;
+}
+
+// =========================
+// REMOVE SENT MESSAGE
+// =========================
+
+function removeSentMessage(
+    userId,
+    messageId
+) {
+    const state = sessions.get(userId);
+
+    if (!state) {
+        return null;
+    }
+
+    state.sentMessages =
+        state.sentMessages.filter(
+            entry =>
+                entry.messageId !== messageId
+        );
 
     state.updatedAt = Date.now();
 
@@ -212,6 +267,8 @@ module.exports = {
     updateEmbed,
     updateAuthor,
     updateFooter,
+    addSentMessage,
+    removeSentMessage,
     remove,
     has
 };
