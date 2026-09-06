@@ -1,10 +1,3 @@
-const {
-    ModalBuilder,
-    ActionRowBuilder,
-    TextInputBuilder,
-    TextInputStyle
-} = require("discord.js");
-
 const state = require("../../systems/embedCreator/state");
 const panel = require("../../systems/embedCreator/panel");
 const inputs = require("../../systems/embedCreator/inputs");
@@ -30,21 +23,118 @@ async function updatePanel(
     interaction,
     session
 ) {
-    const view =
-        panel.build(session);
+    const view = panel.build(session);
 
     await interaction.update(view);
 }
 
 // =========================
-// SHOW MODAL
+// OPEN MODAL
 // =========================
 
-async function showModal(
+async function openModal(
     interaction,
     modal
 ) {
     await interaction.showModal(modal);
+}
+
+// =========================
+// CONTENT
+// =========================
+
+async function content(
+    interaction,
+    session
+) {
+    return openModal(
+        interaction,
+        inputs.content(session)
+    );
+}
+
+// =========================
+// EMBED
+// =========================
+
+async function embed(
+    interaction,
+    session
+) {
+    return openModal(
+        interaction,
+        inputs.embed(session)
+    );
+}
+
+// =========================
+// AUTHOR
+// =========================
+
+async function author(
+    interaction,
+    session
+) {
+    return openModal(
+        interaction,
+        inputs.author(session)
+    );
+}
+
+// =========================
+// FOOTER
+// =========================
+
+async function footer(
+    interaction,
+    session
+) {
+    return openModal(
+        interaction,
+        inputs.footer(session)
+    );
+}
+
+// =========================
+// MEDIA
+// =========================
+
+async function media(
+    interaction,
+    session
+) {
+    return openModal(
+        interaction,
+        inputs.media(session)
+    );
+}
+
+// =========================
+// FIELDS
+// =========================
+
+async function fields(
+    interaction
+) {
+    return interaction.reply({
+        content:
+            "📋 Field management is being connected.",
+        flags: 64
+    });
+}
+
+// =========================
+// COMPONENTS
+// =========================
+
+async function components(
+    interaction
+) {
+    return interaction.reply({
+        content:
+            "🧩 Component management is being connected.",
+        flags: 64
+    });
 }
 
 // =========================
@@ -72,8 +162,38 @@ async function preview(
         });
     }
 
-    await interaction.reply({
+    return interaction.reply({
         ...result.payload,
+        flags: 64
+    });
+}
+
+// =========================
+// SAVE
+// =========================
+
+async function save(
+    interaction,
+    session
+) {
+    return openModal(
+        interaction,
+        inputs.save(
+            session.name || ""
+        )
+    );
+}
+
+// =========================
+// SEND
+// =========================
+
+async function send(
+    interaction
+) {
+    return interaction.reply({
+        content:
+            "📤 Send will be connected after the creator flow is complete.",
         flags: 64
     });
 }
@@ -91,14 +211,14 @@ async function reset(
         session.guildId
     );
 
-    const fresh =
+    const updated =
         state.get(
             session.userId
         );
 
-    await updatePanel(
+    return updatePanel(
         interaction,
-        fresh
+        updated
     );
 }
 
@@ -114,145 +234,19 @@ async function cancel(
         session.userId
     );
 
-    await interaction.update({
-        content: interactionEmbeds
-            .embedCreatorCancelled()
-            .data.description,
+    const embed =
+        interactionEmbeds
+            .embedCreatorCancelled();
+
+    return interaction.update({
+        content: embed.data.description,
         embeds: [],
         components: []
     });
 }
 
 // =========================
-// CONTENT
-// =========================
-
-async function content(
-    interaction,
-    session
-) {
-    await showModal(
-        interaction,
-        inputs.content(session)
-    );
-}
-
-// =========================
-// EMBED
-// =========================
-
-async function embed(
-    interaction,
-    session
-) {
-    await showModal(
-        interaction,
-        inputs.embed(session)
-    );
-}
-
-// =========================
-// AUTHOR
-// =========================
-
-async function author(
-    interaction,
-    session
-) {
-    await showModal(
-        interaction,
-        inputs.author(session)
-    );
-}
-
-// =========================
-// FOOTER
-// =========================
-
-async function footer(
-    interaction,
-    session
-) {
-    await showModal(
-        interaction,
-        inputs.footer(session)
-    );
-}
-
-// =========================
-// MEDIA
-// =========================
-
-async function media(
-    interaction,
-    session
-) {
-    await showModal(
-        interaction,
-        inputs.media(session)
-    );
-}
-
-// =========================
-// FIELDS
-// =========================
-
-async function fields(
-    interaction
-) {
-    await interaction.reply({
-        content:
-            "📋 Field management will be available here.",
-        flags: 64
-    });
-}
-
-// =========================
-// COMPONENTS
-// =========================
-
-async function components(
-    interaction
-) {
-    await interaction.reply({
-        content:
-            "🧩 Component management will be available here.",
-        flags: 64
-    });
-}
-
-// =========================
-// SAVE
-// =========================
-
-async function save(
-    interaction,
-    session
-) {
-    await showModal(
-        interaction,
-        inputs.save(
-            session.name || ""
-        )
-    );
-}
-
-// =========================
-// SEND
-// =========================
-
-async function send(
-    interaction
-) {
-    await interaction.reply({
-        content:
-            "📤 Send handling will be connected after the creator interaction flow is complete.",
-        flags: 64
-    });
-}
-
-// =========================
-// ROUTER
+// EXECUTE
 // =========================
 
 async function execute(
@@ -297,88 +291,113 @@ async function execute(
         });
     }
 
-    switch (action) {
-        case "content":
-            return content(
-                interaction,
-                session
-            );
+    try {
+        switch (action) {
+            case "content":
+                return content(
+                    interaction,
+                    session
+                );
 
-        case "embed":
-            return embed(
-                interaction,
-                session
-            );
+            case "embed":
+                return embed(
+                    interaction,
+                    session
+                );
 
-        case "author":
-            return author(
-                interaction,
-                session
-            );
+            case "author":
+                return author(
+                    interaction,
+                    session
+                );
 
-        case "footer":
-            return footer(
-                interaction,
-                session
-            );
+            case "footer":
+                return footer(
+                    interaction,
+                    session
+                );
 
-        case "media":
-            return media(
-                interaction,
-                session
-            );
+            case "media":
+                return media(
+                    interaction,
+                    session
+                );
 
-        case "fields":
-            return fields(
-                interaction,
-                session
-            );
+            case "fields":
+                return fields(
+                    interaction,
+                    session
+                );
 
-        case "components":
-            return components(
-                interaction,
-                session
-            );
+            case "components":
+                return components(
+                    interaction,
+                    session
+                );
 
-        case "preview":
-            return preview(
-                interaction,
-                session
-            );
+            case "preview":
+                return preview(
+                    interaction,
+                    session
+                );
 
-        case "save":
-            return save(
-                interaction,
-                session
-            );
+            case "save":
+                return save(
+                    interaction,
+                    session
+                );
 
-        case "send":
-            return send(
-                interaction,
-                session
-            );
+            case "send":
+                return send(
+                    interaction,
+                    session
+                );
 
-        case "reset":
-            return reset(
-                interaction,
-                session
-            );
+            case "reset":
+                return reset(
+                    interaction,
+                    session
+                );
 
-        case "cancel":
-            return cancel(
-                interaction,
-                session
-            );
+            case "cancel":
+                return cancel(
+                    interaction,
+                    session
+                );
 
-        default:
-            return interaction.reply({
+            default:
+                return interaction.reply({
+                    embeds: [
+                        interactionEmbeds.embedCreatorFailed(
+                            "That creator action is not available."
+                        )
+                    ],
+                    flags: 64
+                });
+        }
+    } catch (error) {
+        console.error(
+            "Embed Creator Button Error:",
+            error
+        );
+
+        if (
+            interaction.deferred ||
+            interaction.replied
+        ) {
+            return interaction.editReply({
                 embeds: [
-                    interactionEmbeds.embedCreatorFailed(
-                        "That creator action is not available."
-                    )
-                ],
-                flags: 64
+                    interactionEmbeds.embedCreatorFailed()
+                ]
             });
+        }
+
+        return interaction.reply({
+            embeds: [
+                interactionEmbeds.embedCreatorFailed()
+            ],
+            flags: 64
+        });
     }
 }
 
