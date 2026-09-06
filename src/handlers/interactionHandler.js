@@ -6,11 +6,65 @@ const buttons = new Map();
 const selectMenus = new Map();
 const modals = new Map();
 
+// =========================
+// UTILITIES
+// =========================
+
 function normalize(value) {
     return String(value || "")
         .trim()
         .toLowerCase();
 }
+
+function getInteractionType(interaction) {
+    if (interaction.isButton()) {
+        return "button";
+    }
+
+    if (
+        interaction.isStringSelectMenu() ||
+        interaction.isUserSelectMenu() ||
+        interaction.isRoleSelectMenu() ||
+        interaction.isChannelSelectMenu() ||
+        interaction.isMentionableSelectMenu()
+    ) {
+        return "select";
+    }
+
+    if (interaction.isModalSubmit()) {
+        return "modal";
+    }
+
+    if (interaction.isChatInputCommand()) {
+        return "command";
+    }
+
+    return "unknown";
+}
+
+function getCollection(type) {
+    if (type === "command") {
+        return slashCommands;
+    }
+
+    if (type === "button") {
+        return buttons;
+    }
+
+    if (type === "select") {
+        return selectMenus;
+    }
+
+    if (type === "modal") {
+        return modals;
+    }
+
+    return null;
+}
+
+// =========================
+// REGISTER INTERACTION
+// =========================
 
 function registerInteraction(
     type,
@@ -18,62 +72,104 @@ function registerInteraction(
     handler,
     filePath = "unknown"
 ) {
-
     if (!name || typeof handler !== "function") {
         console.warn(
-            `[INTERACTION CHECK] Invalid handler | Type: ${type} | Name: ${name || "MISSING"} | File: ${filePath}`
+            `[INTERACTION CHECK] Invalid handler | Type: ${type || "MISSING"} | Name: ${name || "MISSING"} | File: ${filePath}`
         );
-        return;
+
+        return false;
+    }
+
+    const collection = getCollection(type);
+
+    if (!collection) {
+        console.warn(
+            `[INTERACTION CHECK] Invalid interaction type | Type: ${type} | Name: ${name} | File: ${filePath}`
+        );
+
+        return false;
     }
 
     const key = normalize(name);
 
-    handler.__interactionFile =
-        filePath;
+    if (collection.has(key)) {
+        const existingHandler = collection.get(key);
 
-    handler.__interactionName =
-        name;
+        console.warn(
+            `\n========== DUPLICATE INTERACTION ==========`
+        );
 
-    handler.__interactionType =
-        type;
+        console.warn(
+            `Type: ${type}`
+        );
 
-    if (type === "command") {
-        slashCommands.set(key, handler);
+        console.warn(
+            `Name: ${name}`
+        );
+
+        console.warn(
+            `Existing File: ${existingHandler.__interactionFile || "unknown"}`
+        );
+
+        console.warn(
+            `Duplicate File: ${filePath}`
+        );
+
+        console.warn(
+            `===========================================\n`
+        );
+
+        return false;
     }
 
-    if (type === "button") {
-        buttons.set(key, handler);
-    }
+    handler.__interactionFile = filePath;
+    handler.__interactionName = name;
+    handler.__interactionType = type;
 
-    if (type === "select") {
-        selectMenus.set(key, handler);
-    }
+    collection.set(key, handler);
 
-    if (type === "modal") {
-        modals.set(key, handler);
-    }
+    return true;
 }
 
-function loadInteractions(client) {
+// =========================
+// LOAD INTERACTIONS
+// =========================
 
+function loadInteractions(client) {
     const interactionsPath = path.join(
         __dirname,
         "../interactions"
     );
 
     if (!fs.existsSync(interactionsPath)) {
-
         console.error(
             `[INTERACTION CHECK] Interactions folder not found: ${interactionsPath}`
         );
 
-        return;
+        return {
+            commands: slashCommands,
+            buttons,
+            selectMenus,
+            modals
+        };
     }
 
     function loadFolder(folder) {
+        let files;
 
-        for (const file of fs.readdirSync(folder)) {
+        try {
+            files = fs.readdirSync(folder);
+        } catch (error) {
+            console.error(
+                `[INTERACTION CHECK] Failed to read folder: ${folder}`
+            );
 
+            console.error(error);
+
+            return;
+        }
+
+        for (const file of files) {
             const filePath = path.join(
                 folder,
                 file
@@ -82,31 +178,19 @@ function loadInteractions(client) {
             let stat;
 
             try {
-
-                stat =
-                    fs.statSync(
-                        filePath
-                    );
-
+                stat = fs.statSync(filePath);
             } catch (error) {
-
                 console.error(
                     `[INTERACTION CHECK] Failed to read: ${filePath}`
                 );
 
-                console.error(
-                    error
-                );
+                console.error(error);
 
                 continue;
             }
 
             if (stat.isDirectory()) {
-
-                loadFolder(
-                    filePath
-                );
-
+                loadFolder(filePath);
                 continue;
             }
 
@@ -117,12 +201,8 @@ function loadInteractions(client) {
             let interaction;
 
             try {
-
-                interaction =
-                    require(filePath);
-
+                interaction = require(filePath);
             } catch (error) {
-
                 console.error(
                     `\n========== INTERACTION LOAD ERROR ==========`
                 );
@@ -144,8 +224,15 @@ function loadInteractions(client) {
                 continue;
             }
 
-            if (!interaction.name) {
+            if (!interaction || typeof interaction !== "object") {
+                console.error(
+                    `[INTERACTION CHECK] Invalid export | File: ${filePath}`
+                );
 
+                continue;
+            }
+
+            if (!interaction.name) {
                 console.error(
                     `[INTERACTION CHECK] Missing name | File: ${filePath}`
                 );
@@ -154,7 +241,6 @@ function loadInteractions(client) {
             }
 
             if (!interaction.type) {
-
                 console.error(
                     `[INTERACTION CHECK] Missing type | Name: ${interaction.name} | File: ${filePath}`
                 );
@@ -162,11 +248,7 @@ function loadInteractions(client) {
                 continue;
             }
 
-            if (
-                typeof interaction.execute !==
-                "function"
-            ) {
-
+            if (typeof interaction.execute !== "function") {
                 console.error(
                     `[INTERACTION CHECK] Missing execute() | ${interaction.type} | ${interaction.name} | File: ${filePath}`
                 );
@@ -174,22 +256,22 @@ function loadInteractions(client) {
                 continue;
             }
 
-            registerInteraction(
+            const registered = registerInteraction(
                 interaction.type,
                 interaction.name,
                 interaction.execute,
                 filePath
             );
 
-            console.log(
-                `[INTERACTION] Loaded ${interaction.type.toUpperCase()} | ${interaction.name} | ${filePath}`
-            );
+            if (registered) {
+                console.log(
+                    `[INTERACTION] Loaded ${interaction.type.toUpperCase()} | ${interaction.name} | ${filePath}`
+                );
+            }
         }
     }
 
-    loadFolder(
-        interactionsPath
-    );
+    loadFolder(interactionsPath);
 
     client.interactions = {
         commands: slashCommands,
@@ -197,10 +279,6 @@ function loadInteractions(client) {
         selectMenus,
         modals
     };
-
-    /*
-     * Interaction system summary
-     */
 
     console.log(
         "\n========== INTERACTION REGISTRY =========="
@@ -229,48 +307,34 @@ function loadInteractions(client) {
     return client.interactions;
 }
 
-function findHandler(
-    collection,
-    customId
-) {
+// =========================
+// FIND HANDLER
+// =========================
 
-    const id =
-        normalize(customId);
+function findHandler(collection, customId) {
+    const id = normalize(customId);
 
-    /*
-     * Exact match
-     */
+    if (!id) {
+        return null;
+    }
 
+    // Exact match
     if (collection.has(id)) {
         return collection.get(id);
     }
 
-    /*
-     * Prefix match
-     *
-     * Example:
-     *
-     * Registered:
-     * embedButtonSelect
-     *
-     * Actual:
-     * embedButtonSelect:colors
-     */
-
-    for (
-        const [
-            key,
-            handler
-        ] of collection
-    ) {
-
+    // Prefix match
+    //
+    // Registered:
+    // embedCreator
+    //
+    // Actual:
+    // embedCreator:title
+    //
+    for (const [key, handler] of collection) {
         if (
-            id === key ||
-            id.startsWith(
-                `${key}:`
-            )
+            id.startsWith(`${key}:`)
         ) {
-
             return handler;
         }
     }
@@ -278,30 +342,22 @@ function findHandler(
     return null;
 }
 
+// =========================
+// PRINT REGISTERED HANDLERS
+// =========================
+
 function printRegisteredHandlers(
     collection,
     collectionName
 ) {
-
     console.error(
         `\n========== REGISTERED ${collectionName.toUpperCase()} ==========`
     );
 
     if (!collection.size) {
-
-        console.error(
-            "NONE"
-        );
-
+        console.error("NONE");
     } else {
-
-        for (
-            const [
-                key,
-                handler
-            ] of collection
-        ) {
-
+        for (const [key, handler] of collection) {
             console.error(
                 `${key} | ${handler.__interactionFile || "unknown"}`
             );
@@ -313,49 +369,98 @@ function printRegisteredHandlers(
     );
 }
 
+// =========================
+// SEND ERROR RESPONSE
+// =========================
+
+async function sendInteractionError(
+    interaction
+) {
+    try {
+        const message =
+            "❌ Something went wrong while processing that interaction.";
+
+        const payload = {
+            content: message,
+            flags: 64
+        };
+
+        if (
+            interaction.replied ||
+            interaction.deferred
+        ) {
+            await interaction.followUp(
+                payload
+            );
+
+            return;
+        }
+
+        await interaction.reply(
+            payload
+        );
+    } catch (error) {
+        console.error(
+            "[INTERACTIONS] Failed to send interaction error:",
+            error
+        );
+    }
+}
+
+// =========================
+// EXECUTE HANDLER
+// =========================
+
 async function executeHandler(
     handler,
     interaction
 ) {
-
     try {
-
         await handler(
             interaction.client,
             interaction
         );
 
         return true;
-
     } catch (error) {
-
         console.error(
             "\n========== INTERACTION ERROR =========="
         );
 
         console.error(
             "Type:",
+            getInteractionType(interaction)
+        );
+
+        console.error(
+            "Discord Type:",
             interaction.type
         );
 
         console.error(
             "User:",
-            interaction.user?.tag
+            interaction.user?.tag ||
+            interaction.user?.id ||
+            "Unknown"
         );
 
         console.error(
             "Guild:",
-            interaction.guild?.id
+            interaction.guild?.id ||
+            "DM"
         );
 
         console.error(
             "Custom ID:",
-            interaction.customId
+            interaction.customId ||
+            "N/A"
         );
 
         console.error(
             "Handler:",
-            handler?.name
+            handler?.__interactionName ||
+            handler?.name ||
+            "Unknown"
         );
 
         console.error(
@@ -383,91 +488,207 @@ async function executeHandler(
             "=======================================\n"
         );
 
-        try {
-
-            const payload = {
-                content:
-                    `❌ **Interaction Error**\n` +
-                    `\`${error?.message || "Unknown error"}\``,
-                flags: 64
-            };
-
-            if (
-                interaction.replied ||
-                interaction.deferred
-            ) {
-
-                await interaction.followUp(
-                    payload
-                );
-
-            } else {
-
-                await interaction.reply(
-                    payload
-                );
-            }
-
-        } catch (replyError) {
-
-            console.error(
-                "[INTERACTIONS] Error sending error message:",
-                replyError
-            );
-        }
+        await sendInteractionError(
+            interaction
+        );
 
         return false;
     }
 }
 
+// =========================
+// HANDLE BUTTON
+// =========================
+
+async function handleButton(
+    interaction
+) {
+    const handler = findHandler(
+        buttons,
+        interaction.customId
+    );
+
+    console.log(
+        `[INTERACTION] BUTTON | ${interaction.customId} | Handler: ${handler?.__interactionName || "NOT FOUND"}`
+    );
+
+    if (!handler) {
+        console.error(
+            `\n========== BUTTON HANDLER NOT FOUND ==========`
+        );
+
+        console.error(
+            "Custom ID:",
+            interaction.customId
+        );
+
+        console.error(
+            "Normalized:",
+            normalize(interaction.customId)
+        );
+
+        printRegisteredHandlers(
+            buttons,
+            "BUTTONS"
+        );
+
+        return;
+    }
+
+    await executeHandler(
+        handler,
+        interaction
+    );
+}
+
+// =========================
+// HANDLE SELECT
+// =========================
+
+async function handleSelect(
+    interaction
+) {
+    const handler = findHandler(
+        selectMenus,
+        interaction.customId
+    );
+
+    console.log(
+        `[INTERACTION] SELECT | ${interaction.customId} | Handler: ${handler?.__interactionName || "NOT FOUND"}`
+    );
+
+    if (!handler) {
+        console.error(
+            `\n========== SELECT HANDLER NOT FOUND ==========`
+        );
+
+        console.error(
+            "Custom ID:",
+            interaction.customId
+        );
+
+        console.error(
+            "Normalized:",
+            normalize(interaction.customId)
+        );
+
+        console.error(
+            "Select Type:",
+            interaction.isStringSelectMenu()
+                ? "String"
+                : interaction.isRoleSelectMenu()
+                    ? "Role"
+                    : interaction.isUserSelectMenu()
+                        ? "User"
+                        : interaction.isChannelSelectMenu()
+                            ? "Channel"
+                            : interaction.isMentionableSelectMenu()
+                                ? "Mentionable"
+                                : "Unknown"
+        );
+
+        console.error(
+            "Selected Values:",
+            interaction.values || []
+        );
+
+        printRegisteredHandlers(
+            selectMenus,
+            "SELECT MENUS"
+        );
+
+        return;
+    }
+
+    await executeHandler(
+        handler,
+        interaction
+    );
+}
+
+// =========================
+// HANDLE MODAL
+// =========================
+
+async function handleModal(
+    interaction
+) {
+    const handler = findHandler(
+        modals,
+        interaction.customId
+    );
+
+    console.log(
+        "\n========== MODAL SUBMIT =========="
+    );
+
+    console.log(
+        "Custom ID:",
+        interaction.customId
+    );
+
+    console.log(
+        "Handler:",
+        handler?.__interactionName ||
+        "NOT FOUND"
+    );
+
+    console.log(
+        "Handler File:",
+        handler?.__interactionFile ||
+        "unknown"
+    );
+
+    console.log(
+        "Guild:",
+        interaction.guild?.id ||
+        "DM"
+    );
+
+    console.log(
+        "User:",
+        interaction.user?.tag ||
+        interaction.user?.id ||
+        "Unknown"
+    );
+
+    console.log(
+        "Fields:",
+        interaction.fields?.fields
+            ? [
+                ...interaction.fields.fields.keys()
+            ]
+            : []
+    );
+
+    console.log(
+        "==================================\n"
+    );
+
+    if (!handler) {
+        printRegisteredHandlers(
+            modals,
+            "MODALS"
+        );
+
+        return;
+    }
+
+    await executeHandler(
+        handler,
+        interaction
+    );
+}
+
+// =========================
+// HANDLE INTERACTION
+// =========================
+
 async function handleInteraction(
     interaction
 ) {
-
     if (interaction.isButton()) {
-
-        const handler =
-            findHandler(
-                buttons,
-                interaction.customId
-            );
-
-        console.log(
-            `[INTERACTION] BUTTON | ${interaction.customId} | Handler: ${handler?.name || "NOT FOUND"}`
-        );
-
-        if (!handler) {
-
-            console.error(
-                `\n========== BUTTON HANDLER NOT FOUND ==========`
-            );
-
-            console.error(
-                "Custom ID:",
-                interaction.customId
-            );
-
-            console.error(
-                "Normalized:",
-                normalize(
-                    interaction.customId
-                )
-            );
-
-            printRegisteredHandlers(
-                buttons,
-                "BUTTONS"
-            );
-
-            console.error(
-                "==============================================\n"
-            );
-
-            return;
-        }
-
-        await executeHandler(
-            handler,
+        await handleButton(
             interaction
         );
 
@@ -481,141 +702,15 @@ async function handleInteraction(
         interaction.isChannelSelectMenu() ||
         interaction.isMentionableSelectMenu()
     ) {
-
-        const handler =
-            findHandler(
-                selectMenus,
-                interaction.customId
-            );
-
-        console.log(
-            `[INTERACTION] SELECT | ${interaction.customId} | Handler: ${handler?.name || "NOT FOUND"}`
-        );
-
-        if (!handler) {
-
-            console.error(
-                `\n========== SELECT HANDLER NOT FOUND ==========`
-            );
-
-            console.error(
-                "Custom ID:",
-                interaction.customId
-            );
-
-            console.error(
-                "Normalized:",
-                normalize(
-                    interaction.customId
-                )
-            );
-
-            console.error(
-                "Select Type:",
-                interaction.isStringSelectMenu()
-                    ? "String"
-                    : interaction.isRoleSelectMenu()
-                        ? "Role"
-                        : interaction.isUserSelectMenu()
-                            ? "User"
-                            : interaction.isChannelSelectMenu()
-                                ? "Channel"
-                                : interaction.isMentionableSelectMenu()
-                                    ? "Mentionable"
-                                    : "Unknown"
-            );
-
-            console.error(
-                "Selected Values:",
-                interaction.values || []
-            );
-
-            printRegisteredHandlers(
-                selectMenus,
-                "SELECT MENUS"
-            );
-
-            console.error(
-                "==============================================\n"
-            );
-
-            return;
-        }
-
-        await executeHandler(
-            handler,
+        await handleSelect(
             interaction
         );
 
         return;
     }
 
-    if (
-        interaction.isModalSubmit()
-    ) {
-
-        const handler =
-            findHandler(
-                modals,
-                interaction.customId
-            );
-
-        console.log(
-            "\n========== MODAL SUBMIT =========="
-        );
-
-        console.log(
-            "Custom ID:",
-            interaction.customId
-        );
-
-        console.log(
-            "Handler:",
-            handler?.name ||
-            "NOT FOUND"
-        );
-
-        console.log(
-            "Handler File:",
-            handler?.__interactionFile ||
-            "unknown"
-        );
-
-        console.log(
-            "Guild:",
-            interaction.guild?.id
-        );
-
-        console.log(
-            "User:",
-            interaction.user?.tag
-        );
-
-        console.log(
-            "Fields:",
-            interaction.fields?.fields
-                ? [
-                    ...interaction.fields.fields.keys()
-                ]
-                : []
-        );
-
-        console.log(
-            "==================================\n"
-        );
-
-        if (!handler) {
-
-            printRegisteredHandlers(
-                modals,
-                "MODALS"
-            );
-
-            return;
-        }
-
-        await executeHandler(
-            handler,
+    if (interaction.isModalSubmit()) {
+        await handleModal(
             interaction
         );
 
@@ -623,37 +718,64 @@ async function handleInteraction(
     }
 }
 
-function register(client) {
+// =========================
+// REGISTER EVENT
+// =========================
 
+function register(client) {
     client.on(
         "interactionCreate",
         async interaction => {
-
             try {
-
                 await handleInteraction(
                     interaction
                 );
-
             } catch (error) {
-
                 console.error(
                     "\n[INTERACTIONS] UNHANDLED ERROR"
                 );
 
                 console.error(
+                    "Type:",
+                    getInteractionType(interaction)
+                );
+
+                console.error(
+                    "Custom ID:",
+                    interaction.customId ||
+                    "N/A"
+                );
+
+                console.error(
+                    "Error:",
                     error
                 );
 
                 console.error(
+                    "Stack:",
                     error?.stack
                 );
 
-            }
+                console.error(
+                    "=======================================\n"
+                );
 
+                if (
+                    !interaction.replied &&
+                    !interaction.deferred
+                ) {
+                    await sendInteractionError(
+                        interaction
+                    );
+                }
+            }
         }
     );
 }
+
+// =========================
+// EXPORTS
+// =========================
 
 module.exports = {
     loadInteractions,
