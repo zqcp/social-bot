@@ -1,5 +1,8 @@
+const Embed = require("../../models/Embed");
 const state = require("../../systems/embedCreator/state");
 const panel = require("../../systems/embedCreator/panel");
+const componentManager =
+    require("../../systems/embedCreator/components/manager");
 const interactionEmbeds = require("../../embeds/general/interaction");
 
 // =========================
@@ -17,8 +20,13 @@ function isOwner(interaction, session) {
 // GET VALUE
 // =========================
 
-function getValue(interaction, id) {
-    return interaction.fields.getTextInputValue(id);
+function getValue(
+    interaction,
+    id
+) {
+    return interaction.fields.getTextInputValue(
+        id
+    );
 }
 
 // =========================
@@ -64,25 +72,37 @@ function updateEmbed(
     state.updateEmbed(
         session.userId,
         "title",
-        getValue(interaction, "title")
+        getValue(
+            interaction,
+            "title"
+        )
     );
 
     state.updateEmbed(
         session.userId,
         "description",
-        getValue(interaction, "description")
+        getValue(
+            interaction,
+            "description"
+        )
     );
 
     state.updateEmbed(
         session.userId,
         "color",
-        getValue(interaction, "color")
+        getValue(
+            interaction,
+            "color"
+        )
     );
 
     state.updateEmbed(
         session.userId,
         "url",
-        getValue(interaction, "url")
+        getValue(
+            interaction,
+            "url"
+        )
     );
 }
 
@@ -230,6 +250,309 @@ function addField(
 }
 
 // =========================
+// EDIT FIELD
+// =========================
+
+function editField(
+    interaction,
+    session,
+    index
+) {
+    const fields =
+        Array.isArray(
+            session.embed?.fields
+        )
+            ? [
+                ...session.embed.fields
+            ]
+            : [];
+
+    if (
+        !Number.isInteger(index) ||
+        !fields[index]
+    ) {
+        throw new Error(
+            "That field could not be found."
+        );
+    }
+
+    const name = getValue(
+        interaction,
+        "name"
+    ).trim();
+
+    const value = getValue(
+        interaction,
+        "value"
+    ).trim();
+
+    const inline =
+        getValue(
+            interaction,
+            "inline"
+        )
+            .trim()
+            .toLowerCase() === "true";
+
+    if (!name) {
+        throw new Error(
+            "Field name cannot be empty."
+        );
+    }
+
+    if (!value) {
+        throw new Error(
+            "Field value cannot be empty."
+        );
+    }
+
+    fields[index] = {
+        name,
+        value,
+        inline
+    };
+
+    state.updateEmbed(
+        session.userId,
+        "fields",
+        fields
+    );
+}
+
+// =========================
+// UPDATE COMPONENT
+// =========================
+
+function updateComponent(
+    interaction,
+    session,
+    index
+) {
+    const components =
+        Array.isArray(
+            session.components
+        )
+            ? [
+                ...session.components
+            ]
+            : [];
+
+    if (
+        !Number.isInteger(index) ||
+        !components[index]
+    ) {
+        throw new Error(
+            "That component could not be found."
+        );
+    }
+
+    const component =
+        components[index];
+
+    if (
+        component.type === "button"
+    ) {
+        const style =
+            getValue(
+                interaction,
+                "style"
+            )
+                .trim()
+                .toLowerCase();
+
+        components[index] = {
+            ...component,
+            type: "button",
+            label: getValue(
+                interaction,
+                "label"
+            ).trim(),
+            style,
+            emoji: getValue(
+                interaction,
+                "emoji"
+            ).trim(),
+            customId: getValue(
+                interaction,
+                "customId"
+            ).trim(),
+            url: getValue(
+                interaction,
+                "url"
+            ).trim()
+        };
+    } else {
+        const type =
+            getValue(
+                interaction,
+                "type"
+            )
+                .trim()
+                .toLowerCase();
+
+        const minValues =
+            Number(
+                getValue(
+                    interaction,
+                    "minValues"
+                )
+            );
+
+        const maxValues =
+            Number(
+                getValue(
+                    interaction,
+                    "maxValues"
+                )
+            );
+
+        components[index] = {
+            ...component,
+            type: "select",
+            selectType: type,
+            customId: getValue(
+                interaction,
+                "customId"
+            ).trim(),
+            placeholder: getValue(
+                interaction,
+                "placeholder"
+            ).trim(),
+            minValues:
+                Number.isInteger(
+                    minValues
+                )
+                    ? minValues
+                    : 1,
+            maxValues:
+                Number.isInteger(
+                    maxValues
+                )
+                    ? maxValues
+                    : 1
+        };
+    }
+
+    state.update(
+        session.userId,
+        {
+            components
+        }
+    );
+}
+
+// =========================
+// ADD BUTTON
+// =========================
+
+function addButton(
+    interaction,
+    session
+) {
+    const label = getValue(
+        interaction,
+        "label"
+    ).trim();
+
+    const style = getValue(
+        interaction,
+        "style"
+    ).trim().toLowerCase();
+
+    const emoji = getValue(
+        interaction,
+        "emoji"
+    ).trim();
+
+    const customId = getValue(
+        interaction,
+        "customId"
+    ).trim();
+
+    const url = getValue(
+        interaction,
+        "url"
+    ).trim();
+
+    componentManager.add(
+        session.userId,
+        {
+            type: "button",
+            label,
+            style,
+            emoji,
+            customId,
+            url,
+            disabled: false
+        }
+    );
+}
+
+// =========================
+// ADD SELECT
+// =========================
+
+function addSelect(
+    interaction,
+    session
+) {
+    const type = getValue(
+        interaction,
+        "type"
+    ).trim().toLowerCase();
+
+    const customId = getValue(
+        interaction,
+        "customId"
+    ).trim();
+
+    const placeholder = getValue(
+        interaction,
+        "placeholder"
+    ).trim();
+
+    const minValues =
+        Number(
+            getValue(
+                interaction,
+                "minValues"
+            )
+        );
+
+    const maxValues =
+        Number(
+            getValue(
+                interaction,
+                "maxValues"
+            )
+        );
+
+    componentManager.add(
+        session.userId,
+        {
+            type: "select",
+            selectType: type,
+            customId,
+            placeholder,
+            minValues:
+                Number.isInteger(
+                    minValues
+                )
+                    ? minValues
+                    : 1,
+            maxValues:
+                Number.isInteger(
+                    maxValues
+                )
+                    ? maxValues
+                    : 1,
+            options: [],
+            disabled: false
+        }
+    );
+}
+
+// =========================
 // UPDATE SAVE NAME
 // =========================
 
@@ -254,6 +577,56 @@ function updateName(
             name
         }
     );
+
+    return name;
+}
+
+// =========================
+// SAVE EMBED
+// =========================
+
+async function saveEmbed(
+    session,
+    name
+) {
+    const current =
+        state.get(
+            session.userId
+        );
+
+    if (!current) {
+        throw new Error(
+            "The embed creator session has expired."
+        );
+    }
+
+    await Embed.findOneAndUpdate(
+        {
+            guildId:
+                current.guildId,
+            userId:
+                current.userId,
+            name:
+                session.name
+        },
+        {
+            $set: {
+                name,
+                content:
+                    current.content || "",
+                embed:
+                    current.embed || {},
+                components:
+                    current.components || []
+            }
+        },
+        {
+            new: true,
+            runValidators: true
+        }
+    );
+
+    return true;
 }
 
 // =========================
@@ -263,7 +636,9 @@ function updateName(
 async function acknowledge(
     interaction
 ) {
-    await interaction.deferUpdate();
+    await interaction.deferReply({
+        flags: 64
+    });
 }
 
 // =========================
@@ -313,10 +688,12 @@ async function execute(
     }
 
     try {
+        await acknowledge(
+            interaction
+        );
+
         switch (action) {
             case "content":
-                await acknowledge(interaction);
-
                 updateContent(
                     interaction,
                     session
@@ -324,8 +701,6 @@ async function execute(
                 break;
 
             case "embed":
-                await acknowledge(interaction);
-
                 updateEmbed(
                     interaction,
                     session
@@ -333,8 +708,6 @@ async function execute(
                 break;
 
             case "author":
-                await acknowledge(interaction);
-
                 updateAuthor(
                     interaction,
                     session
@@ -342,8 +715,6 @@ async function execute(
                 break;
 
             case "footer":
-                await acknowledge(interaction);
-
                 updateFooter(
                     interaction,
                     session
@@ -351,8 +722,6 @@ async function execute(
                 break;
 
             case "media":
-                await acknowledge(interaction);
-
                 updateMedia(
                     interaction,
                     session
@@ -360,32 +729,141 @@ async function execute(
                 break;
 
             case "field":
-                await acknowledge(interaction);
-
                 addField(
                     interaction,
                     session
                 );
                 break;
 
-            case "save":
-                await acknowledge(interaction);
-
-                updateName(
-                    interaction,
-                    session
-                );
-                break;
-
             default:
-                return interaction.reply({
-                    embeds: [
-                        interactionEmbeds.embedCreatorFailed(
-                            "That creator form is not available."
-                        )
-                    ],
-                    flags: 64
-                });
+                if (
+                    action.startsWith(
+                        "field:edit:"
+                    )
+                ) {
+                    const index =
+                        Number(
+                            action.split(":")[2]
+                        );
+
+                    editField(
+                        interaction,
+                        session,
+                        index
+                    );
+
+                    break;
+                }
+
+                if (
+                    action ===
+                    "component:button"
+                ) {
+                    addButton(
+                        interaction,
+                        session
+                    );
+
+                    break;
+                }
+
+                if (
+                    action ===
+                    "component:select"
+                ) {
+                    addSelect(
+                        interaction,
+                        session
+                    );
+
+                    break;
+                }
+
+                if (
+                    action.startsWith(
+                        "component:button:edit:"
+                    )
+                ) {
+                    const index =
+                        Number(
+                            action.split(":")[3]
+                        );
+
+                    updateComponent(
+                        interaction,
+                        session,
+                        index
+                    );
+
+                    break;
+                }
+
+                if (
+                    action.startsWith(
+                        "component:select:edit:"
+                    )
+                ) {
+                    const index =
+                        Number(
+                            action.split(":")[3]
+                        );
+
+                    updateComponent(
+                        interaction,
+                        session,
+                        index
+                    );
+
+                    break;
+                }
+
+                if (action === "save") {
+                    const oldName =
+                        session.name;
+
+                    const name =
+                        updateName(
+                            interaction,
+                            session
+                        );
+
+                    const updated =
+                        state.get(
+                            session.userId
+                        );
+
+                    await Embed.findOneAndUpdate(
+                        {
+                            guildId:
+                                updated.guildId,
+                            userId:
+                                updated.userId,
+                            name:
+                                oldName
+                        },
+                        {
+                            $set: {
+                                name,
+                                content:
+                                    updated.content || "",
+                                embed:
+                                    updated.embed || {},
+                                components:
+                                    updated.components || []
+                            }
+                        },
+                        {
+                            new: true,
+                            runValidators: true
+                        }
+                    );
+
+                    break;
+                }
+
+                throw new Error(
+                    "That creator form is not available."
+                );
         }
 
         const updated =
@@ -401,13 +879,17 @@ async function execute(
             interaction,
             updated
         );
+
     } catch (error) {
         console.error(
             "Embed Creator Modal Error:",
             error
         );
 
-        if (interaction.deferred) {
+        if (
+            interaction.deferred ||
+            interaction.replied
+        ) {
             return interaction.editReply({
                 embeds: [
                     interactionEmbeds.embedCreatorInvalid(
@@ -418,16 +900,14 @@ async function execute(
             });
         }
 
-        if (!interaction.replied) {
-            return interaction.reply({
-                embeds: [
-                    interactionEmbeds.embedCreatorInvalid(
-                        error.message
-                    )
-                ],
-                flags: 64
-            });
-        }
+        return interaction.reply({
+            embeds: [
+                interactionEmbeds.embedCreatorInvalid(
+                    error.message
+                )
+            ],
+            flags: 64
+        });
     }
 }
 
