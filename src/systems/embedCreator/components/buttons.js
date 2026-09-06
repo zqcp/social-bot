@@ -20,13 +20,13 @@ const styles = {
 // =========================
 
 function create(data = {}) {
-    const button =
-        new ButtonBuilder();
+    const button = new ButtonBuilder();
 
     const style =
         styles[
-            String(data.style || "primary")
-                .toLowerCase()
+            String(
+                data.style || "primary"
+            ).toLowerCase()
         ];
 
     if (!style) {
@@ -110,10 +110,6 @@ function getStyles() {
         ...styles
     };
 }
-
-// =========================
-// EXPORTS
-// =========================
 
 module.exports = {
     create,
