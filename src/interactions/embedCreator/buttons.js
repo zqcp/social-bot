@@ -114,13 +114,85 @@ async function media(
 // =========================
 
 async function fields(
-    interaction
+    interaction,
+    session
 ) {
-    return interaction.reply({
-        content:
-            "📋 Field management is being connected.",
-        flags: 64
-    });
+    return interaction.update(
+        panel.buildFields(session)
+    );
+}
+
+// =========================
+// FIELD ADD
+// =========================
+
+async function fieldAdd(
+    interaction,
+    session
+) {
+    return openModal(
+        interaction,
+        inputs.field()
+    );
+}
+
+// =========================
+// FIELD MANAGE
+// =========================
+
+async function fieldManage(
+    interaction,
+    session
+) {
+    return interaction.update(
+        panel.buildFieldList(session)
+    );
+}
+
+// =========================
+// FIELD SELECT
+// =========================
+
+async function fieldSelect(
+    interaction,
+    session,
+    index
+) {
+    const field =
+        session.embed?.fields?.[index];
+
+    if (!field) {
+        return interaction.reply({
+            embeds: [
+                interactionEmbeds.embedCreatorInvalid(
+                    "That field could not be found."
+                )
+            ],
+            flags: 64
+        });
+    }
+
+    return openModal(
+        interaction,
+        inputs.editField(
+            index,
+            field
+        )
+    );
+}
+
+// =========================
+// FIELDS BACK
+// =========================
+
+async function fieldsBack(
+    interaction,
+    session
+) {
+    return updatePanel(
+        interaction,
+        session
+    );
 }
 
 // =========================
@@ -128,13 +200,114 @@ async function fields(
 // =========================
 
 async function components(
+    interaction,
+    session
+) {
+    return interaction.update(
+        panel.buildComponents(session)
+    );
+}
+
+// =========================
+// COMPONENT ADD BUTTON
+// =========================
+
+async function componentAddButton(
     interaction
 ) {
-    return interaction.reply({
-        content:
-            "🧩 Component management is being connected.",
-        flags: 64
-    });
+    return openModal(
+        interaction,
+        inputs.button()
+    );
+}
+
+// =========================
+// COMPONENT ADD SELECT
+// =========================
+
+async function componentAddSelect(
+    interaction
+) {
+    return openModal(
+        interaction,
+        inputs.select()
+    );
+}
+
+// =========================
+// COMPONENT MANAGE
+// =========================
+
+async function componentManage(
+    interaction,
+    session
+) {
+    return interaction.update(
+        panel.buildComponentList(session)
+    );
+}
+
+// =========================
+// COMPONENT SELECT
+// =========================
+
+async function componentSelect(
+    interaction,
+    session,
+    index
+) {
+    const component =
+        Array.isArray(session.components)
+            ? session.components[index]
+            : null;
+
+    if (!component) {
+        return interaction.reply({
+            embeds: [
+                interactionEmbeds.embedCreatorInvalid(
+                    "That component could not be found."
+                )
+            ],
+            flags: 64
+        });
+    }
+
+    if (
+        component.type === "button"
+    ) {
+        return openModal(
+            interaction,
+            inputs.button({
+                ...component,
+                index
+            })
+        );
+    }
+
+    return openModal(
+        interaction,
+        inputs.select({
+            ...component,
+            type:
+                component.selectType ||
+                component.type,
+            index
+        })
+    );
+}
+
+// =========================
+// COMPONENTS BACK
+// =========================
+
+async function componentsBack(
+    interaction,
+    session
+) {
+    return updatePanel(
+        interaction,
+        session
+    );
 }
 
 // =========================
@@ -189,11 +362,33 @@ async function save(
 // =========================
 
 async function send(
-    interaction
+    interaction,
+    session
 ) {
+    const result =
+        builder.buildMessage(
+            session,
+            interaction
+        );
+
+    if (!result.success) {
+        return interaction.reply({
+            embeds: [
+                interactionEmbeds.embedCreatorInvalid(
+                    result.errors[0]
+                )
+            ],
+            flags: 64
+        });
+    }
+
+    await interaction.channel.send(
+        result.payload
+    );
+
     return interaction.reply({
         content:
-            "📤 Send will be connected after the creator flow is complete.",
+            "📤 Embed sent successfully.",
         flags: 64
     });
 }
@@ -329,8 +524,48 @@ async function execute(
                     session
                 );
 
+            case "field:add":
+                return fieldAdd(
+                    interaction,
+                    session
+                );
+
+            case "field:manage":
+                return fieldManage(
+                    interaction,
+                    session
+                );
+
+            case "fields:back":
+                return fieldsBack(
+                    interaction,
+                    session
+                );
+
             case "components":
                 return components(
+                    interaction,
+                    session
+                );
+
+            case "component:addbutton":
+                return componentAddButton(
+                    interaction
+                );
+
+            case "component:addselect":
+                return componentAddSelect(
+                    interaction
+                );
+
+            case "component:manage":
+                return componentManage(
+                    interaction,
+                    session
+                );
+
+            case "components:back":
+                return componentsBack(
                     interaction,
                     session
                 );
@@ -366,6 +601,40 @@ async function execute(
                 );
 
             default:
+                if (
+                    action.startsWith(
+                        "field:select:"
+                    )
+                ) {
+                    const index =
+                        Number(
+                            action.split(":")[2]
+                        );
+
+                    return fieldSelect(
+                        interaction,
+                        session,
+                        index
+                    );
+                }
+
+                if (
+                    action.startsWith(
+                        "component:select:"
+                    )
+                ) {
+                    const index =
+                        Number(
+                            action.split(":")[2]
+                        );
+
+                    return componentSelect(
+                        interaction,
+                        session,
+                        index
+                    );
+                }
+
                 return interaction.reply({
                     embeds: [
                         interactionEmbeds.embedCreatorFailed(
