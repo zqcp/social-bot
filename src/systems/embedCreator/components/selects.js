@@ -23,9 +23,9 @@ const types = {
 // =========================
 
 function create(data = {}) {
-    const type =
-        String(data.type || "string")
-            .toLowerCase();
+    const type = String(
+        data.type || "string"
+    ).toLowerCase();
 
     const SelectBuilder =
         types[type];
@@ -55,12 +55,10 @@ function create(data = {}) {
         );
     }
 
-    if (data.disabled === true) {
-        select.setDisabled(true);
-    }
-
     if (
-        Number.isInteger(data.minValues)
+        Number.isInteger(
+            data.minValues
+        )
     ) {
         select.setMinValues(
             data.minValues
@@ -68,59 +66,27 @@ function create(data = {}) {
     }
 
     if (
-        Number.isInteger(data.maxValues)
+        Number.isInteger(
+            data.maxValues
+        )
     ) {
         select.setMaxValues(
             data.maxValues
         );
     }
 
+    if (data.disabled === true) {
+        select.setDisabled(true);
+    }
+
+    // String select options
     if (
         type === "string" &&
         Array.isArray(data.options)
     ) {
-        if (data.options.length) {
-            select.addOptions(
-                data.options.map(
-                    option => {
-                        const item = {
-                            label: String(
-                                option.label || ""
-                            ),
-                            value: String(
-                                option.value || ""
-                            )
-                        };
-
-                        if (
-                            option.description
-                        ) {
-                            item.description =
-                                String(
-                                    option.description
-                                );
-                        }
-
-                        if (
-                            option.emoji
-                        ) {
-                            item.emoji =
-                                String(
-                                    option.emoji
-                                );
-                        }
-
-                        if (
-                            option.default === true
-                        ) {
-                            item.default = true;
-                        }
-
-                        return item;
-                    }
-                )
-            );
-        }
+        select.addOptions(
+            data.options
+        );
     }
 
     return select;
@@ -134,18 +100,19 @@ function createData({
     type = "string",
     customId = "",
     placeholder = "",
-    options = [],
     minValues = 1,
     maxValues = 1,
+    options = [],
     disabled = false
 } = {}) {
     return {
-        type,
+        type: "select",
+        selectType: type,
         customId,
         placeholder,
-        options,
         minValues,
         maxValues,
+        options,
         disabled
     };
 }
@@ -161,19 +128,19 @@ function getTypes() {
 }
 
 // =========================
-// IS STRING SELECT
+// STRING SELECT CHECK
 // =========================
 
-function isString(type) {
+function isString(data = {}) {
     return (
-        String(type || "")
-            .toLowerCase() === "string"
+        String(
+            data.selectType ||
+                data.type ||
+                ""
+        ).toLowerCase() ===
+        "string"
     );
 }
-
-// =========================
-// EXPORTS
-// =========================
 
 module.exports = {
     create,
