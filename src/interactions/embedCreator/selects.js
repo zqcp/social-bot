@@ -1,20 +1,38 @@
 const state = require("../../systems/embedCreator/state");
 const variables = require("../../systems/embedCreator/variables");
+const panel = require("../../systems/embedCreator/panel");
 const interactionEmbeds = require("../../embeds/general/interaction");
 
 // =========================
 // OWNERSHIP
 // =========================
 
-function isOwner(interaction, session) {
+function isOwner(
+    interaction,
+    session
+) {
     return (
         session &&
-        interaction.user.id === session.userId
+        interaction.user.id ===
+            session.userId
     );
 }
 
 // =========================
-// VARIABLE VALUES
+// UPDATE PANEL
+// =========================
+
+async function updatePanel(
+    interaction,
+    view
+) {
+    await interaction.update(
+        view
+    );
+}
+
+// =========================
+// VARIABLE LIST
 // =========================
 
 function getVariableList() {
@@ -37,35 +55,23 @@ async function variablePicker(
         return interaction.reply({
             embeds: [
                 interactionEmbeds.embedCreatorInvalid(
-                    "No variable was selected."
+                    "Please select a variable."
                 )
             ],
             flags: 64
         });
     }
 
-    return interaction.reply({
-        content:
-            `\`${selected}\``,
-        flags: 64
-    });
-}
+    const token =
+        variables.getToken(
+            selected
+        );
 
-// =========================
-// COMPONENT MANAGER
-// =========================
-
-async function componentManager(
-    interaction
-) {
-    const selected =
-        interaction.values?.[0];
-
-    if (!selected) {
+    if (!token) {
         return interaction.reply({
             embeds: [
                 interactionEmbeds.embedCreatorInvalid(
-                    "No component was selected."
+                    "That variable is not available."
                 )
             ],
             flags: 64
@@ -74,7 +80,7 @@ async function componentManager(
 
     return interaction.reply({
         content:
-            `🧩 Selected component \`${selected}\`.`,
+            `Variable: \`${token}\``,
         flags: 64
     });
 }
@@ -93,7 +99,26 @@ async function fieldManager(
         return interaction.reply({
             embeds: [
                 interactionEmbeds.embedCreatorInvalid(
-                    "No field was selected."
+                    "Please select a field."
+                )
+            ],
+            flags: 64
+        });
+    }
+
+    const index =
+        Number.parseInt(
+            selected,
+            10
+        );
+
+    if (
+        !Number.isInteger(index)
+    ) {
+        return interaction.reply({
+            embeds: [
+                interactionEmbeds.embedCreatorInvalid(
+                    "That field selection is invalid."
                 )
             ],
             flags: 64
@@ -102,13 +127,60 @@ async function fieldManager(
 
     return interaction.reply({
         content:
-            `📋 Selected field \`${selected}\`.`,
+            `📋 Selected field \`${index + 1}\`.`,
         flags: 64
     });
 }
 
 // =========================
-// ROUTER
+// COMPONENT MANAGER
+// =========================
+
+async function componentManager(
+    interaction
+) {
+    const selected =
+        interaction.values?.[0];
+
+    if (!selected) {
+        return interaction.reply({
+            embeds: [
+                interactionEmbeds.embedCreatorInvalid(
+                    "Please select a component."
+                )
+            ],
+            flags: 64
+        });
+    }
+
+    const index =
+        Number.parseInt(
+            selected,
+            10
+        );
+
+    if (
+        !Number.isInteger(index)
+    ) {
+        return interaction.reply({
+            embeds: [
+                interactionEmbeds.embedCreatorInvalid(
+                    "That component selection is invalid."
+                )
+            ],
+            flags: 64
+        });
+    }
+
+    return interaction.reply({
+        content:
+            `🧩 Selected component \`${index + 1}\`.`,
+        flags: 64
+    });
+}
+
+// =========================
+// EXECUTE
 // =========================
 
 async function execute(
@@ -153,34 +225,59 @@ async function execute(
         });
     }
 
-    switch (action) {
-        case "variables":
-        case "variable":
-            return variablePicker(
-                interaction
-            );
+    try {
+        switch (action) {
+            case "variables":
+            case "variable":
+                return variablePicker(
+                    interaction
+                );
 
-        case "components":
-        case "component":
-            return componentManager(
-                interaction
-            );
+            case "fields":
+            case "field":
+                return fieldManager(
+                    interaction
+                );
 
-        case "fields":
-        case "field":
-            return fieldManager(
-                interaction
-            );
+            case "components":
+            case "component":
+                return componentManager(
+                    interaction
+                );
 
-        default:
-            return interaction.reply({
+            default:
+                return interaction.reply({
+                    embeds: [
+                        interactionEmbeds.embedCreatorInvalid(
+                            "That selection is not available."
+                        )
+                    ],
+                    flags: 64
+                });
+        }
+    } catch (error) {
+        console.error(
+            "Embed Creator Select Error:",
+            error
+        );
+
+        if (
+            interaction.deferred ||
+            interaction.replied
+        ) {
+            return interaction.editReply({
                 embeds: [
-                    interactionEmbeds.embedCreatorFailed(
-                        "That creator selection is not available."
-                    )
-                ],
-                flags: 64
+                    interactionEmbeds.embedCreatorFailed()
+                ]
             });
+        }
+
+        return interaction.reply({
+            embeds: [
+                interactionEmbeds.embedCreatorFailed()
+            ],
+            flags: 64
+        });
     }
 }
 
@@ -191,5 +288,6 @@ async function execute(
 module.exports = {
     name: "embedCreator",
     type: "select",
-    execute
+    execute,
+    getVariableList
 };
