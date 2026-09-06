@@ -1,8 +1,20 @@
+const {
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle
+} = require("discord.js");
+
 const state = require("../../systems/embedCreator/state");
 const panel = require("../../systems/embedCreator/panel");
 const inputs = require("../../systems/embedCreator/inputs");
 const builder = require("../../systems/embedCreator/builder");
 const interactionEmbeds = require("../../embeds/general/interaction");
+
+const buttonTypes =
+    require("../../systems/embedCreator/components/buttonTypes");
+
+const selectTypes =
+    require("../../systems/embedCreator/components/selectTypes");
 
 // =========================
 // OWNERSHIP
@@ -209,15 +221,209 @@ async function components(
 }
 
 // =========================
+// BUTTON TYPE MENU
+// =========================
+
+async function buttonTypeMenu(
+    interaction
+) {
+    const rows = [];
+
+    const types =
+        buttonTypes.list();
+
+    for (
+        let index = 0;
+        index < types.length;
+        index += 5
+    ) {
+        const row =
+            new ActionRowBuilder();
+
+        types
+            .slice(index, index + 5)
+            .forEach(type => {
+                const data =
+                    buttonTypes.get(type);
+
+                row.addComponents(
+                    new ButtonBuilder()
+                        .setCustomId(
+                            `embedCreator:component:buttonType:${type}`
+                        )
+                        .setLabel(
+                            data.label
+                        )
+                        .setEmoji(
+                            data.emoji
+                        )
+                        .setStyle(
+                            data.style
+                        )
+                );
+            });
+
+        rows.push(row);
+    }
+
+    rows.push(
+        new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+                .setCustomId(
+                    "embedCreator:components:back"
+                )
+                .setLabel("Back")
+                .setEmoji("↩️")
+                .setStyle(
+                    ButtonStyle.Secondary
+                )
+        )
+    );
+
+    return interaction.update({
+        content:
+            "### 🔘 Choose a Button Type\n\nSelect the type of button you want to add.",
+        components: rows
+    });
+}
+
+// =========================
+// SELECT TYPE MENU
+// =========================
+
+async function selectTypeMenu(
+    interaction
+) {
+    const rows = [];
+
+    const types =
+        selectTypes.list();
+
+    for (
+        let index = 0;
+        index < types.length;
+        index += 5
+    ) {
+        const row =
+            new ActionRowBuilder();
+
+        types
+            .slice(index, index + 5)
+            .forEach(type => {
+                const data =
+                    selectTypes.get(type);
+
+                row.addComponents(
+                    new ButtonBuilder()
+                        .setCustomId(
+                            `embedCreator:component:selectType:${type}`
+                        )
+                        .setLabel(
+                            data.label
+                        )
+                        .setEmoji(
+                            data.emoji
+                        )
+                        .setStyle(
+                            ButtonStyle.Primary
+                        )
+                );
+            });
+
+        rows.push(row);
+    }
+
+    rows.push(
+        new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+                .setCustomId(
+                    "embedCreator:components:back"
+                )
+                .setLabel("Back")
+                .setEmoji("↩️")
+                .setStyle(
+                    ButtonStyle.Secondary
+                )
+        )
+    );
+
+    return interaction.update({
+        content:
+            "### 📋 Choose a Select Menu Type\n\nSelect the type of select menu you want to add.",
+        components: rows
+    });
+}
+
+// =========================
+// BUTTON TYPE SELECT
+// =========================
+
+async function buttonTypeSelect(
+    interaction,
+    type
+) {
+    const buttonType =
+        buttonTypes.get(type);
+
+    if (!buttonType) {
+        return interaction.reply({
+            embeds: [
+                interactionEmbeds.embedCreatorInvalid(
+                    "That button type is invalid."
+                )
+            ],
+            flags: 64
+        });
+    }
+
+    return openModal(
+        interaction,
+        inputs.button({
+            style: type
+        })
+    );
+}
+
+// =========================
+// SELECT TYPE SELECT
+// =========================
+
+async function selectTypeSelect(
+    interaction,
+    type
+) {
+    const selectType =
+        selectTypes.get(type);
+
+    if (!selectType) {
+        return interaction.reply({
+            embeds: [
+                interactionEmbeds.embedCreatorInvalid(
+                    "That select menu type is invalid."
+                )
+            ],
+            flags: 64
+        });
+    }
+
+    return openModal(
+        interaction,
+        inputs.select({
+            type,
+            selectType: type
+        })
+    );
+}
+
+// =========================
 // COMPONENT ADD BUTTON
 // =========================
 
 async function componentAddButton(
     interaction
 ) {
-    return openModal(
-        interaction,
-        inputs.button()
+    return buttonTypeMenu(
+        interaction
     );
 }
 
@@ -228,9 +434,8 @@ async function componentAddButton(
 async function componentAddSelect(
     interaction
 ) {
-    return openModal(
-        interaction,
-        inputs.select()
+    return selectTypeMenu(
+        interaction
     );
 }
 
@@ -302,16 +507,8 @@ async function componentSelect(
             )
                 .toLowerCase();
 
-        const validTypes = [
-            "string",
-            "user",
-            "role",
-            "channel",
-            "mentionable"
-        ];
-
         if (
-            !validTypes.includes(
+            !selectTypes.has(
                 selectType
             )
         ) {
@@ -651,6 +848,48 @@ async function execute(
                 );
 
             default:
+                // -------------------------
+                // BUTTON TYPE
+                // -------------------------
+
+                if (
+                    action.startsWith(
+                        "component:buttontype:"
+                    )
+                ) {
+                    const type =
+                        action
+                            .split(":")[2];
+
+                    return buttonTypeSelect(
+                        interaction,
+                        type
+                    );
+                }
+
+                // -------------------------
+                // SELECT TYPE
+                // -------------------------
+
+                if (
+                    action.startsWith(
+                        "component:selecttype:"
+                    )
+                ) {
+                    const type =
+                        action
+                            .split(":")[2];
+
+                    return selectTypeSelect(
+                        interaction,
+                        type
+                    );
+                }
+
+                // -------------------------
+                // FIELD SELECT
+                // -------------------------
+
                 if (
                     action.startsWith(
                         "field:select:"
@@ -667,6 +906,10 @@ async function execute(
                         index
                     );
                 }
+
+                // -------------------------
+                // COMPONENT SELECT
+                // -------------------------
 
                 if (
                     action.startsWith(
