@@ -1,7 +1,6 @@
 const {
     StringSelectMenuBuilder,
     UserSelectMenuBuilder,
-    RoleSelectMenuBuilder,
     ChannelSelectMenuBuilder,
     MentionableSelectMenuBuilder
 } = require("discord.js");
@@ -13,7 +12,7 @@ const {
 const types = {
     string: StringSelectMenuBuilder,
     user: UserSelectMenuBuilder,
-    role: RoleSelectMenuBuilder,
+    role: StringSelectMenuBuilder,
     channel: ChannelSelectMenuBuilder,
     mentionable: MentionableSelectMenuBuilder
 };
@@ -23,8 +22,11 @@ const types = {
 // =========================
 
 function create(data = {}) {
+
     const type = String(
-        data.type || "string"
+        data.type ||
+        data.selectType ||
+        "string"
     ).toLowerCase();
 
     const SelectBuilder =
@@ -79,10 +81,17 @@ function create(data = {}) {
         select.setDisabled(true);
     }
 
-    // String select options
+    // =========================
+    // SELECT OPTIONS
+    // =========================
+
     if (
-        type === "string" &&
-        Array.isArray(data.options)
+        (
+            type === "string" ||
+            type === "role"
+        ) &&
+        Array.isArray(data.options) &&
+        data.options.length
     ) {
         select.addOptions(
             data.options
@@ -105,6 +114,7 @@ function createData({
     options = [],
     disabled = false
 } = {}) {
+
     return {
         type: "select",
         selectType: type,
@@ -132,15 +142,20 @@ function getTypes() {
 // =========================
 
 function isString(data = {}) {
+
     return (
         String(
             data.selectType ||
-                data.type ||
-                ""
+            data.type ||
+            ""
         ).toLowerCase() ===
         "string"
     );
 }
+
+// =========================
+// EXPORTS
+// =========================
 
 module.exports = {
     create,
