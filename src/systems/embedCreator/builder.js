@@ -622,10 +622,8 @@ const selectBuilders = {
 function buildSelect(
     data = {}
 ) {
-    const type =
-        clean(data.type || "string")
-            .toLowerCase();
-
+    const type = clean(data.selectType || data.type || "string").toLowerCase();
+    
     const SelectBuilder =
         selectBuilders[type];
 
