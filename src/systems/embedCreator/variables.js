@@ -1,22 +1,67 @@
 // =========================
-// EMBED CREATOR VARIABLES
+// VARIABLES
 // =========================
 
 const variables = {
-    user: "{user}",
-    userName: "{user.name}",
-    userId: "{user.id}",
-    userMention: "{user.mention}",
+    user: {
+        token: "{user}",
+        description: "Username"
+    },
 
-    server: "{server}",
-    serverName: "{server.name}",
-    serverId: "{server.id}",
-    serverMemberCount: "{server.memberCount}",
+    userName: {
+        token: "{user.name}",
+        description: "Username"
+    },
 
-    channel: "{channel}",
-    channelName: "{channel.name}",
-    channelId: "{channel.id}",
-    channelMention: "{channel.mention}"
+    userId: {
+        token: "{user.id}",
+        description: "User ID"
+    },
+
+    userMention: {
+        token: "{user.mention}",
+        description: "User mention"
+    },
+
+    server: {
+        token: "{server}",
+        description: "Server name"
+    },
+
+    serverName: {
+        token: "{server.name}",
+        description: "Server name"
+    },
+
+    serverId: {
+        token: "{server.id}",
+        description: "Server ID"
+    },
+
+    serverMemberCount: {
+        token: "{server.memberCount}",
+        description: "Server member count"
+    },
+
+    channel: {
+        token: "{channel}",
+        description: "Channel name"
+    },
+
+    channelName: {
+        token: "{channel.name}",
+        description: "Channel name"
+    },
+
+    channelId: {
+        token: "{channel.id}",
+        description: "Channel ID"
+    },
+
+    channelMention: {
+        token: "{channel.mention}",
+        description: "Channel mention"
+    }
 };
 
 // =========================
@@ -24,35 +69,61 @@ const variables = {
 // =========================
 
 function getVariables() {
-    return {
-        ...variables
-    };
+    const result = {};
+
+    for (
+        const [name, data] of Object.entries(
+            variables
+        )
+    ) {
+        result[name] = data.token;
+    }
+
+    return result;
 }
 
 // =========================
-// REPLACE VARIABLES
+// GET VARIABLE DATA
 // =========================
 
-function replace(
-    text,
+function getVariableData() {
+    return Object.entries(
+        variables
+    ).map(
+        ([name, data]) => ({
+            name,
+            token: data.token,
+            description:
+                data.description
+        })
+    );
+}
+
+// =========================
+// GET TOKEN
+// =========================
+
+function getToken(name) {
+    return variables[name]?.token || null;
+}
+
+// =========================
+// REPLACEMENTS
+// =========================
+
+function getReplacements(
     interaction
 ) {
-    if (
-        text === null ||
-        text === undefined
-    ) {
-        return text;
-    }
+    const user =
+        interaction?.user;
 
-    if (!interaction) {
-        return String(text);
-    }
+    const guild =
+        interaction?.guild;
 
-    const user = interaction.user;
-    const guild = interaction.guild;
-    const channel = interaction.channel;
+    const channel =
+        interaction?.channel;
 
-    const replacements = {
+    return {
         "{user}":
             user?.username || "",
 
@@ -77,8 +148,11 @@ function replace(
             guild?.id || "",
 
         "{server.memberCount}":
-            guild?.memberCount !== undefined
-                ? String(guild.memberCount)
+            guild?.memberCount !==
+            undefined
+                ? String(
+                    guild.memberCount
+                )
                 : "",
 
         "{channel}":
@@ -95,21 +169,44 @@ function replace(
                 ? `<#${channel.id}>`
                 : ""
     };
+}
 
-    let result = String(text);
+// =========================
+// REPLACE TEXT
+// =========================
+
+function replace(
+    text,
+    interaction
+) {
+    if (
+        text === null ||
+        text === undefined
+    ) {
+        return text;
+    }
+
+    const replacements =
+        getReplacements(
+            interaction
+        );
+
+    let result =
+        String(text);
 
     for (
         const [
-            variable,
+            token,
             value
         ] of Object.entries(
             replacements
         )
     ) {
-        result = result.replaceAll(
-            variable,
-            value
-        );
+        result =
+            result.replaceAll(
+                token,
+                value
+            );
     }
 
     return result;
@@ -123,11 +220,25 @@ function replaceObject(
     object,
     interaction
 ) {
-    if (!object || typeof object !== "object") {
+    if (
+        object === null ||
+        object === undefined
+    ) {
         return object;
     }
 
-    if (Array.isArray(object)) {
+    if (
+        typeof object === "string"
+    ) {
+        return replace(
+            object,
+            interaction
+        );
+    }
+
+    if (
+        Array.isArray(object)
+    ) {
         return object.map(
             value =>
                 replaceObject(
@@ -137,37 +248,52 @@ function replaceObject(
         );
     }
 
+    if (
+        typeof object !== "object"
+    ) {
+        return object;
+    }
+
     const result = {};
 
     for (
         const [
             key,
             value
-        ] of Object.entries(object)
+        ] of Object.entries(
+            object
+        )
     ) {
-        if (
-            typeof value === "string"
-        ) {
-            result[key] =
-                replace(
-                    value,
-                    interaction
-                );
-        } else if (
-            value &&
-            typeof value === "object"
-        ) {
-            result[key] =
-                replaceObject(
-                    value,
-                    interaction
-                );
-        } else {
-            result[key] = value;
-        }
+        result[key] =
+            replaceObject(
+                value,
+                interaction
+            );
     }
 
     return result;
+}
+
+// =========================
+// CHECK VARIABLE
+// =========================
+
+function isVariable(
+    value
+) {
+    if (
+        typeof value !== "string"
+    ) {
+        return false;
+    }
+
+    return Object.values(
+        variables
+    ).some(
+        data =>
+            data.token ===
+            value
+    );
 }
 
 // =========================
@@ -176,6 +302,11 @@ function replaceObject(
 
 module.exports = {
     getVariables,
+    getVariableData,
+    getToken,
+
     replace,
-    replaceObject
+    replaceObject,
+
+    isVariable
 };
