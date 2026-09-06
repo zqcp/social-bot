@@ -655,6 +655,219 @@ function addSelect(
 }
 
 // =========================
+// ADD ROLE
+// =========================
+
+function addRole(
+    interaction,
+    session
+) {
+    const name =
+        getValue(
+            interaction,
+            "name"
+        ).trim();
+
+    const roleId =
+        getValue(
+            interaction,
+            "roleId"
+        ).trim();
+
+    if (!name) {
+        throw new Error(
+            "Role name cannot be empty."
+        );
+    }
+
+    if (!/^\d{17,20}$/.test(roleId)) {
+        throw new Error(
+            "Invalid Discord role ID."
+        );
+    }
+
+    const components =
+        Array.isArray(
+            session.components
+        )
+            ? [
+                ...session.components
+            ]
+            : [];
+
+    const index =
+        Number(
+            interaction.customId
+                .split(":")[4]
+        );
+
+    if (
+        !Number.isInteger(index) ||
+        !components[index] ||
+        components[index].type !== "select" ||
+        components[index].selectType !== "role"
+    ) {
+        throw new Error(
+            "That role select could not be found."
+        );
+    }
+
+    const options =
+        Array.isArray(
+            components[index].options
+        )
+            ? [
+                ...components[index].options
+            ]
+            : [];
+
+    if (
+        options.some(
+            option =>
+                String(option.value) ===
+                roleId
+        )
+    ) {
+        throw new Error(
+            "That role is already configured."
+        );
+    }
+
+    if (options.length >= 25) {
+        throw new Error(
+            "A role select cannot contain more than 25 roles."
+        );
+    }
+
+    options.push({
+        label: name.slice(0, 100),
+        value: roleId
+    });
+
+    components[index] = {
+        ...components[index],
+        options
+    };
+
+    state.update(
+        session.userId,
+        {
+            components
+        }
+    );
+}
+
+// =========================
+// EDIT ROLE
+// =========================
+
+function editRole(
+    interaction,
+    session
+) {
+    const name =
+        getValue(
+            interaction,
+            "name"
+        ).trim();
+
+    const roleId =
+        getValue(
+            interaction,
+            "roleId"
+        ).trim();
+
+    if (!name) {
+        throw new Error(
+            "Role name cannot be empty."
+        );
+    }
+
+    if (!/^\d{17,20}$/.test(roleId)) {
+        throw new Error(
+            "Invalid Discord role ID."
+        );
+    }
+
+    const parts =
+        interaction.customId.split(":");
+
+    const componentIndex =
+        Number(parts[4]);
+
+    const roleIndex =
+        Number(parts[5]);
+
+    const components =
+        Array.isArray(
+            session.components
+        )
+            ? [
+                ...session.components
+            ]
+            : [];
+
+    if (
+        !Number.isInteger(componentIndex) ||
+        !components[componentIndex] ||
+        components[componentIndex].type !== "select" ||
+        components[componentIndex].selectType !== "role"
+    ) {
+        throw new Error(
+            "That role select could not be found."
+        );
+    }
+
+    const options =
+        Array.isArray(
+            components[componentIndex].options
+        )
+            ? [
+                ...components[componentIndex].options
+            ]
+            : [];
+
+    if (
+        !Number.isInteger(roleIndex) ||
+        !options[roleIndex]
+    ) {
+        throw new Error(
+            "That role could not be found."
+        );
+    }
+
+    const duplicate =
+        options.some(
+            (option, index) =>
+                index !== roleIndex &&
+                String(option.value) === roleId
+        );
+
+    if (duplicate) {
+        throw new Error(
+            "That role is already configured."
+        );
+    }
+
+    options[roleIndex] = {
+        label: name.slice(0, 100),
+        value: roleId
+    };
+
+    components[componentIndex] = {
+        ...components[componentIndex],
+        options
+    };
+
+    state.update(
+        session.userId,
+        {
+            components
+        }
+    );
+}
+
+// =========================
 // UPDATE SAVE NAME
 // =========================
 
@@ -837,6 +1050,34 @@ async function execute(
                 );
                 break;
 
+            case "component:button":
+                addButton(
+                    interaction,
+                    session
+                );
+                break;
+
+            case "component:select":
+                addSelect(
+                    interaction,
+                    session
+                );
+                break;
+
+            case "component:role:add":
+                addRole(
+                    interaction,
+                    session
+                );
+                break;
+
+            case "component:role:edit":
+                editRole(
+                    interaction,
+                    session
+                );
+                break;
+
             default:
                 if (
                     action.startsWith(
@@ -852,30 +1093,6 @@ async function execute(
                         interaction,
                         session,
                         index
-                    );
-
-                    break;
-                }
-
-                if (
-                    action ===
-                    "component:button"
-                ) {
-                    addButton(
-                        interaction,
-                        session
-                    );
-
-                    break;
-                }
-
-                if (
-                    action ===
-                    "component:select"
-                ) {
-                    addSelect(
-                        interaction,
-                        session
                     );
 
                     break;
