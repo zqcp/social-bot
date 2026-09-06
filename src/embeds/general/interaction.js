@@ -341,6 +341,73 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.failed)
             .setDescription(description);
+    },
+
+
+    // =========================
+    // EMBED CREATOR
+    // =========================
+
+    embedCreator(description) {
+        return new EmbedBuilder()
+            .setColor(config.colors.regular)
+            .setDescription(description);
+    },
+
+    embedCreatorSuccess(
+        description = "The embed was updated successfully."
+    ) {
+        return new EmbedBuilder()
+            .setColor(config.colors.success)
+            .setDescription(description);
+    },
+
+    embedCreatorFailed(
+        description = "I couldn't update the embed."
+    ) {
+        return new EmbedBuilder()
+            .setColor(config.colors.error)
+            .setDescription(description);
+    },
+
+    embedCreatorCancelled(
+        description = "The embed creator has been cancelled."
+    ) {
+        return new EmbedBuilder()
+            .setColor(config.colors.failed)
+            .setDescription(description);
+    },
+
+    embedCreatorExpired(
+        description = "This embed creator has expired. Please run the command again."
+    ) {
+        return new EmbedBuilder()
+            .setColor(config.colors.error)
+            .setDescription(description);
+    },
+
+    embedCreatorInvalid(
+        description = "The embed information provided is invalid."
+    ) {
+        return new EmbedBuilder()
+            .setColor(config.colors.error)
+            .setDescription(description);
+    },
+
+    embedCreatorSent(
+        description = "The embed has been sent successfully."
+    ) {
+        return new EmbedBuilder()
+            .setColor(config.colors.success)
+            .setDescription(description);
+    },
+
+    embedCreatorNoPermission(
+        description = "You don't have permission to use the embed creator."
+    ) {
+        return new EmbedBuilder()
+            .setColor(config.colors.error)
+            .setDescription(description);
     }
 
 };
