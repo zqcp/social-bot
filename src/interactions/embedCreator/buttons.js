@@ -272,6 +272,10 @@ async function componentSelect(
         });
     }
 
+    // -------------------------
+    // BUTTON
+    // -------------------------
+
     if (
         component.type === "button"
     ) {
@@ -284,16 +288,62 @@ async function componentSelect(
         );
     }
 
-    return openModal(
-        interaction,
-        inputs.select({
-            ...component,
-            type:
+    // -------------------------
+    // SELECT MENU
+    // -------------------------
+
+    if (
+        component.type === "select"
+    ) {
+        const selectType =
+            (
                 component.selectType ||
-                component.type,
-            index
-        })
-    );
+                "string"
+            )
+                .toLowerCase();
+
+        const validTypes = [
+            "string",
+            "user",
+            "role",
+            "channel",
+            "mentionable"
+        ];
+
+        if (
+            !validTypes.includes(
+                selectType
+            )
+        ) {
+            return interaction.reply({
+                embeds: [
+                    interactionEmbeds.embedCreatorInvalid(
+                        "That select menu type is invalid."
+                    )
+                ],
+                flags: 64
+            });
+        }
+
+        return openModal(
+            interaction,
+            inputs.select({
+                ...component,
+                type: selectType,
+                selectType,
+                index
+            })
+        );
+    }
+
+    return interaction.reply({
+        embeds: [
+            interactionEmbeds.embedCreatorInvalid(
+                "That component type is invalid."
+            )
+        ],
+        flags: 64
+    });
 }
 
 // =========================
