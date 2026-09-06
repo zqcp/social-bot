@@ -17,7 +17,7 @@ module.exports = {
                 config.colors.success
             )
             .setDescription(
-                `${config.emojis.success} ${user}: Embed **${name}** has been created.`
+                `${config.emojis.success} ${user}: Embed \`${name}\` has been **created**.`
             );
 
     },
@@ -33,7 +33,7 @@ module.exports = {
                 config.colors.success
             )
             .setDescription(
-                `${config.emojis.success} ${user}: Embed **${name}** has been updated.`
+                `${config.emojis.success} ${user}: Embed \`${name}\` has been **updated**.`
             );
 
     },
@@ -50,7 +50,7 @@ module.exports = {
                 config.colors.success
             )
             .setDescription(
-                `${config.emojis.success} ${user}: Embed **${name}** has been sent to ${channel}.`
+                `${config.emojis.success} ${user}: Embed \`${name}\` has been **sent** to ${channel}.`
             );
 
     },
@@ -66,7 +66,7 @@ module.exports = {
                 config.colors.success
             )
             .setDescription(
-                `${config.emojis.success} ${user}: Embed **${name}** has been deleted.`
+                `${config.emojis.success} ${user}: Embed \`${name}\` has been **deleted**.`
             );
 
     },
@@ -82,7 +82,7 @@ module.exports = {
                 config.colors.error
             )
             .setDescription(
-                `${config.emojis.error} ${user}: An embed named **${name}** already exists.`
+                `${config.emojis.error} ${user}: An embed named \`${name}\` **already exists**.`
             );
 
     },
@@ -98,7 +98,7 @@ module.exports = {
                 config.colors.error
             )
             .setDescription(
-                `${config.emojis.error} ${user}: I couldn't find an embed named **${name}**.`
+                `${config.emojis.error} ${user}: I couldn't find an embed named \`${name}\`.`
             );
 
     },
@@ -113,11 +113,7 @@ module.exports = {
                 config.colors.error
             )
             .setDescription(
-                `${config.emojis.error} ${user}: You need to provide an embed name.
-\`\`\`
-Syntax:
-${config.prefix}embed create [name]
-\`\`\``
+                `${config.emojis.error} ${user}: You need to provide an embed **name**.`
             );
 
     },
@@ -132,7 +128,7 @@ ${config.prefix}embed create [name]
                 config.colors.error
             )
             .setDescription(
-                `${config.emojis.error} ${user}: You don't have any saved embeds.`
+                `${config.emojis.error} ${user}: You don't have any **saved embeds**.`
             );
 
     },
@@ -147,7 +143,7 @@ ${config.prefix}embed create [name]
                 config.colors.error
             )
             .setDescription(
-                `${config.emojis.error} ${user}: That embed name is invalid.`
+                `${config.emojis.error} ${user}: That embed name is **invalid**.`
             );
 
     },
@@ -162,7 +158,7 @@ ${config.prefix}embed create [name]
                 config.colors.error
             )
             .setDescription(
-                `${config.emojis.error} ${user}: You've reached the maximum number of saved embeds.`
+                `${config.emojis.error} ${user}: You've reached the **maximum number of saved embeds**.`
             );
 
     },
@@ -177,7 +173,7 @@ ${config.prefix}embed create [name]
                 config.colors.error
             )
             .setDescription(
-                `${config.emojis.error} ${user}: That embed is invalid.`
+                `${config.emojis.error} ${user}: That embed is **invalid**.`
             );
 
     },
@@ -192,7 +188,7 @@ ${config.prefix}embed create [name]
                 config.colors.error
             )
             .setDescription(
-                `${config.emojis.error} ${user}: Something went wrong while processing the embed.`
+                `${config.emojis.error} ${user}: Something went wrong while **processing the embed**.`
             );
 
     },
@@ -207,7 +203,7 @@ ${config.prefix}embed create [name]
                 config.colors.error
             )
             .setDescription(
-                `${config.emojis.error} ${user}: Your embed editor session has expired.`
+                `${config.emojis.error} ${user}: Your embed editor **session has expired**.`
             );
 
     }
