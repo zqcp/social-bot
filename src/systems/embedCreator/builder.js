@@ -13,7 +13,7 @@ const {
 const variables = require("./variables");
 
 // =========================
-// LIMITS
+// DISCORD LIMITS
 // =========================
 
 const LIMITS = {
@@ -25,11 +25,17 @@ const LIMITS = {
     fieldValue: 1024,
     fields: 25,
     totalEmbed: 6000,
+
     buttonLabel: 80,
     customId: 100,
-    actionRows: 5,
     buttonsPerRow: 5,
-    selectOptions: 25
+    actionRows: 5,
+
+    selectPlaceholder: 150,
+    selectOptions: 25,
+    selectOptionLabel: 100,
+    selectOptionValue: 100,
+    selectOptionDescription: 100
 };
 
 // =========================
@@ -61,8 +67,14 @@ function validUrl(value) {
     }
 
     try {
-        new URL(value);
-        return true;
+        const url = new URL(
+            String(value).trim()
+        );
+
+        return (
+            url.protocol === "http:" ||
+            url.protocol === "https:"
+        );
     } catch {
         return false;
     }
@@ -73,21 +85,12 @@ function validColor(value) {
         return true;
     }
 
-    const color = String(value).trim();
+    const color = clean(value)
+        .replace(/^#/, "");
 
-    if (/^#[0-9a-fA-F]{6}$/.test(color)) {
-        return true;
-    }
-
-    if (/^0x[0-9a-fA-F]{6}$/.test(color)) {
-        return true;
-    }
-
-    if (/^[0-9a-fA-F]{6}$/.test(color)) {
-        return true;
-    }
-
-    return false;
+    return /^[0-9a-fA-F]{6}$/.test(
+        color
+    );
 }
 
 function normalizeColor(value) {
@@ -95,47 +98,62 @@ function normalizeColor(value) {
         return null;
     }
 
-    const color = String(value).trim();
-
-    if (color.startsWith("#")) {
-        return color;
-    }
-
-    if (color.startsWith("0x")) {
-        return `#${color.slice(2)}`;
-    }
-
-    return `#${color}`;
+    return parseInt(
+        clean(value).replace(/^#/, ""),
+        16
+    );
 }
 
 // =========================
-// VALIDATE EMBED
+// EMBED VALIDATION
 // =========================
 
 function validateEmbed(data = {}) {
     const embed = data.embed || {};
+    const author = embed.author || {};
+    const footer = embed.footer || {};
+    const fields = Array.isArray(
+        embed.fields
+    )
+        ? embed.fields
+        : [];
+
     const errors = [];
 
     const title = clean(embed.title);
-    const description = clean(embed.description);
+    const description =
+        clean(embed.description);
 
-    const author = embed.author || {};
-    const footer = embed.footer || {};
+    const authorName =
+        clean(author.name);
 
-    if (title.length > LIMITS.title) {
+    const footerText =
+        clean(footer.text);
+
+    // -------------------------
+    // Basic lengths
+    // -------------------------
+
+    if (
+        title.length >
+        LIMITS.title
+    ) {
         errors.push(
-            `Title cannot exceed ${LIMITS.title} characters.`
-        );
-    }
-
-    if (description.length > LIMITS.description) {
-        errors.push(
-            `Description cannot exceed ${LIMITS.description} characters.`
+            `Embed title cannot exceed ${LIMITS.title} characters.`
         );
     }
 
     if (
-        clean(author.name).length >
+        description.length >
+        LIMITS.description
+    ) {
+        errors.push(
+            `Embed description cannot exceed ${LIMITS.description} characters.`
+        );
+    }
+
+    if (
+        authorName.length >
         LIMITS.authorName
     ) {
         errors.push(
@@ -144,7 +162,7 @@ function validateEmbed(data = {}) {
     }
 
     if (
-        clean(footer.text).length >
+        footerText.length >
         LIMITS.footerText
     ) {
         errors.push(
@@ -152,125 +170,127 @@ function validateEmbed(data = {}) {
         );
     }
 
-    if (
-        !validUrl(embed.url)
-    ) {
+    // -------------------------
+    // URLs
+    // -------------------------
+
+    if (!validUrl(embed.url)) {
         errors.push(
-            "The embed URL is invalid."
+            "Embed URL must be a valid HTTP or HTTPS URL."
         );
     }
 
-    if (
-        !validUrl(author.url)
-    ) {
+    if (!validUrl(author.iconURL)) {
         errors.push(
-            "The author URL is invalid."
+            "Author icon URL must be a valid HTTP or HTTPS URL."
         );
     }
 
-    if (
-        !validUrl(author.iconURL)
-    ) {
+    if (!validUrl(author.url)) {
         errors.push(
-            "The author icon URL is invalid."
+            "Author URL must be a valid HTTP or HTTPS URL."
         );
     }
 
-    if (
-        !validUrl(footer.iconURL)
-    ) {
+    if (!validUrl(footer.iconURL)) {
         errors.push(
-            "The footer icon URL is invalid."
+            "Footer icon URL must be a valid HTTP or HTTPS URL."
         );
     }
 
-    if (
-        !validUrl(embed.thumbnail)
-    ) {
+    if (!validUrl(embed.thumbnail)) {
         errors.push(
-            "The thumbnail URL is invalid."
+            "Thumbnail URL must be a valid HTTP or HTTPS URL."
         );
     }
 
-    if (
-        !validUrl(embed.image)
-    ) {
+    if (!validUrl(embed.image)) {
         errors.push(
-            "The image URL is invalid."
+            "Image URL must be a valid HTTP or HTTPS URL."
         );
     }
 
-    if (
-        !validColor(embed.color)
-    ) {
+    // -------------------------
+    // Color
+    // -------------------------
+
+    if (!validColor(embed.color)) {
         errors.push(
-            "The embed color is invalid."
+            "Embed color must be a valid 6-digit hexadecimal color."
         );
     }
 
-    const fields =
-        Array.isArray(embed.fields)
-            ? embed.fields
-            : [];
+    // -------------------------
+    // Fields
+    // -------------------------
 
-    if (fields.length > LIMITS.fields) {
+    if (
+        fields.length >
+        LIMITS.fields
+    ) {
         errors.push(
             `An embed cannot contain more than ${LIMITS.fields} fields.`
         );
     }
 
-    let totalCharacters =
-        title.length +
-        description.length +
-        clean(author.name).length +
-        clean(footer.text).length;
+    fields.forEach(
+        (field, index) => {
+            const name =
+                clean(field?.name);
 
-    for (
-        let index = 0;
-        index < fields.length;
-        index++
-    ) {
-        const field = fields[index] || {};
-        const name = clean(field.name);
-        const value = clean(field.value);
+            const value =
+                clean(field?.value);
 
-        if (!name) {
-            errors.push(
-                `Field ${index + 1} must have a name.`
-            );
+            if (!name) {
+                errors.push(
+                    `Field ${index + 1} must have a name.`
+                );
+            }
+
+            if (!value) {
+                errors.push(
+                    `Field ${index + 1} must have a value.`
+                );
+            }
+
+            if (
+                name.length >
+                LIMITS.fieldName
+            ) {
+                errors.push(
+                    `Field ${index + 1} name cannot exceed ${LIMITS.fieldName} characters.`
+                );
+            }
+
+            if (
+                value.length >
+                LIMITS.fieldValue
+            ) {
+                errors.push(
+                    `Field ${index + 1} value cannot exceed ${LIMITS.fieldValue} characters.`
+                );
+            }
         }
+    );
 
-        if (!value) {
-            errors.push(
-                `Field ${index + 1} must have a value.`
-            );
-        }
+    // -------------------------
+    // Total embed characters
+    // -------------------------
 
-        if (
-            name.length >
-            LIMITS.fieldName
-        ) {
-            errors.push(
-                `Field ${index + 1} name cannot exceed ${LIMITS.fieldName} characters.`
-            );
-        }
+    let total = 0;
 
-        if (
-            value.length >
-            LIMITS.fieldValue
-        ) {
-            errors.push(
-                `Field ${index + 1} value cannot exceed ${LIMITS.fieldValue} characters.`
-            );
-        }
+    total += title.length;
+    total += description.length;
+    total += authorName.length;
+    total += footerText.length;
 
-        totalCharacters +=
-            name.length +
-            value.length;
+    for (const field of fields) {
+        total += clean(field?.name).length;
+        total += clean(field?.value).length;
     }
 
     if (
-        totalCharacters >
+        total >
         LIMITS.totalEmbed
     ) {
         errors.push(
@@ -290,157 +310,158 @@ function validateEmbed(data = {}) {
 
 function buildEmbed(
     data = {},
-    interaction = null
+    interaction
 ) {
     const prepared =
         variables.replaceObject(
-            data,
+            data.embed || {},
             interaction
         );
 
     const validation =
-        validateEmbed(prepared);
+        validateEmbed({
+            embed: prepared
+        });
 
     if (!validation.valid) {
         return {
             success: false,
-            errors: validation.errors,
-            embed: null
+            errors: validation.errors
         };
     }
-
-    const dataEmbed =
-        prepared.embed || {};
 
     const embed =
         new EmbedBuilder();
 
-    if (
-        hasValue(dataEmbed.title)
-    ) {
-        embed.setTitle(
-            clean(dataEmbed.title)
+    const title =
+        clean(prepared.title);
+
+    const description =
+        clean(prepared.description);
+
+    const color =
+        normalizeColor(
+            prepared.color
         );
+
+    const url =
+        clean(prepared.url);
+
+    const author =
+        prepared.author || {};
+
+    const footer =
+        prepared.footer || {};
+
+    const fields =
+        Array.isArray(
+            prepared.fields
+        )
+            ? prepared.fields
+            : [];
+
+    if (title) {
+        embed.setTitle(title);
     }
 
-    if (
-        hasValue(dataEmbed.description)
-    ) {
+    if (description) {
         embed.setDescription(
-            clean(dataEmbed.description)
+            description
         );
     }
 
-    if (
-        hasValue(dataEmbed.color)
-    ) {
-        embed.setColor(
-            normalizeColor(
-                dataEmbed.color
-            )
-        );
+    if (color !== null) {
+        embed.setColor(color);
     }
 
-    if (
-        hasValue(dataEmbed.url)
-    ) {
-        embed.setURL(
-            clean(dataEmbed.url)
-        );
+    if (url) {
+        embed.setURL(url);
     }
 
-    if (
-        hasValue(dataEmbed.author?.name)
-    ) {
-        const author = {
+    if (clean(author.name)) {
+        const authorData = {
             name: clean(
-                dataEmbed.author.name
+                author.name
             )
         };
 
         if (
-            hasValue(
-                dataEmbed.author.iconURL
-            )
+            clean(author.iconURL)
         ) {
-            author.iconURL =
-                clean(
-                    dataEmbed.author.iconURL
-                );
+            authorData.iconURL =
+                clean(author.iconURL);
         }
 
         if (
-            hasValue(
-                dataEmbed.author.url
-            )
+            clean(author.url)
         ) {
-            author.url =
-                clean(
-                    dataEmbed.author.url
-                );
+            authorData.url =
+                clean(author.url);
         }
 
-        embed.setAuthor(author);
+        embed.setAuthor(
+            authorData
+        );
     }
 
-    if (
-        hasValue(dataEmbed.footer?.text)
-    ) {
-        const footer = {
+    if (clean(footer.text)) {
+        const footerData = {
             text: clean(
-                dataEmbed.footer.text
+                footer.text
             )
         };
 
         if (
-            hasValue(
-                dataEmbed.footer.iconURL
-            )
+            clean(footer.iconURL)
         ) {
-            footer.iconURL =
+            footerData.iconURL =
                 clean(
-                    dataEmbed.footer.iconURL
+                    footer.iconURL
                 );
         }
 
-        embed.setFooter(footer);
+        embed.setFooter(
+            footerData
+        );
     }
 
     if (
-        hasValue(dataEmbed.thumbnail)
+        clean(prepared.thumbnail)
     ) {
         embed.setThumbnail(
-            clean(dataEmbed.thumbnail)
+            clean(
+                prepared.thumbnail
+            )
         );
     }
 
     if (
-        hasValue(dataEmbed.image)
+        clean(prepared.image)
     ) {
         embed.setImage(
-            clean(dataEmbed.image)
+            clean(
+                prepared.image
+            )
         );
     }
 
-    if (
-        Array.isArray(dataEmbed.fields) &&
-        dataEmbed.fields.length
-    ) {
+    if (fields.length) {
         embed.addFields(
-            dataEmbed.fields.map(
-                field => ({
-                    name: clean(field.name),
-                    value: clean(field.value),
-                    inline:
-                        field.inline === true
-                })
-            )
+            fields.map(field => ({
+                name: clean(
+                    field.name
+                ),
+                value: clean(
+                    field.value
+                ),
+                inline:
+                    field.inline === true
+            }))
         );
     }
 
     return {
         success: true,
-        errors: [],
         embed
     };
 }
@@ -449,33 +470,41 @@ function buildEmbed(
 // BUTTON STYLE
 // =========================
 
-function getButtonStyle(style) {
-    const value =
-        String(style || "")
-            .toLowerCase();
-
+function getButtonStyle(
+    style
+) {
     const styles = {
-        primary: ButtonStyle.Primary,
-        secondary: ButtonStyle.Secondary,
-        success: ButtonStyle.Success,
-        danger: ButtonStyle.Danger,
-        link: ButtonStyle.Link
+        primary:
+            ButtonStyle.Primary,
+
+        secondary:
+            ButtonStyle.Secondary,
+
+        success:
+            ButtonStyle.Success,
+
+        danger:
+            ButtonStyle.Danger,
+
+        link:
+            ButtonStyle.Link
     };
 
-    return styles[value] || null;
+    return styles[
+        clean(style).toLowerCase()
+    ];
 }
 
 // =========================
 // BUILD BUTTON
 // =========================
 
-function buildButton(component = {}) {
-    const button =
-        new ButtonBuilder();
-
+function buildButton(
+    data = {}
+) {
     const style =
         getButtonStyle(
-            component.style
+            data.style
         );
 
     if (!style) {
@@ -484,26 +513,70 @@ function buildButton(component = {}) {
         );
     }
 
-    button.setStyle(style);
+    const label =
+        clean(data.label);
+
+    const customId =
+        clean(data.customId);
+
+    const url =
+        clean(data.url);
+
+    const emoji =
+        clean(data.emoji);
 
     if (
-        hasValue(component.label)
+        label.length >
+        LIMITS.buttonLabel
     ) {
-        button.setLabel(
-            clean(component.label)
+        throw new Error(
+            `Button label cannot exceed ${LIMITS.buttonLabel} characters.`
         );
     }
 
     if (
-        hasValue(component.emoji)
+        customId.length >
+        LIMITS.customId
     ) {
-        button.setEmoji(
-            clean(component.emoji)
+        throw new Error(
+            `Button custom ID cannot exceed ${LIMITS.customId} characters.`
         );
     }
 
     if (
-        component.disabled === true
+        style === ButtonStyle.Link
+    ) {
+        if (!url) {
+            throw new Error(
+                "Link buttons require a URL."
+            );
+        }
+
+        if (!validUrl(url)) {
+            throw new Error(
+                "Link button URL must be a valid HTTP or HTTPS URL."
+            );
+        }
+    } else if (!customId) {
+        throw new Error(
+            "Non-link buttons require a custom ID."
+        );
+    }
+
+    const button =
+        new ButtonBuilder()
+            .setStyle(style);
+
+    if (label) {
+        button.setLabel(label);
+    }
+
+    if (emoji) {
+        button.setEmoji(emoji);
+    }
+
+    if (
+        data.disabled === true
     ) {
         button.setDisabled(true);
     }
@@ -511,40 +584,8 @@ function buildButton(component = {}) {
     if (
         style === ButtonStyle.Link
     ) {
-        if (!validUrl(component.url)) {
-            throw new Error(
-                "Invalid button URL."
-            );
-        }
-
-        if (!hasValue(component.url)) {
-            throw new Error(
-                "Link buttons require a URL."
-            );
-        }
-
-        button.setURL(
-            clean(component.url)
-        );
+        button.setURL(url);
     } else {
-        const customId =
-            clean(component.customId);
-
-        if (!customId) {
-            throw new Error(
-                "Non-link buttons require a custom ID."
-            );
-        }
-
-        if (
-            customId.length >
-            LIMITS.customId
-        ) {
-            throw new Error(
-                `Button custom ID cannot exceed ${LIMITS.customId} characters.`
-            );
-        }
-
         button.setCustomId(
             customId
         );
@@ -554,83 +595,48 @@ function buildButton(component = {}) {
 }
 
 // =========================
+// SELECT BUILDERS
+// =========================
+
+const selectBuilders = {
+    string:
+        StringSelectMenuBuilder,
+
+    user:
+        UserSelectMenuBuilder,
+
+    role:
+        RoleSelectMenuBuilder,
+
+    channel:
+        ChannelSelectMenuBuilder,
+
+    mentionable:
+        MentionableSelectMenuBuilder
+};
+
+// =========================
 // BUILD SELECT
 // =========================
 
-function buildSelect(component = {}) {
+function buildSelect(
+    data = {}
+) {
     const type =
-        String(component.type || "string")
+        clean(data.type || "string")
             .toLowerCase();
 
-    let select;
+    const SelectBuilder =
+        selectBuilders[type];
 
-    if (type === "string") {
-        select =
-            new StringSelectMenuBuilder();
-
-        if (
-            Array.isArray(component.options)
-        ) {
-            if (
-                component.options.length >
-                LIMITS.selectOptions
-            ) {
-                throw new Error(
-                    `A select menu cannot contain more than ${LIMITS.selectOptions} options.`
-                );
-            }
-
-            select.addOptions(
-                component.options.map(
-                    option => ({
-                        label: clean(
-                            option.label
-                        ),
-                        value: clean(
-                            option.value
-                        ),
-                        description:
-                            hasValue(
-                                option.description
-                            )
-                                ? clean(
-                                    option.description
-                                )
-                                : undefined,
-                        emoji:
-                            hasValue(
-                                option.emoji
-                            )
-                                ? clean(
-                                    option.emoji
-                                )
-                                : undefined,
-                        default:
-                            option.default === true
-                    })
-                )
-            );
-        }
-    } else if (type === "user") {
-        select =
-            new UserSelectMenuBuilder();
-    } else if (type === "role") {
-        select =
-            new RoleSelectMenuBuilder();
-    } else if (type === "channel") {
-        select =
-            new ChannelSelectMenuBuilder();
-    } else if (type === "mentionable") {
-        select =
-            new MentionableSelectMenuBuilder();
-    } else {
+    if (!SelectBuilder) {
         throw new Error(
             "Invalid select menu type."
         );
     }
 
     const customId =
-        clean(component.customId);
+        clean(data.customId);
 
     if (!customId) {
         throw new Error(
@@ -647,35 +653,191 @@ function buildSelect(component = {}) {
         );
     }
 
-    select.setCustomId(customId);
+    const placeholder =
+        clean(data.placeholder);
 
     if (
-        hasValue(component.placeholder)
+        placeholder.length >
+        LIMITS.selectPlaceholder
     ) {
-        select.setPlaceholder(
-            clean(component.placeholder)
+        throw new Error(
+            `Select menu placeholder cannot exceed ${LIMITS.selectPlaceholder} characters.`
+        );
+    }
+
+    const minValues =
+        Number.isInteger(
+            data.minValues
+        )
+            ? data.minValues
+            : 1;
+
+    const maxValues =
+        Number.isInteger(
+            data.maxValues
+        )
+            ? data.maxValues
+            : 1;
+
+    if (
+        minValues < 0 ||
+        minValues > 25
+    ) {
+        throw new Error(
+            "Select menu minimum values must be between 0 and 25."
         );
     }
 
     if (
-        component.disabled === true
+        maxValues < 1 ||
+        maxValues > 25
+    ) {
+        throw new Error(
+            "Select menu maximum values must be between 1 and 25."
+        );
+    }
+
+    if (
+        minValues > maxValues
+    ) {
+        throw new Error(
+            "Select menu minimum values cannot exceed maximum values."
+        );
+    }
+
+    const select =
+        new SelectBuilder()
+            .setCustomId(customId)
+            .setMinValues(
+                minValues
+            )
+            .setMaxValues(
+                maxValues
+            );
+
+    if (placeholder) {
+        select.setPlaceholder(
+            placeholder
+        );
+    }
+
+    if (
+        data.disabled === true
     ) {
         select.setDisabled(true);
     }
 
-    if (
-        Number.isInteger(component.minValues)
-    ) {
-        select.setMinValues(
-            component.minValues
-        );
-    }
+    if (type === "string") {
+        const options =
+            Array.isArray(
+                data.options
+            )
+                ? data.options
+                : [];
 
-    if (
-        Number.isInteger(component.maxValues)
-    ) {
-        select.setMaxValues(
-            component.maxValues
+        if (
+            options.length >
+            LIMITS.selectOptions
+        ) {
+            throw new Error(
+                `A select menu cannot contain more than ${LIMITS.selectOptions} options.`
+            );
+        }
+
+        if (
+            !options.length
+        ) {
+            throw new Error(
+                "String select menus require at least one option."
+            );
+        }
+
+        select.addOptions(
+            options.map(
+                (option, index) => {
+                    const label =
+                        clean(
+                            option?.label
+                        );
+
+                    const value =
+                        clean(
+                            option?.value
+                        );
+
+                    const description =
+                        clean(
+                            option?.description
+                        );
+
+                    if (!label) {
+                        throw new Error(
+                            `Select option ${index + 1} requires a label.`
+                        );
+                    }
+
+                    if (!value) {
+                        throw new Error(
+                            `Select option ${index + 1} requires a value.`
+                        );
+                    }
+
+                    if (
+                        label.length >
+                        LIMITS.selectOptionLabel
+                    ) {
+                        throw new Error(
+                            `Select option ${index + 1} label cannot exceed ${LIMITS.selectOptionLabel} characters.`
+                        );
+                    }
+
+                    if (
+                        value.length >
+                        LIMITS.selectOptionValue
+                    ) {
+                        throw new Error(
+                            `Select option ${index + 1} value cannot exceed ${LIMITS.selectOptionValue} characters.`
+                        );
+                    }
+
+                    if (
+                        description.length >
+                        LIMITS.selectOptionDescription
+                    ) {
+                        throw new Error(
+                            `Select option ${index + 1} description cannot exceed ${LIMITS.selectOptionDescription} characters.`
+                        );
+                    }
+
+                    const item = {
+                        label,
+                        value
+                    };
+
+                    if (description) {
+                        item.description =
+                            description;
+                    }
+
+                    if (
+                        option?.emoji
+                    ) {
+                        item.emoji =
+                            String(
+                                option.emoji
+                            );
+                    }
+
+                    if (
+                        option?.default === true
+                    ) {
+                        item.default =
+                            true;
+                    }
+
+                    return item;
+                }
+            )
         );
     }
 
@@ -683,16 +845,26 @@ function buildSelect(component = {}) {
 }
 
 // =========================
-// BUILD COMPONENT ROWS
+// BUILD COMPONENTS
 // =========================
 
 function buildComponents(
     components = []
 ) {
-    if (!Array.isArray(components)) {
+    if (
+        !Array.isArray(components)
+    ) {
         return {
             success: true,
-            errors: [],
+            rows: []
+        };
+    }
+
+    if (
+        components.length === 0
+    ) {
+        return {
+            success: true,
             rows: []
         };
     }
@@ -700,74 +872,69 @@ function buildComponents(
     const rows = [];
     let currentButtonRow = null;
 
-    function pushButtonRow() {
+    function addRow(row) {
         if (
-            currentButtonRow &&
-            currentButtonRow.components.length
+            rows.length >=
+            LIMITS.actionRows
         ) {
-            rows.push(
-                currentButtonRow
+            throw new Error(
+                `A message cannot contain more than ${LIMITS.actionRows} action rows.`
             );
         }
 
-        currentButtonRow = null;
+        rows.push(row);
     }
 
     for (
         const component of components
     ) {
-        if (!component) {
-            continue;
-        }
-
-        const type =
-            String(
-                component.type || "button"
-            ).toLowerCase();
-
-        if (type === "button") {
+        if (
+            component?.type === "button"
+        ) {
             if (
                 !currentButtonRow ||
-                currentButtonRow.components.length >=
+                currentButtonRow.components
+                    .length >=
                     LIMITS.buttonsPerRow
             ) {
-                pushButtonRow();
-
                 currentButtonRow =
                     new ActionRowBuilder();
+
+                addRow(
+                    currentButtonRow
+                );
             }
 
             currentButtonRow.addComponents(
-                buildButton(component)
+                buildButton(
+                    component
+                )
             );
 
             continue;
         }
 
-        pushButtonRow();
+        if (
+            currentButtonRow
+        ) {
+            currentButtonRow = null;
+        }
 
-        rows.push(
+        const select =
+            buildSelect(
+                component
+            );
+
+        addRow(
             new ActionRowBuilder()
                 .addComponents(
-                    buildSelect(component)
+                    select
                 )
-        );
-    }
-
-    pushButtonRow();
-
-    if (
-        rows.length >
-        LIMITS.actionRows
-    ) {
-        throw new Error(
-            `A message cannot contain more than ${LIMITS.actionRows} component rows.`
         );
     }
 
     return {
         success: true,
-        errors: [],
         rows
     };
 }
@@ -778,68 +945,73 @@ function buildComponents(
 
 function buildMessage(
     data = {},
-    interaction = null
+    interaction
 ) {
-    const result =
+    const embedResult =
         buildEmbed(
             data,
             interaction
         );
 
-    if (!result.success) {
-        return {
-            success: false,
-            errors: result.errors,
-            payload: null
-        };
+    if (
+        !embedResult.success
+    ) {
+        return embedResult;
     }
 
-    let components;
+    let componentResult;
 
     try {
-        components =
+        componentResult =
             buildComponents(
-                variables.replaceObject(
-                    data.components || [],
-                    interaction
-                )
+                data.components
             );
     } catch (error) {
         return {
             success: false,
             errors: [
                 error.message
-            ],
-            payload: null
+            ]
         };
     }
 
-    const payload = {
-        embeds: [
-            result.embed
-        ]
-    };
+    const payload = {};
 
-    if (
-        hasValue(data.content)
-    ) {
+    const content =
+        variables.replace(
+            data.content || "",
+            interaction
+        );
+
+    if (content) {
         payload.content =
-            variables.replace(
-                data.content,
-                interaction
-            );
+            content;
+    }
+
+    const hasEmbed =
+        embedResult.embed
+            .data &&
+        Object.keys(
+            embedResult.embed.data
+        ).length > 0;
+
+    if (hasEmbed) {
+        payload.embeds = [
+            embedResult.embed
+        ];
     }
 
     if (
-        components.rows.length
+        componentResult.rows.length
     ) {
         payload.components =
-            components.rows;
+            componentResult.rows;
     }
 
     return {
         success: true,
-        errors: [],
+        embed:
+            embedResult.embed,
         payload
     };
 }
@@ -850,10 +1022,20 @@ function buildMessage(
 
 module.exports = {
     LIMITS,
+
+    clean,
+    hasValue,
+    validUrl,
+    validColor,
+    normalizeColor,
+
     validateEmbed,
     buildEmbed,
+
+    getButtonStyle,
     buildButton,
     buildSelect,
     buildComponents,
+
     buildMessage
 };
