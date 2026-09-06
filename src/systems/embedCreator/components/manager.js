@@ -5,51 +5,72 @@ const state = require("../state");
 // =========================
 
 function get(userId) {
-    const current =
+    const session =
         state.get(userId);
 
-    if (!current) {
-        return null;
+    if (!session) {
+        return [];
     }
 
-    return Array.isArray(current.components)
-        ? current.components
+    return Array.isArray(
+        session.components
+    )
+        ? session.components
         : [];
 }
 
 // =========================
-// ADD COMPONENT
+// GET COMPONENT
+// =========================
+
+function getOne(
+    userId,
+    index
+) {
+    const components =
+        get(userId);
+
+    if (
+        !Number.isInteger(index) ||
+        index < 0 ||
+        index >= components.length
+    ) {
+        return null;
+    }
+
+    return components[index];
+}
+
+// =========================
+// ADD
 // =========================
 
 function add(
     userId,
     component
 ) {
-    const current =
-        state.get(userId);
-
-    if (!current || !component) {
+    if (
+        !component ||
+        typeof component !== "object"
+    ) {
         return null;
     }
 
-    const components = get(userId);
+    const components = [
+        ...get(userId),
+        cloneComponent(component)
+    ];
 
-    components.push({
-        ...component
-    });
-
-    state.update(
+    return state.update(
         userId,
         {
             components
         }
     );
-
-    return components;
 }
 
 // =========================
-// UPDATE COMPONENT
+// UPDATE
 // =========================
 
 function update(
@@ -57,14 +78,8 @@ function update(
     index,
     changes = {}
 ) {
-    const current =
-        state.get(userId);
-
-    if (!current) {
-        return null;
-    }
-
-    const components = get(userId);
+    const components =
+        get(userId);
 
     if (
         !Number.isInteger(index) ||
@@ -74,37 +89,48 @@ function update(
         return null;
     }
 
-    components[index] = {
-        ...components[index],
-        ...changes
-    };
+    if (
+        !changes ||
+        typeof changes !== "object"
+    ) {
+        return null;
+    }
 
-    state.update(
-        userId,
-        {
-            components
+    const updated = components.map(
+        (component, componentIndex) => {
+            if (
+                componentIndex !== index
+            ) {
+                return component;
+            }
+
+            return {
+                ...component,
+                ...cloneComponent(
+                    changes
+                )
+            };
         }
     );
 
-    return components[index];
+    return state.update(
+        userId,
+        {
+            components: updated
+        }
+    );
 }
 
 // =========================
-// REMOVE COMPONENT
+// REMOVE
 // =========================
 
 function remove(
     userId,
     index
 ) {
-    const current =
-        state.get(userId);
-
-    if (!current) {
-        return null;
-    }
-
-    const components = get(userId);
+    const components =
+        get(userId);
 
     if (
         !Number.isInteger(index) ||
@@ -114,38 +140,29 @@ function remove(
         return null;
     }
 
-    const removed =
-        components.splice(
-            index,
-            1
-        )[0];
+    components.splice(
+        index,
+        1
+    );
 
-    state.update(
+    return state.update(
         userId,
         {
             components
         }
     );
-
-    return removed;
 }
 
 // =========================
-// DUPLICATE COMPONENT
+// DUPLICATE
 // =========================
 
 function duplicate(
     userId,
     index
 ) {
-    const current =
-        state.get(userId);
-
-    if (!current) {
-        return null;
-    }
-
-    const components = get(userId);
+    const components =
+        get(userId);
 
     if (
         !Number.isInteger(index) ||
@@ -155,20 +172,10 @@ function duplicate(
         return null;
     }
 
-    const copy = {
-        ...components[index]
-    };
-
-    if (
-        Array.isArray(copy.options)
-    ) {
-        copy.options =
-            copy.options.map(
-                option => ({
-                    ...option
-                })
-            );
-    }
+    const copy =
+        cloneComponent(
+            components[index]
+        );
 
     components.splice(
         index + 1,
@@ -176,18 +183,16 @@ function duplicate(
         copy
     );
 
-    state.update(
+    return state.update(
         userId,
         {
             components
         }
     );
-
-    return copy;
 }
 
 // =========================
-// MOVE COMPONENT
+// MOVE
 // =========================
 
 function move(
@@ -195,18 +200,21 @@ function move(
     fromIndex,
     toIndex
 ) {
-    const current =
-        state.get(userId);
+    const components =
+        get(userId);
 
-    if (!current) {
+    if (
+        !Number.isInteger(
+            fromIndex
+        ) ||
+        !Number.isInteger(
+            toIndex
+        )
+    ) {
         return null;
     }
 
-    const components = get(userId);
-
     if (
-        !Number.isInteger(fromIndex) ||
-        !Number.isInteger(toIndex) ||
         fromIndex < 0 ||
         fromIndex >= components.length ||
         toIndex < 0 ||
@@ -218,29 +226,34 @@ function move(
     if (
         fromIndex === toIndex
     ) {
-        return components;
+        return state.get(
+            userId
+        );
     }
 
-    const moved =
-        components.splice(
-            fromIndex,
-            1
-        )[0];
+    const updated = [
+        ...components
+    ];
 
-    components.splice(
+    const [
+        component
+    ] = updated.splice(
+        fromIndex,
+        1
+    );
+
+    updated.splice(
         toIndex,
         0,
-        moved
+        component
     );
 
-    state.update(
+    return state.update(
         userId,
         {
-            components
+            components: updated
         }
     );
-
-    return components;
 }
 
 // =========================
@@ -251,8 +264,11 @@ function moveUp(
     userId,
     index
 ) {
-    if (index <= 0) {
-        return get(userId);
+    if (
+        !Number.isInteger(index) ||
+        index <= 0
+    ) {
+        return null;
     }
 
     return move(
@@ -274,10 +290,12 @@ function moveDown(
         get(userId);
 
     if (
-        !components ||
-        index >= components.length - 1
+        !Number.isInteger(index) ||
+        index < 0 ||
+        index >=
+            components.length - 1
     ) {
-        return components;
+        return null;
     }
 
     return move(
@@ -288,33 +306,62 @@ function moveDown(
 }
 
 // =========================
-// CLEAR COMPONENTS
+// CLEAR
 // =========================
 
-function clear(userId) {
-    const current =
-        state.get(userId);
-
-    if (!current) {
-        return null;
-    }
-
-    state.update(
+function clear(
+    userId
+) {
+    return state.update(
         userId,
         {
             components: []
         }
     );
-
-    return [];
 }
 
 // =========================
-// COUNT COMPONENTS
+// COUNT
 // =========================
 
-function count(userId) {
+function count(
+    userId
+) {
     return get(userId).length;
+}
+
+// =========================
+// CLONE COMPONENT
+// =========================
+
+function cloneComponent(
+    component
+) {
+    if (
+        !component ||
+        typeof component !== "object"
+    ) {
+        return component;
+    }
+
+    const result = {
+        ...component
+    };
+
+    if (
+        Array.isArray(
+            component.options
+        )
+    ) {
+        result.options =
+            component.options.map(
+                option => ({
+                    ...option
+                })
+            );
+    }
+
+    return result;
 }
 
 // =========================
@@ -323,13 +370,17 @@ function count(userId) {
 
 module.exports = {
     get,
+    getOne,
+
     add,
     update,
     remove,
     duplicate,
+
     move,
     moveUp,
     moveDown,
+
     clear,
     count
 };
