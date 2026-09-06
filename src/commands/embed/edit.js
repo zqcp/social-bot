@@ -136,6 +136,8 @@ module.exports = {
                 await Embed.findOne({
                     guildId:
                         message.guild.id,
+                    userId:
+                        message.author.id,
                     name
                 });
 
@@ -154,21 +156,28 @@ module.exports = {
             // START SESSION
             // =========================
 
-            const session =
-                await embedCreator.start(
-                    client,
-                    message,
-                    args
+            let session =
+                embedCreator.get(
+                    message.author.id
                 );
 
             if (!session) {
-                return message.channel.send({
-                    embeds: [
-                        embedEmbeds.failed(
-                            message.author
-                        )
-                    ]
-                });
+                session =
+                    await embedCreator.start(
+                        client,
+                        message,
+                        args
+                    );
+
+                if (!session) {
+                    return message.channel.send({
+                        embeds: [
+                            embedEmbeds.failed(
+                                message.author
+                            )
+                        ]
+                    });
+                }
             }
 
             // =========================
