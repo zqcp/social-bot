@@ -316,3 +316,116 @@ module.exports = {
     }
 
 };
+    // =========================
+    // FAILED
+    // =========================
+
+    failed(
+        user,
+        action
+    ) {
+
+        return new EmbedBuilder()
+            .setColor(
+                config.colors.error
+            )
+            .setDescription(
+                `${config.emojis.error} ${user}: Something went wrong while **${action}** the Starboard.`
+            );
+
+    },
+
+
+    // =========================
+    // STARBOARD ENTRY
+    // =========================
+
+    entry(
+        message,
+        color
+    ) {
+
+        const embed =
+            new EmbedBuilder()
+                .setColor(
+                    color
+                )
+                .setAuthor({
+                    name:
+                        message.author.displayName ||
+                        message.author.username,
+                    iconURL:
+                        message.author.displayAvatarURL({
+                            extension: "png",
+                            size: 128
+                        })
+                })
+                .setDescription(
+                    message.content?.trim() ||
+                    "*No message content.*"
+                )
+                .addFields(
+                    {
+                        name: "\u200B",
+                        value:
+                            `${message.channel}\n` +
+                            `[Jump to message](${message.url})`,
+                        inline: false
+                    },
+                    {
+                        name: "\u200B",
+                        value:
+                            `<t:${Math.floor(
+                                message.createdTimestamp / 1000
+                            )}:F>`,
+                        inline: false
+                    }
+                );
+
+        const attachments =
+            [...message.attachments.values()];
+
+        const image =
+            attachments.find(
+                attachment =>
+                    attachment.contentType?.startsWith(
+                        "image/"
+                    )
+            );
+
+        if (image) {
+
+            embed.setImage(
+                image.url
+            );
+
+        }
+
+        const otherAttachments =
+            attachments.filter(
+                attachment =>
+                    attachment.id !== image?.id
+            );
+
+        if (otherAttachments.length) {
+
+            embed.addFields({
+                name: "Attachments",
+                value:
+                    otherAttachments
+                        .map(
+                            attachment =>
+                                `[${attachment.name || "Attachment"}](${attachment.url})`
+                        )
+                        .join("\n")
+                        .slice(0, 1024),
+                inline: false
+            });
+
+        }
+
+        return embed;
+
+    }
+
+};
