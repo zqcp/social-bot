@@ -4,10 +4,20 @@ module.exports = {
         timestamp
     ) {
 
-        return `<t:${Math.floor(timestamp / 1000)}:F>`;
+        return new Date(timestamp).toLocaleString(
+            "en-US",
+            {
+                timeZone: "UTC",
+                month: "numeric",
+                day: "numeric",
+                year: "2-digit",
+                hour: "numeric",
+                minute: "2-digit",
+                hour12: true
+            }
+        );
 
     },
-
 
     short(
         timestamp
@@ -17,7 +27,6 @@ module.exports = {
 
     },
 
-
     date(
         timestamp
     ) {
@@ -26,7 +35,6 @@ module.exports = {
 
     },
 
-
     time(
         timestamp
     ) {
@@ -34,7 +42,6 @@ module.exports = {
         return `<t:${Math.floor(timestamp / 1000)}:t>`;
 
     },
-
 
     relative(
         timestamp
