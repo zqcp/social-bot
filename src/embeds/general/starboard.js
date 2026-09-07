@@ -313,26 +313,6 @@ module.exports = {
                 `${config.emojis.error} ${user}: Something went wrong while **${action}** the Starboard.`
             );
 
-    }
-
-};
-    // =========================
-    // FAILED
-    // =========================
-
-    failed(
-        user,
-        action
-    ) {
-
-        return new EmbedBuilder()
-            .setColor(
-                config.colors.error
-            )
-            .setDescription(
-                `${config.emojis.error} ${user}: Something went wrong while **${action}** the Starboard.`
-            );
-
     },
 
 
