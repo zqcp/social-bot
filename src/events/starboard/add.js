@@ -1,55 +1,20 @@
-const {
-    PermissionFlagsBits
-} = require("discord.js");
-
-const Starboard =
-    require("../../models/Starboard");
-
-const starboardEmbeds =
-    require("../../embeds/general/starboard");
-
-
-// =========================
-// EMOJI NORMALIZER
-// =========================
+const { PermissionFlagsBits } = require("discord.js");
+const Starboard = require("../../models/Starboard");
+const starboardEmbeds = require("../../embeds/general/starboard");
 
 function normalizeEmoji(emoji) {
+    if (!emoji) return null;
 
-    if (!emoji) {
-        return null;
-    }
-
-    // =========================
-    // CUSTOM DISCORD EMOJI
-    // =========================
-
-    if (
-        typeof emoji === "object" &&
-        emoji.id
-    ) {
-
+    if (typeof emoji === "object" && emoji.id) {
         return `custom:${emoji.id}`;
-
     }
 
-    if (
-        typeof emoji === "string"
-    ) {
-
-        const customEmoji =
-            emoji.match(
-                /^<a?:\w+:(\d+)>$/
-            );
+    if (typeof emoji === "string") {
+        const customEmoji = emoji.match(/^<a?:\w+:(\d+)>$/);
 
         if (customEmoji) {
-
             return `custom:${customEmoji[1]}`;
-
         }
-
-        // =========================
-        // UNICODE EMOJI
-        // =========================
 
         return `unicode:${emoji
             .normalize("NFC")
@@ -61,119 +26,80 @@ function normalizeEmoji(emoji) {
     return null;
 }
 
-
-// =========================
-// EVENT
-// =========================
-
 module.exports = {
-
     name: "messageReactionAdd",
 
-    async execute(
-        reaction,
-        user,
-        client
-    ) {
-
+    async execute(reaction, user, client) {
         try {
+            console.log("⭐ Starboard reaction event fired");
 
             if (user.bot) {
+                console.log("❌ User is a bot");
                 return;
             }
-
-            // =========================
-            // FETCH PARTIAL REACTION
-            // =========================
 
             if (reaction.partial) {
-
                 await reaction.fetch();
-
             }
 
-            const message =
-                reaction.message;
+            const message = reaction.message;
 
-            if (!message) {
+            if (!message || !message.guild) {
+                console.log("❌ Reaction message or guild missing");
                 return;
             }
 
-            if (!message.guild) {
-                return;
-            }
+            console.log("📩 Message:", message.id);
+            console.log("🏠 Guild:", message.guild.id);
+            console.log("😀 Reaction:", reaction.emoji.toString());
 
-            // =========================
-            // GET STARBOARDS
-            // =========================
+            const starboards = await Starboard.find({
+                guildId: message.guild.id
+            });
 
-            const starboards =
-                await Starboard.find({
-                    guildId:
-                        message.guild.id
-                });
+            console.log("📋 Starboards found:", starboards.length);
 
             if (!starboards.length) {
+                console.log("❌ No Starboard configuration found");
                 return;
             }
 
-            // =========================
-            // REACTION EMOJI
-            // =========================
+            for (const starboard of starboards) {
+                console.log("━━━━━━━━━━━━━━━━━━━━");
+                console.log("⭐ Checking Starboard:", starboard.channelId);
+                console.log("Configured emoji:", starboard.emoji);
+                console.log("Reaction emoji:", reaction.emoji.toString());
+                console.log("Threshold:", starboard.threshold);
+                console.log("Self react:", starboard.selfReact);
 
-            const reactionEmoji =
-                normalizeEmoji(
-                    reaction.emoji
+                const reactionEmoji = normalizeEmoji(reaction.emoji);
+                const configuredEmoji = normalizeEmoji(starboard.emoji);
+
+                console.log("Normalized reaction:", reactionEmoji);
+                console.log("Normalized config:", configuredEmoji);
+
+                if (reactionEmoji !== configuredEmoji) {
+                    console.log("❌ Emoji does not match");
+                    continue;
+                }
+
+                console.log("✅ Emoji matches");
+
+                const channel = message.guild.channels.cache.get(
+                    starboard.channelId
                 );
 
-            // =========================
-            // CHECK STARBOARDS
-            // =========================
-
-            for (
-                const starboard
-                of starboards
-            ) {
-
-                const configuredEmoji =
-                    normalizeEmoji(
-                        starboard.emoji
-                    );
-
-                // =========================
-                // EMOJI MATCH
-                // =========================
-
-                if (
-                    reactionEmoji !==
-                    configuredEmoji
-                ) {
-                    continue;
-                }
-
-                // =========================
-                // CHANNEL
-                // =========================
-
-                const channel =
-                    message.guild.channels.cache.get(
-                        starboard.channelId
-                    );
-
                 if (!channel) {
+                    console.log("❌ Starboard channel not found");
                     continue;
                 }
 
-                // =========================
-                // PERMISSIONS
-                // =========================
+                console.log("✅ Starboard channel found:", channel.id);
 
-                const permissions =
-                    channel.permissionsFor(
-                        client.user
-                    );
+                const permissions = channel.permissionsFor(client.user);
 
                 if (!permissions) {
+                    console.log("❌ Could not check bot permissions");
                     continue;
                 }
 
@@ -184,154 +110,92 @@ module.exports = {
                     PermissionFlagsBits.ReadMessageHistory
                 ];
 
-                const missingPermissions =
-                    requiredPermissions.filter(
-                        permission =>
-                            !permissions.has(
-                                permission
-                            )
+                const missingPermissions = requiredPermissions.filter(
+                    permission => !permissions.has(permission)
+                );
+
+                if (missingPermissions.length) {
+                    console.log(
+                        "❌ Missing permissions:",
+                        missingPermissions.map(permission => permission.toString())
                     );
-
-                if (
-                    missingPermissions.length
-                ) {
-
-                    console.error(
-                        "Starboard missing permissions:",
-                        missingPermissions
-                    );
-
                     continue;
                 }
 
-                // =========================
-                // FETCH USERS
-                // =========================
+                console.log("✅ Starboard channel permissions are good");
 
                 let users;
 
                 try {
-
-                    users =
-                        await reaction.users.fetch();
-
+                    users = await reaction.users.fetch();
                 } catch (error) {
-
-                    console.error(
-                        "Starboard reaction users error:",
-                        error
-                    );
-
+                    console.error("❌ Failed to fetch reaction users:", error);
                     continue;
                 }
 
-                // =========================
-                // COUNT
-                // =========================
-
-                let count =
-                    users.size;
+                let count = users.size;
 
                 if (
                     !starboard.selfReact &&
-                    users.has(
-                        message.author.id
-                    )
+                    users.has(message.author.id)
                 ) {
-
                     count--;
-
                 }
 
-                if (count < 0) {
-                    count = 0;
-                }
+                if (count < 0) count = 0;
 
-                // =========================
-                // THRESHOLD
-                // =========================
+                console.log("👥 Reaction count:", count);
+                console.log("🎯 Required:", starboard.threshold);
 
-                if (
-                    count <
-                    starboard.threshold
-                ) {
-
+                if (count < starboard.threshold) {
+                    console.log("❌ Threshold not reached");
                     continue;
-
                 }
 
-                // =========================
-                // FIND EXISTING ENTRY
-                // =========================
+                console.log("✅ Threshold reached");
 
-                const messages =
-                    await channel.messages.fetch({
-                        limit: 100
-                    });
+                const messages = await channel.messages.fetch({
+                    limit: 100
+                });
 
-                const existing =
-                    messages.find(
-                        starboardMessage =>
-                            starboardMessage.author?.id ===
-                                client.user.id &&
-                            starboardMessage.embeds.some(
-                                embed =>
-                                    embed.url ===
-                                    message.url
-                            )
-                    );
+                const existing = messages.find(
+                    starboardMessage =>
+                        starboardMessage.author?.id === client.user.id &&
+                        starboardMessage.embeds.some(
+                            embed => embed.url === message.url
+                        )
+                );
 
-                // =========================
-                // CREATE EMBED
-                // =========================
+                const embed = starboardEmbeds.entry(
+                    message,
+                    starboard.color
+                );
 
-                const embed =
-                    starboardEmbeds.entry(
-                        message,
-                        starboard.color
-                    );
-
-                const content =
-                    `${starboard.emoji} ${count}`;
-
-                // =========================
-                // UPDATE
-                // =========================
+                const content = `${starboard.emoji} ${count}`;
 
                 if (existing) {
+                    console.log("🔄 Updating existing Starboard message");
 
                     await existing.edit({
                         content,
-                        embeds: [
-                            embed
-                        ]
+                        embeds: [embed]
                     });
 
+                    console.log("✅ Starboard message updated");
                     continue;
                 }
 
-                // =========================
-                // CREATE
-                // =========================
+                console.log("📤 Sending Starboard embed...");
 
                 await channel.send({
                     content,
-                    embeds: [
-                        embed
-                    ]
+                    embeds: [embed]
                 });
 
+                console.log("✅ Starboard embed sent");
             }
-
         } catch (error) {
-
-            console.error(
-                "Starboard add event error:",
-                error
-            );
-
+            console.error("❌ Starboard add event error:", error);
         }
-
     }
-
 };
