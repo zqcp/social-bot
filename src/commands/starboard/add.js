@@ -95,6 +95,8 @@ module.exports = {
             });
         }
 
+        args.shift();
+
         const emoji =
             args.shift();
 
