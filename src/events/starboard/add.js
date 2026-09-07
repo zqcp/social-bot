@@ -1,7 +1,12 @@
-const { PermissionFlagsBits } = require("discord.js");
+const {
+    PermissionFlagsBits
+} = require("discord.js");
 
-const Starboard = require("../../models/Starboard");
-const globalEmbeds = require("../../embeds/general/global");
+const Starboard =
+    require("../../models/Starboard");
+
+const starboardEmbeds =
+    require("../../embeds/general/starboard");
 
 module.exports = {
 
@@ -17,23 +22,48 @@ module.exports = {
                 await reaction.fetch();
             }
 
-            const message = reaction.message;
+            const message =
+                reaction.message;
 
             if (!message.guild) return;
 
-            const starboards = await Starboard.find({
-                guildId: message.guild.id
-            });
+            const starboards =
+                await Starboard.find({
+                    guildId:
+                        message.guild.id
+                });
 
             if (!starboards.length) return;
 
             for (const starboard of starboards) {
 
-                const reactionEmoji = reaction.emoji.id
-                    ? reaction.emoji.id
-                    : reaction.emoji.name;
+                let reactionEmoji;
 
-                if (reactionEmoji !== starboard.emoji) {
+                if (reaction.emoji.id) {
+                    reactionEmoji =
+                        reaction.emoji.id;
+                } else {
+                    reactionEmoji =
+                        reaction.emoji.name;
+                }
+
+                let configuredEmoji =
+                    starboard.emoji;
+
+                const customEmoji =
+                    configuredEmoji.match(
+                        /^<a?:\w+:(\d+)>$/
+                    );
+
+                if (customEmoji) {
+                    configuredEmoji =
+                        customEmoji[1];
+                }
+
+                if (
+                    reactionEmoji !==
+                    configuredEmoji
+                ) {
                     continue;
                 }
 
@@ -52,7 +82,9 @@ module.exports = {
                 if (!channel) continue;
 
                 const permissions =
-                    channel.permissionsFor(client.user);
+                    channel.permissionsFor(
+                        client.user
+                    );
 
                 if (!permissions) continue;
 
@@ -63,39 +95,77 @@ module.exports = {
                     PermissionFlagsBits.ReadMessageHistory
                 ];
 
-                const missing = required.filter(
-                    permission =>
-                        !permissions.has(permission)
-                );
+                const missing =
+                    required.filter(
+                        permission =>
+                            !permissions.has(
+                                permission
+                            )
+                    );
 
                 if (missing.length) {
 
                     console.error(
-                        globalEmbeds.botPermission(
-                            `<@${client.user.id}>`,
-                            missing.map(
-                                permission =>
-                                    Object.keys(
-                                        PermissionFlagsBits
-                                    ).find(
-                                        key =>
-                                            PermissionFlagsBits[key] === permission
-                                    ) || "Unknown"
-                            )
-                        ).data.description
+                        `Missing Starboard permissions: ${missing.join(", ")}`
                     );
 
                     continue;
                 }
 
-                const count = reaction.count || 0;
+                const count =
+                    reaction.count || 0;
 
-                if (count < starboard.threshold) {
+                if (
+                    count <
+                    starboard.threshold
+                ) {
                     continue;
                 }
 
-                // Starboard creation/update will be added
-                // after the Starboard embed system is built.
+                const messages =
+                    await channel.messages.fetch({
+                        limit: 100
+                    });
+
+                const existing =
+                    messages.find(
+                        starboardMessage =>
+                            starboardMessage.author.id ===
+                                client.user.id &&
+                            starboardMessage.embeds.some(
+                                embed =>
+                                    embed.url ===
+                                    message.url
+                            )
+                    );
+
+                const embed =
+                    starboardEmbeds.entry(
+                        message,
+                        starboard.color
+                    );
+
+                const content =
+                    `${starboard.emoji} ${count}`;
+
+                if (existing) {
+
+                    await existing.edit({
+                        content,
+                        embeds: [
+                            embed
+                        ]
+                    });
+
+                    continue;
+                }
+
+                await channel.send({
+                    content,
+                    embeds: [
+                        embed
+                    ]
+                });
 
             }
 
