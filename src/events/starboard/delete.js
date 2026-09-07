@@ -1,7 +1,7 @@
 const { PermissionFlagsBits } = require("discord.js");
 
 const Starboard = require("../../models/Starboard");
-const globalEmbeds = require("../../embeds/global");
+const globalEmbeds = require("../../embeds/general/global");
 
 module.exports = {
 
