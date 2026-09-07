@@ -1,4 +1,7 @@
+const { PermissionFlagsBits } = require("discord.js");
+
 const Starboard = require("../../../models/Starboard");
+const globalEmbeds = require("../../../embeds/global");
 
 module.exports = {
 
@@ -18,62 +21,88 @@ module.exports = {
 
             if (!message.guild) return;
 
-            const config = await Starboard.findOne({
-                guildId: message.guild.id,
-                channelId: { $exists: true }
+            const starboards = await Starboard.find({
+                guildId: message.guild.id
             });
 
-            if (!config) return;
+            if (!starboards.length) return;
 
-            const emoji = reaction.emoji.id
-                ? reaction.emoji.id
-                : reaction.emoji.name;
+            for (const starboard of starboards) {
 
-            const configuredEmoji = config.emoji.id
-                ? config.emoji.id
-                : config.emoji;
+                const reactionEmoji = reaction.emoji.id
+                    ? reaction.emoji.id
+                    : reaction.emoji.name;
 
-            if (emoji !== configuredEmoji) return;
+                if (reactionEmoji !== starboard.emoji) {
+                    continue;
+                }
 
-            if (
-                config.selfReact === false &&
-                message.author?.id === user.id
-            ) {
-                return;
-            }
+                if (
+                    starboard.selfReact === false &&
+                    message.author?.id === user.id
+                ) {
+                    return;
+                }
 
-            const count = reaction.count || 0;
+                const channel =
+                    message.guild.channels.cache.get(
+                        starboard.channelId
+                    );
 
-            if (count < config.threshold) return;
+                if (!channel) continue;
 
-            const starboardChannel =
-                message.guild.channels.cache.get(
-                    config.channelId
+                const permissions =
+                    channel.permissionsFor(client.user);
+
+                if (!permissions) continue;
+
+                const required = [
+                    PermissionFlagsBits.ViewChannel,
+                    PermissionFlagsBits.SendMessages,
+                    PermissionFlagsBits.EmbedLinks,
+                    PermissionFlagsBits.ReadMessageHistory
+                ];
+
+                const missing = required.filter(
+                    permission =>
+                        !permissions.has(permission)
                 );
 
-            if (!starboardChannel) return;
+                if (missing.length) {
 
-            if (!starboardChannel.isTextBased()) return;
+                    console.error(
+                        globalEmbeds.botPermission(
+                            `<@${client.user.id}>`,
+                            missing.map(
+                                permission =>
+                                    Object.keys(
+                                        PermissionFlagsBits
+                                    ).find(
+                                        key =>
+                                            PermissionFlagsBits[key] === permission
+                                    ) || "Unknown"
+                            )
+                        ).data.description
+                    );
 
-            const permissions =
-                starboardChannel.permissionsFor(client.user);
+                    continue;
+                }
 
-            if (
-                !permissions ||
-                !permissions.has("ViewChannel") ||
-                !permissions.has("SendMessages") ||
-                !permissions.has("EmbedLinks")
-            ) {
-                return;
+                const count = reaction.count || 0;
+
+                if (count < starboard.threshold) {
+                    continue;
+                }
+
+                // Starboard creation/update will be added
+                // after the Starboard embed system is built.
+
             }
-
-            // Starboard creation/update will be handled here
-            // once the Starboard embed/template is added.
 
         } catch (error) {
 
             console.error(
-                "Starboard reaction add error:",
+                "Starboard add event error:",
                 error
             );
 
