@@ -209,15 +209,9 @@ module.exports = {
             color;
 
         if (
-            color.toLowerCase() ===
+            color.toLowerCase() !==
             "random"
         ) {
-            starboardColor =
-                Math.floor(
-                    Math.random() *
-                    0xFFFFFF
-                );
-        } else {
             if (
                 !/^#?[0-9A-Fa-f]{6}$/.test(
                     color
@@ -238,6 +232,13 @@ module.exports = {
                 starboardColor =
                     `#${color}`;
             }
+        } else {
+            /*
+             * Keep "random" in the database.
+             * The actual random color will be generated
+             * when the Starboard embed is created.
+             */
+            starboardColor = "random";
         }
 
         try {
