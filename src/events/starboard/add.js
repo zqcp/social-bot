@@ -8,6 +8,39 @@ const Starboard =
 const starboardEmbeds =
     require("../../embeds/general/starboard");
 
+
+// =========================
+// EMOJI NORMALIZER
+// =========================
+
+function normalizeEmoji(emoji) {
+
+    if (!emoji) {
+        return null;
+    }
+
+    // Custom Discord emoji
+    const customEmoji =
+        emoji.match(
+            /^<a?:\w+:(\d+)>$/
+        );
+
+    if (customEmoji) {
+        return `custom:${customEmoji[1]}`;
+    }
+
+    // Unicode emoji
+    return `unicode:${emoji
+        .normalize("NFC")
+        .replace(/\uFE0F/g, "")
+        .trim()}`;
+}
+
+
+// =========================
+// EVENT
+// =========================
+
 module.exports = {
 
     name: "messageReactionAdd",
@@ -20,22 +53,30 @@ module.exports = {
 
         try {
 
-            if (user.bot) return;
+            if (user.bot) {
+                return;
+            }
 
             // =========================
             // FETCH PARTIAL REACTION
             // =========================
 
             if (reaction.partial) {
+
                 await reaction.fetch();
+
             }
 
             const message =
                 reaction.message;
 
-            if (!message) return;
+            if (!message) {
+                return;
+            }
 
-            if (!message.guild) return;
+            if (!message.guild) {
+                return;
+            }
 
             // =========================
             // GET STARBOARDS
@@ -52,7 +93,18 @@ module.exports = {
             }
 
             // =========================
-            // CHECK EACH STARBOARD
+            // REACTION EMOJI
+            // =========================
+
+            const reactionEmoji =
+                reaction.emoji.id
+                    ? `custom:${reaction.emoji.id}`
+                    : normalizeEmoji(
+                        reaction.emoji.name
+                    );
+
+            // =========================
+            // CHECK STARBOARDS
             // =========================
 
             for (
@@ -60,45 +112,13 @@ module.exports = {
                 of starboards
             ) {
 
-                // =========================
-                // NORMALIZE REACTION EMOJI
-                // =========================
-
-                let reactionEmoji;
-
-                if (reaction.emoji.id) {
-
-                    reactionEmoji =
-                        reaction.emoji.id;
-
-                } else {
-
-                    reactionEmoji =
-                        reaction.emoji.name;
-
-                }
-
-                // =========================
-                // NORMALIZE CONFIGURED EMOJI
-                // =========================
-
-                let configuredEmoji =
-                    starboard.emoji;
-
-                const customEmoji =
-                    configuredEmoji.match(
-                        /^<a?:\w+:(\d+)>$/
+                const configuredEmoji =
+                    normalizeEmoji(
+                        starboard.emoji
                     );
 
-                if (customEmoji) {
-
-                    configuredEmoji =
-                        customEmoji[1];
-
-                }
-
                 // =========================
-                // EMOJI DOES NOT MATCH
+                // EMOJI MATCH
                 // =========================
 
                 if (
@@ -109,7 +129,7 @@ module.exports = {
                 }
 
                 // =========================
-                // STARBOARD CHANNEL
+                // CHANNEL
                 // =========================
 
                 const channel =
@@ -122,7 +142,7 @@ module.exports = {
                 }
 
                 // =========================
-                // BOT PERMISSIONS
+                // PERMISSIONS
                 // =========================
 
                 const permissions =
@@ -154,7 +174,7 @@ module.exports = {
                 ) {
 
                     console.error(
-                        `Starboard is missing permissions in ${channel.id}:`,
+                        "Starboard missing permissions:",
                         missingPermissions
                     );
 
@@ -162,20 +182,20 @@ module.exports = {
                 }
 
                 // =========================
-                // FETCH REACTION USERS
+                // FETCH USERS
                 // =========================
 
-                let reactionUsers;
+                let users;
 
                 try {
 
-                    reactionUsers =
+                    users =
                         await reaction.users.fetch();
 
                 } catch (error) {
 
                     console.error(
-                        "Starboard Reaction Users Error:",
+                        "Starboard reaction users error:",
                         error
                     );
 
@@ -183,19 +203,19 @@ module.exports = {
                 }
 
                 // =========================
-                // CALCULATE VALID COUNT
+                // COUNT
                 // =========================
 
                 let count =
-                    reactionUsers.size;
+                    users.size;
 
-                // The message author cannot count
-                // their own reaction when selfReact
-                // is disabled.
+                // Don't count the message
+                // author's own reaction when
+                // selfReact is disabled.
 
                 if (
-                    starboard.selfReact === false &&
-                    reactionUsers.has(
+                    !starboard.selfReact &&
+                    users.has(
                         message.author.id
                     )
                 ) {
@@ -204,58 +224,41 @@ module.exports = {
 
                 }
 
-                // Never allow a negative count.
-
                 if (count < 0) {
                     count = 0;
                 }
 
                 // =========================
-                // THRESHOLD CHECK
+                // THRESHOLD
                 // =========================
 
                 if (
                     count <
                     starboard.threshold
                 ) {
-
                     continue;
                 }
 
                 // =========================
-                // FIND EXISTING STARBOARD
+                // FIND EXISTING ENTRY
                 // =========================
 
-                let existing = null;
+                const messages =
+                    await channel.messages.fetch({
+                        limit: 100
+                    });
 
-                try {
-
-                    const messages =
-                        await channel.messages.fetch({
-                            limit: 100
-                        });
-
-                    existing =
-                        messages.find(
-                            starboardMessage =>
-                                starboardMessage.author?.id ===
-                                    client.user.id &&
-                                starboardMessage.embeds.some(
-                                    embed =>
-                                        embed.url ===
-                                        message.url
-                                )
-                        );
-
-                } catch (error) {
-
-                    console.error(
-                        "Starboard Message Fetch Error:",
-                        error
+                const existing =
+                    messages.find(
+                        starboardMessage =>
+                            starboardMessage.author?.id ===
+                                client.user.id &&
+                            starboardMessage.embeds.some(
+                                embed =>
+                                    embed.url ===
+                                    message.url
+                            )
                     );
-
-                    continue;
-                }
 
                 // =========================
                 // CREATE EMBED
@@ -271,7 +274,7 @@ module.exports = {
                     `${starboard.emoji} ${count}`;
 
                 // =========================
-                // UPDATE EXISTING
+                // UPDATE
                 // =========================
 
                 if (existing) {
@@ -287,7 +290,7 @@ module.exports = {
                 }
 
                 // =========================
-                // CREATE STARBOARD ENTRY
+                // CREATE
                 // =========================
 
                 await channel.send({
