@@ -330,6 +330,9 @@ module.exports = {
                 .setColor(
                     color
                 )
+                .setURL(
+                    message.url
+                )
                 .setAuthor({
                     name:
                         message.author.displayName ||
