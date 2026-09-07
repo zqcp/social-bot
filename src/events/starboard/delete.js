@@ -1,7 +1,12 @@
-const { PermissionFlagsBits } = require("discord.js");
+const {
+    PermissionFlagsBits
+} = require("discord.js");
 
-const Starboard = require("../../models/Starboard");
-const globalEmbeds = require("../../embeds/general/global");
+const Starboard =
+    require("../../models/Starboard");
+
+const globalEmbeds =
+    require("../../embeds/general/global");
 
 module.exports = {
 
@@ -13,23 +18,45 @@ module.exports = {
 
             if (!message.guild) return;
 
-            const starboards = await Starboard.find({
-                guildId: message.guild.id
-            });
+            const starboards =
+                await Starboard.find({
+                    guildId:
+                        message.guild.id
+                });
 
             if (!starboards.length) return;
 
-            for (const starboard of starboards) {
+            for (
+                const starboard
+                of starboards
+            ) {
 
                 const channel =
                     message.guild.channels.cache.get(
                         starboard.channelId
                     );
 
-                if (!channel) continue;
+                /*
+                 * If the configured Starboard channel
+                 * no longer exists, remove its configuration.
+                 */
+
+                if (!channel) {
+
+                    await Starboard.deleteMany({
+                        guildId:
+                            message.guild.id,
+                        channelId:
+                            starboard.channelId
+                    });
+
+                    continue;
+                }
 
                 const permissions =
-                    channel.permissionsFor(client.user);
+                    channel.permissionsFor(
+                        client.user
+                    );
 
                 if (!permissions) continue;
 
@@ -40,10 +67,13 @@ module.exports = {
                     PermissionFlagsBits.ReadMessageHistory
                 ];
 
-                const missing = required.filter(
-                    permission =>
-                        !permissions.has(permission)
-                );
+                const missing =
+                    required.filter(
+                        permission =>
+                            !permissions.has(
+                                permission
+                            )
+                    );
 
                 if (missing.length) {
 
@@ -56,7 +86,8 @@ module.exports = {
                                         PermissionFlagsBits
                                     ).find(
                                         key =>
-                                            PermissionFlagsBits[key] === permission
+                                            PermissionFlagsBits[key] ===
+                                            permission
                                     ) || "Unknown"
                             )
                         ).data.description
@@ -70,11 +101,15 @@ module.exports = {
                         limit: 100
                     });
 
-                for (const starboardMessage of messages.values()) {
+                for (
+                    const starboardMessage
+                    of messages.values()
+                ) {
 
                     if (
                         !starboardMessage.author ||
-                        starboardMessage.author.id !== client.user.id
+                        starboardMessage.author.id !==
+                            client.user.id
                     ) {
                         continue;
                     }
@@ -90,10 +125,12 @@ module.exports = {
                     if (!sourceUrl) continue;
 
                     if (
-                        sourceUrl === message.url
+                        sourceUrl ===
+                        message.url
                     ) {
 
-                        await starboardMessage.delete()
+                        await starboardMessage
+                            .delete()
                             .catch(() => {});
 
                     }
@@ -112,5 +149,4 @@ module.exports = {
         }
 
     }
-
 };
