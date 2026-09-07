@@ -37,14 +37,12 @@ module.exports = {
 
             for (const starboard of starboards) {
 
-                let reactionEmoji;
+                let reactionEmoji =
+                    reaction.emoji.name;
 
                 if (reaction.emoji.id) {
                     reactionEmoji =
                         reaction.emoji.id;
-                } else {
-                    reactionEmoji =
-                        reaction.emoji.name;
                 }
 
                 let configuredEmoji =
@@ -68,7 +66,7 @@ module.exports = {
                 }
 
                 if (
-                    starboard.selfReact === false &&
+                    !starboard.selfReact &&
                     message.author?.id === user.id
                 ) {
                     return;
@@ -104,7 +102,6 @@ module.exports = {
                     );
 
                 if (missing.length) {
-
                     console.error(
                         `Missing Starboard permissions: ${missing.join(", ")}`
                     );
@@ -130,7 +127,7 @@ module.exports = {
                 const existing =
                     messages.find(
                         starboardMessage =>
-                            starboardMessage.author.id ===
+                            starboardMessage.author?.id ===
                                 client.user.id &&
                             starboardMessage.embeds.some(
                                 embed =>
