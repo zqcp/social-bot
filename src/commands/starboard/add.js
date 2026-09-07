@@ -246,7 +246,8 @@ module.exports = {
                     guildId:
                         message.guild.id,
                     channelId:
-                        channel.id
+                        channel.id,
+                    emoji
                 });
 
             if (existing) {
