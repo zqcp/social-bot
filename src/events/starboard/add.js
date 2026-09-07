@@ -41,7 +41,7 @@ module.exports = {
         try {
             if (user.bot) return;
 
-            // Fetch partial reaction/message if necessary
+            // Fetch partial reaction
             if (reaction.partial) {
                 await reaction.fetch();
             }
@@ -60,9 +60,11 @@ module.exports = {
                 const reactionEmoji = normalizeEmoji(reaction.emoji);
                 const configuredEmoji = normalizeEmoji(starboard.emoji);
 
-                if (!reactionEmoji || !configuredEmoji) continue;
+                if (!reactionEmoji || !configuredEmoji) {
+                    continue;
+                }
 
-                // Only handle the configured emoji
+                // Only handle this Starboard's configured emoji
                 if (reactionEmoji !== configuredEmoji) {
                     continue;
                 }
@@ -92,7 +94,7 @@ module.exports = {
 
                 if (missingPermissions) continue;
 
-                // Get everyone who reacted
+                // Fetch all users who reacted
                 let users;
 
                 try {
@@ -107,8 +109,8 @@ module.exports = {
 
                 let count = users.size;
 
-                // Don't count the message author unless self reactions
-                // are enabled.
+                // Don't count the original message author
+                // unless self reactions are enabled.
                 if (
                     !starboard.selfReact &&
                     users.has(message.author.id)
@@ -116,28 +118,50 @@ module.exports = {
                     count--;
                 }
 
-                if (count < 0) count = 0;
+                if (count < 0) {
+                    count = 0;
+                }
 
-                // Threshold has not been reached
+                // Threshold not reached
                 if (count < starboard.threshold) {
                     continue;
                 }
 
-                // Look for an existing Starboard post.
-                //
-                // We identify it by:
-                // 1. Being sent by this bot
-                // 2. The embed URL matching the original message URL
+                /*
+                 * Find the bot's existing Starboard post.
+                 *
+                 * Use the guild member's ID instead of client.user.id
+                 * so we don't depend on client.user being available here.
+                 */
+                const botMember = message.guild.members.me;
+
+                if (!botMember) {
+                    console.error(
+                        "Starboard error: Bot member could not be found."
+                    );
+                    continue;
+                }
+
+                const botId = botMember.id;
+
                 const messages = await channel.messages.fetch({
                     limit: 100
                 });
 
                 const existing = messages.find(
-                    starboardMessage =>
-                        starboardMessage.author?.id === client.user.id &&
-                        starboardMessage.embeds.some(
+                    starboardMessage => {
+                        if (!starboardMessage.author) {
+                            return false;
+                        }
+
+                        if (starboardMessage.author.id !== botId) {
+                            return false;
+                        }
+
+                        return starboardMessage.embeds.some(
                             embed => embed.url === message.url
-                        )
+                        );
+                    }
                 );
 
                 const embed = starboardEmbeds.entry(
