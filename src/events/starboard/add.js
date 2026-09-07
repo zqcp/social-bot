@@ -1,11 +1,20 @@
-const { PermissionFlagsBits } = require("discord.js");
-const Starboard = require("../../models/Starboard");
-const starboardEmbeds = require("../../embeds/general/starboard");
+const {
+    EmbedBuilder,
+    PermissionFlagsBits
+} = require("discord.js");
+
+const Starboard =
+    require("../../models/Starboard");
+
+const timestamp =
+    require("../../utils/timestamp");
 
 function normalizeEmoji(emoji) {
+
     if (!emoji) return null;
 
     if (typeof emoji === "object") {
+
         if (emoji.id) {
             return `custom:${emoji.id}`;
         }
@@ -18,7 +27,9 @@ function normalizeEmoji(emoji) {
     }
 
     if (typeof emoji === "string") {
-        const customEmoji = emoji.match(/^<a?:\w+:(\d+)>$/);
+
+        const customEmoji =
+            emoji.match(/^<a?:\w+:(\d+)>$/);
 
         if (customEmoji) {
             return `custom:${customEmoji[1]}`;
@@ -35,51 +46,104 @@ function normalizeEmoji(emoji) {
 }
 
 module.exports = {
+
     name: "messageReactionAdd",
 
-    async execute(reaction, user, client) {
+    async execute(
+        reaction,
+        user,
+        client
+    ) {
+
         try {
+
             if (user.bot) return;
 
-            // Fetch partial reaction
+            // =========================
+            // FETCH PARTIAL REACTION
+            // =========================
+
             if (reaction.partial) {
                 await reaction.fetch();
             }
 
-            const message = reaction.message;
+            const message =
+                reaction.message;
 
-            if (!message || !message.guild) return;
+            if (
+                !message ||
+                !message.guild
+            ) {
+                return;
+            }
 
-            const starboards = await Starboard.find({
-                guildId: message.guild.id
-            });
+            // =========================
+            // FIND STARBOARDS
+            // =========================
 
-            if (!starboards.length) return;
+            const starboards =
+                await Starboard.find({
+                    guildId:
+                        message.guild.id
+                });
 
-            for (const starboard of starboards) {
-                const reactionEmoji = normalizeEmoji(reaction.emoji);
-                const configuredEmoji = normalizeEmoji(starboard.emoji);
+            if (!starboards.length) {
+                return;
+            }
 
-                if (!reactionEmoji || !configuredEmoji) {
+            // =========================
+            // CHECK EACH STARBOARD
+            // =========================
+
+            for (
+                const starboard of starboards
+            ) {
+
+                const reactionEmoji =
+                    normalizeEmoji(
+                        reaction.emoji
+                    );
+
+                const configuredEmoji =
+                    normalizeEmoji(
+                        starboard.emoji
+                    );
+
+                if (
+                    !reactionEmoji ||
+                    !configuredEmoji
+                ) {
                     continue;
                 }
 
-                // Only handle this Starboard's configured emoji
-                if (reactionEmoji !== configuredEmoji) {
+                if (
+                    reactionEmoji !==
+                    configuredEmoji
+                ) {
                     continue;
                 }
 
-                const channel = message.guild.channels.cache.get(
-                    starboard.channelId
-                );
+                // =========================
+                // STARBOARD CHANNEL
+                // =========================
 
-                if (!channel) continue;
+                const channel =
+                    message.guild.channels.cache.get(
+                        starboard.channelId
+                    );
 
-                const permissions = channel.permissionsFor(
-                    message.guild.members.me
-                );
+                if (!channel) {
+                    continue;
+                }
 
-                if (!permissions) continue;
+                const permissions =
+                    channel.permissionsFor(
+                        message.guild.members.me
+                    );
+
+                if (!permissions) {
+                    continue;
+                }
 
                 const requiredPermissions = [
                     PermissionFlagsBits.ViewChannel,
@@ -88,107 +152,291 @@ module.exports = {
                     PermissionFlagsBits.ReadMessageHistory
                 ];
 
-                const missingPermissions = requiredPermissions.some(
-                    permission => !permissions.has(permission)
-                );
+                const missingPermissions =
+                    requiredPermissions.some(
+                        permission =>
+                            !permissions.has(
+                                permission
+                            )
+                    );
 
-                if (missingPermissions) continue;
+                if (missingPermissions) {
+                    continue;
+                }
 
-                // Fetch all users who reacted
+                // =========================
+                // REACTION USERS
+                // =========================
+
                 let users;
 
                 try {
-                    users = await reaction.users.fetch();
+
+                    users =
+                        await reaction.users.fetch();
+
                 } catch (error) {
+
                     console.error(
                         "Failed to fetch Starboard reaction users:",
                         error
                     );
+
                     continue;
                 }
 
-                let count = users.size;
+                let count =
+                    users.size;
 
-                // Don't count the original message author
-                // unless self reactions are enabled.
                 if (
                     !starboard.selfReact &&
-                    users.has(message.author.id)
+                    users.has(
+                        message.author.id
+                    )
                 ) {
+
                     count--;
+
                 }
 
                 if (count < 0) {
                     count = 0;
                 }
 
-                // Threshold not reached
-                if (count < starboard.threshold) {
+                // =========================
+                // THRESHOLD
+                // =========================
+
+                if (
+                    count <
+                    starboard.threshold
+                ) {
                     continue;
                 }
 
-                /*
-                 * Find the bot's existing Starboard post.
-                 *
-                 * Use the guild member's ID instead of client.user.id
-                 * so we don't depend on client.user being available here.
-                 */
-                const botMember = message.guild.members.me;
+                // =========================
+                // BOT ID
+                // =========================
+
+                const botMember =
+                    message.guild.members.me;
 
                 if (!botMember) {
+
                     console.error(
                         "Starboard error: Bot member could not be found."
                     );
+
                     continue;
                 }
 
-                const botId = botMember.id;
+                const botId =
+                    botMember.id;
 
-                const messages = await channel.messages.fetch({
-                    limit: 100
+                // =========================
+                // FIND EXISTING ENTRY
+                // =========================
+
+                const messages =
+                    await channel.messages.fetch({
+                        limit: 100
+                    });
+
+                const existing =
+                    messages.find(
+                        starboardMessage => {
+
+                            if (
+                                !starboardMessage.author
+                            ) {
+                                return false;
+                            }
+
+                            if (
+                                starboardMessage.author.id !==
+                                botId
+                            ) {
+                                return false;
+                            }
+
+                            return starboardMessage.embeds.some(
+                                embed =>
+                                    embed.url ===
+                                    message.url
+                            );
+
+                        }
+                    );
+
+                // =========================
+                // STARBOARD EMBED
+                // =========================
+
+                const embed =
+                    new EmbedBuilder()
+                        .setColor(
+                            starboard.color
+                        )
+                        .setURL(
+                            message.url
+                        )
+                        .setAuthor({
+                            name:
+                                message.author.displayName ||
+                                message.author.username,
+                            iconURL:
+                                message.author.displayAvatarURL({
+                                    extension: "png",
+                                    size: 128
+                                })
+                        });
+
+                // =========================
+                // MESSAGE CONTENT
+                // =========================
+
+                const messageContent =
+                    message.content?.trim();
+
+                if (messageContent) {
+
+                    embed.setDescription(
+                        messageContent
+                    );
+
+                }
+
+                // =========================
+                // CHANNEL + JUMP
+                // =========================
+
+                embed.addFields({
+                    name: "\u200B",
+                    value:
+                        `**#${message.channel.name}**\n` +
+                        `[Jump to message](${message.url})`,
+                    inline: false
                 });
 
-                const existing = messages.find(
-                    starboardMessage => {
-                        if (!starboardMessage.author) {
-                            return false;
-                        }
+                // =========================
+                // ATTACHMENTS
+                // =========================
 
-                        if (starboardMessage.author.id !== botId) {
-                            return false;
-                        }
+                const attachments =
+                    [
+                        ...message.attachments.values()
+                    ];
 
-                        return starboardMessage.embeds.some(
-                            embed => embed.url === message.url
-                        );
-                    }
-                );
+                const image =
+                    attachments.find(
+                        attachment =>
+                            attachment.contentType?.startsWith(
+                                "image/"
+                            )
+                    );
 
-                const embed = starboardEmbeds.entry(
-                    message,
-                    starboard.color
-                );
+                // =========================
+                // IMAGE
+                // =========================
 
-                const content = `${starboard.emoji} ${count}`;
+                if (image) {
 
-                // Update existing Starboard post
+                    embed.setImage(
+                        image.url
+                    );
+
+                }
+
+                // =========================
+                // OTHER ATTACHMENTS
+                // =========================
+
+                const otherAttachments =
+                    attachments.filter(
+                        attachment =>
+                            attachment.id !==
+                            image?.id
+                    );
+
+                if (
+                    otherAttachments.length
+                ) {
+
+                    embed.addFields({
+                        name:
+                            "Attachments",
+                        value:
+                            otherAttachments
+                                .map(
+                                    attachment =>
+                                        `[${attachment.name || "Attachment"}](${attachment.url})`
+                                )
+                                .join("\n")
+                                .slice(
+                                    0,
+                                    1024
+                                ),
+                        inline: false
+                    });
+
+                }
+
+                // =========================
+                // FOOTER
+                // =========================
+
+                embed.setFooter({
+                    text:
+                        timestamp.full(
+                            message.createdTimestamp
+                        )
+                });
+
+                // =========================
+                // STARBOARD CONTENT
+                // =========================
+
+                const content =
+                    `${starboard.emoji} **#${count}**`;
+
+                // =========================
+                // UPDATE EXISTING
+                // =========================
+
                 if (existing) {
+
                     await existing.edit({
                         content,
-                        embeds: [embed]
+                        embeds: [
+                            embed
+                        ]
                     });
 
                     continue;
                 }
 
-                // Create new Starboard post
+                // =========================
+                // CREATE ENTRY
+                // =========================
+
                 await channel.send({
                     content,
-                    embeds: [embed]
+                    embeds: [
+                        embed
+                    ]
                 });
+
             }
+
         } catch (error) {
-            console.error("Starboard reaction add error:", error);
+
+            console.error(
+                "Starboard reaction add error:",
+                error
+            );
+
         }
+
     }
+
 };
