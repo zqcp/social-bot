@@ -19,21 +19,46 @@ function normalizeEmoji(emoji) {
         return null;
     }
 
-    // Custom Discord emoji
-    const customEmoji =
-        emoji.match(
-            /^<a?:\w+:(\d+)>$/
-        );
+    // =========================
+    // CUSTOM DISCORD EMOJI
+    // =========================
 
-    if (customEmoji) {
-        return `custom:${customEmoji[1]}`;
+    if (
+        typeof emoji === "object" &&
+        emoji.id
+    ) {
+
+        return `custom:${emoji.id}`;
+
     }
 
-    // Unicode emoji
-    return `unicode:${emoji
-        .normalize("NFC")
-        .replace(/\uFE0F/g, "")
-        .trim()}`;
+    if (
+        typeof emoji === "string"
+    ) {
+
+        const customEmoji =
+            emoji.match(
+                /^<a?:\w+:(\d+)>$/
+            );
+
+        if (customEmoji) {
+
+            return `custom:${customEmoji[1]}`;
+
+        }
+
+        // =========================
+        // UNICODE EMOJI
+        // =========================
+
+        return `unicode:${emoji
+            .normalize("NFC")
+            .replace(/\uFE0F/g, "")
+            .replace(/\u200D/g, "")
+            .trim()}`;
+    }
+
+    return null;
 }
 
 
@@ -97,11 +122,9 @@ module.exports = {
             // =========================
 
             const reactionEmoji =
-                reaction.emoji.id
-                    ? `custom:${reaction.emoji.id}`
-                    : normalizeEmoji(
-                        reaction.emoji.name
-                    );
+                normalizeEmoji(
+                    reaction.emoji
+                );
 
             // =========================
             // CHECK STARBOARDS
@@ -209,10 +232,6 @@ module.exports = {
                 let count =
                     users.size;
 
-                // Don't count the message
-                // author's own reaction when
-                // selfReact is disabled.
-
                 if (
                     !starboard.selfReact &&
                     users.has(
@@ -236,7 +255,9 @@ module.exports = {
                     count <
                     starboard.threshold
                 ) {
+
                     continue;
+
                 }
 
                 // =========================
