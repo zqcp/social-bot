@@ -101,7 +101,7 @@ module.exports = {
             const embed =
                 new EmbedBuilder()
                     .setColor(
-                        require("../../config").colors.primary
+                        require("../../config").colors.regular
                     )
                     .setTitle(
                         "Starboards"
