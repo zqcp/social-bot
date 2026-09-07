@@ -307,18 +307,6 @@ module.exports = {
                 }
 
                 // =========================
-                // CHANNEL + JUMP
-                // =========================
-
-                embed.addFields({
-                    name: "\u200B",
-                    value:
-                        `**#${message.channel.name}**\n` +
-                        `[Jump to message](${message.url})`,
-                    inline: false
-                });
-
-                // =========================
                 // ATTACHMENTS
                 // =========================
 
@@ -334,6 +322,21 @@ module.exports = {
                                 "image/"
                             )
                     );
+
+                // =========================
+                // CHANNEL + JUMP + TIMESTAMP
+                // =========================
+
+                embed.addFields({
+                    name: "\u200B",
+                    value:
+                        `**#${message.channel.name}**\n` +
+                        `[Jump to message](${message.url})\n\n` +
+                        `**${timestamp.full(
+                            message.createdTimestamp
+                        )}**`,
+                    inline: false
+                });
 
                 // =========================
                 // IMAGE
@@ -380,17 +383,6 @@ module.exports = {
                     });
 
                 }
-
-                // =========================
-                // FOOTER
-                // =========================
-
-                embed.setFooter({
-                    text:
-                        timestamp.full(
-                            message.createdTimestamp
-                        )
-                });
 
                 // =========================
                 // STARBOARD CONTENT
