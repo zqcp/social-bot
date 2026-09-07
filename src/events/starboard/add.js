@@ -45,6 +45,18 @@ function normalizeEmoji(emoji) {
     return null;
 }
 
+function getStarboardNumber(content) {
+
+    if (!content) return null;
+
+    const match =
+        content.match(/\*\*#(\d+)\*\*/);
+
+    if (!match) return null;
+
+    return Number(match[1]);
+}
+
 module.exports = {
 
     name: "messageReactionAdd",
@@ -58,10 +70,6 @@ module.exports = {
         try {
 
             if (user.bot) return;
-
-            // =========================
-            // FETCH PARTIAL REACTION
-            // =========================
 
             if (reaction.partial) {
                 await reaction.fetch();
@@ -77,10 +85,6 @@ module.exports = {
                 return;
             }
 
-            // =========================
-            // FIND STARBOARDS
-            // =========================
-
             const starboards =
                 await Starboard.find({
                     guildId:
@@ -90,10 +94,6 @@ module.exports = {
             if (!starboards.length) {
                 return;
             }
-
-            // =========================
-            // CHECK EACH STARBOARD
-            // =========================
 
             for (
                 const starboard of starboards
@@ -122,10 +122,6 @@ module.exports = {
                 ) {
                     continue;
                 }
-
-                // =========================
-                // STARBOARD CHANNEL
-                // =========================
 
                 const channel =
                     message.guild.channels.cache.get(
@@ -164,10 +160,6 @@ module.exports = {
                     continue;
                 }
 
-                // =========================
-                // REACTION USERS
-                // =========================
-
                 let users;
 
                 try {
@@ -194,18 +186,12 @@ module.exports = {
                         message.author.id
                     )
                 ) {
-
                     count--;
-
                 }
 
                 if (count < 0) {
                     count = 0;
                 }
-
-                // =========================
-                // THRESHOLD
-                // =========================
 
                 if (
                     count <
@@ -213,10 +199,6 @@ module.exports = {
                 ) {
                     continue;
                 }
-
-                // =========================
-                // BOT ID
-                // =========================
 
                 const botMember =
                     message.guild.members.me;
@@ -233,44 +215,157 @@ module.exports = {
                 const botId =
                     botMember.id;
 
-                // =========================
-                // FIND EXISTING ENTRY
-                // =========================
+                /*
+                 * Find the existing Starboard post.
+                 *
+                 * The original message URL and configured
+                 * emoji are both checked so multiple
+                 * Starboards can use the same channel.
+                 */
 
-                const messages =
-                    await channel.messages.fetch({
-                        limit: 100
-                    });
+                let existing = null;
 
-                const existing =
-                    messages.find(
-                        starboardMessage => {
+                try {
 
-                            if (
-                                !starboardMessage.author
-                            ) {
-                                return false;
+                    const messages =
+                        await channel.messages.fetch({
+                            limit: 100
+                        });
+
+                    existing =
+                        messages.find(
+                            starboardMessage => {
+
+                                if (
+                                    !starboardMessage.author
+                                ) {
+                                    return false;
+                                }
+
+                                if (
+                                    starboardMessage.author.id !==
+                                    botId
+                                ) {
+                                    return false;
+                                }
+
+                                if (
+                                    !starboardMessage.embeds.length
+                                ) {
+                                    return false;
+                                }
+
+                                const matchingEmbed =
+                                    starboardMessage.embeds.find(
+                                        embed =>
+                                            embed.url ===
+                                            message.url
+                                    );
+
+                                if (!matchingEmbed) {
+                                    return false;
+                                }
+
+                                return starboardMessage.content
+                                    ?.startsWith(
+                                        starboard.emoji
+                                    );
                             }
+                        );
+
+                } catch (error) {
+
+                    console.error(
+                        "Failed to fetch Starboard messages:",
+                        error
+                    );
+
+                    continue;
+                }
+
+                /*
+                 * Existing Starboard posts keep their
+                 * original entry number.
+                 */
+
+                let starboardNumber;
+
+                if (existing) {
+
+                    starboardNumber =
+                        getStarboardNumber(
+                            existing.content
+                        );
+
+                } else {
+
+                    /*
+                     * Find the highest existing Starboard
+                     * entry number and use the next number.
+                     */
+
+                    let highestNumber = 0;
+
+                    try {
+
+                        const messages =
+                            await channel.messages.fetch({
+                                limit: 100
+                            });
+
+                        for (
+                            const starboardMessage
+                            of messages.values()
+                        ) {
 
                             if (
+                                !starboardMessage.author ||
                                 starboardMessage.author.id !==
                                 botId
                             ) {
-                                return false;
+                                continue;
                             }
 
-                            return starboardMessage.embeds.some(
-                                embed =>
-                                    embed.url ===
-                                    message.url
-                            );
+                            const number =
+                                getStarboardNumber(
+                                    starboardMessage.content
+                                );
 
+                            if (
+                                number &&
+                                number >
+                                highestNumber
+                            ) {
+                                highestNumber =
+                                    number;
+                            }
                         }
-                    );
 
-                // =========================
-                // STARBOARD EMBED
-                // =========================
+                    } catch (error) {
+
+                        console.error(
+                            "Failed to determine Starboard number:",
+                            error
+                        );
+
+                        continue;
+                    }
+
+                    starboardNumber =
+                        highestNumber + 1;
+                }
+
+                /*
+                 * Fallback for older Starboard posts
+                 * that do not contain a number.
+                 */
+
+                if (
+                    !starboardNumber ||
+                    starboardNumber < 1
+                ) {
+                    starboardNumber = 1;
+                }
 
                 const embed =
                     new EmbedBuilder()
@@ -291,10 +386,6 @@ module.exports = {
                                 })
                         });
 
-                // =========================
-                // MESSAGE CONTENT
-                // =========================
-
                 const messageContent =
                     message.content?.trim();
 
@@ -303,12 +394,7 @@ module.exports = {
                     embed.setDescription(
                         messageContent
                     );
-
                 }
-
-                // =========================
-                // ATTACHMENTS
-                // =========================
 
                 const attachments =
                     [
@@ -323,36 +409,20 @@ module.exports = {
                             )
                     );
 
-                // =========================
-                // CHANNEL + JUMP + TIMESTAMP
-                // =========================
-
                 embed.addFields({
                     name: "\u200B",
                     value:
                         `**#${message.channel.name}**\n` +
-                        `[Jump to message](${message.url})\n\n` +
-                        `**${timestamp.full(
-                            message.createdTimestamp
-                        )}**`,
+                        `[Jump to message](${message.url})`,
                     inline: false
                 });
-
-                // =========================
-                // IMAGE
-                // =========================
 
                 if (image) {
 
                     embed.setImage(
                         image.url
                     );
-
                 }
-
-                // =========================
-                // OTHER ATTACHMENTS
-                // =========================
 
                 const otherAttachments =
                     attachments.filter(
@@ -381,19 +451,24 @@ module.exports = {
                                 ),
                         inline: false
                     });
-
                 }
 
-                // =========================
-                // STARBOARD CONTENT
-                // =========================
+                embed.setFooter({
+                    text:
+                        timestamp.full(
+                            message.createdTimestamp
+                        )
+                });
+
+                /*
+                 * #1, #2, #3...
+                 * is the Starboard entry number.
+                 *
+                 * It is NOT the reaction count.
+                 */
 
                 const content =
-                    `${starboard.emoji} **#${count}**`;
-
-                // =========================
-                // UPDATE EXISTING
-                // =========================
+                    `${starboard.emoji} **#${starboardNumber}**`;
 
                 if (existing) {
 
@@ -407,17 +482,12 @@ module.exports = {
                     continue;
                 }
 
-                // =========================
-                // CREATE ENTRY
-                // =========================
-
                 await channel.send({
                     content,
                     embeds: [
                         embed
                     ]
                 });
-
             }
 
         } catch (error) {
@@ -426,9 +496,6 @@ module.exports = {
                 "Starboard reaction add error:",
                 error
             );
-
         }
-
     }
-
 };
