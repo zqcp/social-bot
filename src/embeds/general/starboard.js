@@ -342,28 +342,26 @@ module.exports = {
                             extension: "png",
                             size: 128
                         })
-                })
-                .setDescription(
-                    message.content?.trim() ||
-                    "*No message content.*"
-                )
-                .addFields(
-                    {
-                        name: "\u200B",
-                        value:
-                            `${message.channel}\n` +
-                            `[Jump to message](${message.url})`,
-                        inline: false
-                    },
-                    {
-                        name: "\u200B",
-                        value:
-                            `<t:${Math.floor(
-                                message.createdTimestamp / 1000
-                            )}:F>`,
-                        inline: false
-                    }
-                );
+                });
+
+        const content =
+            message.content?.trim();
+
+        // =========================
+        // MESSAGE CONTENT
+        // =========================
+
+        if (content) {
+
+            embed.setDescription(
+                content
+            );
+
+        }
+
+        // =========================
+        // IMAGE
+        // =========================
 
         const attachments =
             [...message.attachments.values()];
@@ -383,6 +381,22 @@ module.exports = {
             );
 
         }
+
+        // =========================
+        // CHANNEL + JUMP
+        // =========================
+
+        embed.addFields({
+            name: "\u200B",
+            value:
+                `**${message.channel.name}**\n` +
+                `[Jump to message](${message.url})`,
+            inline: false
+        });
+
+        // =========================
+        // OTHER ATTACHMENTS
+        // =========================
 
         const otherAttachments =
             attachments.filter(
@@ -406,6 +420,23 @@ module.exports = {
             });
 
         }
+
+        // =========================
+        // FOOTER
+        // =========================
+
+        embed.setFooter({
+            text:
+                new Date(
+                    message.createdTimestamp
+                ).toLocaleString("en-US", {
+                    month: "numeric",
+                    day: "numeric",
+                    year: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit"
+                })
+        });
 
         return embed;
 
