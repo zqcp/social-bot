@@ -1,135 +1,115 @@
 const {
-    EmbedBuilder,
+    PermissionFlagsBits,
     ActionRowBuilder,
     ButtonBuilder,
     ButtonStyle
 } = require("discord.js");
 
+const globalEmbeds =
+    require("../../embeds/general/global");
+
 // =========================
-// ROLE LIST BUTTONS
+// COMMAND
 // =========================
 
 module.exports = {
 
-    name: "role_list",
+    name: "roles",
 
-    type: "button",
+    aliases: [ ],
 
     async execute(
         client,
-        interaction
+        message,
+        args
     ) {
 
         // =========================
-        // BUTTON CHECK
+        // GUILD CHECK
         // =========================
 
-        if (
-            !interaction.isButton()
-        ) {
-            return;
-        }
-
-        if (
-            !interaction.customId.startsWith(
-                "role_list:"
-            )
-        ) {
-            return;
-        }
-
-        // =========================
-        // BUTTON DATA
-        // =========================
-
-        const parts =
-            interaction.customId.split(":");
-
-        const action =
-            parts[1];
-
-        const ownerId =
-            parts[2];
-
-        // =========================
-        // BUTTON OWNER CHECK
-        // =========================
-
-        if (
-            interaction.user.id !==
-            ownerId
-        ) {
-            return interaction.reply({
-                content:
-                    "These buttons don't belong to you.",
-                flags: 64
+        if (!message.guild) {
+            return message.channel.send({
+                embeds: [
+                    globalEmbeds.error(
+                        "This command can only be used in a server."
+                    )
+                ]
             });
         }
 
         // =========================
-        // GET CURRENT PAGE
-        // =========================
-
-        const currentEmbed =
-            interaction.message.embeds[0];
-
-        if (!currentEmbed) {
-            return interaction.deferUpdate();
-        }
-
-        const footer =
-            currentEmbed.footer?.text || "";
-
-        const pageMatch =
-            footer.match(
-                /Page (\d+)\/(\d+)/
-            );
-
-        if (!pageMatch) {
-            return interaction.deferUpdate();
-        }
-
-        let page =
-            Number(pageMatch[1]);
-
-        const totalPages =
-            Number(pageMatch[2]);
-
-        // =========================
-        // CHANGE PAGE
+        // USER PERMISSION
         // =========================
 
         if (
-            action === "previous"
+            !message.member.permissions.has(
+                PermissionFlagsBits.ManageRoles
+            )
         ) {
-            page--;
+            return message.channel.send({
+                embeds: [
+                    globalEmbeds.permission(
+                        message.author,
+                        "ManageRoles"
+                    )
+                ]
+            });
         }
 
-        if (
-            action === "next"
-        ) {
-            page++;
-        }
+        // =========================
+        // BOT PERMISSIONS
+        // =========================
 
-        page =
-            Math.max(
-                1,
-                Math.min(
-                    page,
-                    totalPages
-                )
+        const botMember =
+            message.guild.members.me;
+
+        const requiredPermissions = [
+            PermissionFlagsBits.ViewChannel,
+            PermissionFlagsBits.SendMessages,
+            PermissionFlagsBits.EmbedLinks
+        ];
+
+        const missingPermissions =
+            requiredPermissions.filter(
+                permission =>
+                    !message.channel
+                        .permissionsFor(botMember)
+                        ?.has(permission)
             );
+
+        if (missingPermissions.length) {
+            const permissionNames =
+                missingPermissions.map(
+                    permission =>
+                        Object.entries(
+                            PermissionFlagsBits
+                        ).find(
+                            ([, value]) =>
+                                value === permission
+                        )?.[0] || permission
+                );
+
+            return message.channel.send({
+                embeds: [
+                    globalEmbeds.botPermission(
+                        message.author,
+                        permissionNames
+                    )
+                ]
+            });
+        }
 
         // =========================
         // GET ROLES
         // =========================
 
         const roles =
-            interaction.guild.roles.cache
+            message.guild.roles.cache
                 .filter(
                     role =>
                         role.id !==
-                            interaction.guild.id &&
+                            message.guild.id &&
                         !role.managed
                 )
                 .sort(
@@ -141,11 +121,25 @@ module.exports = {
         const roleArray =
             [...roles.values()];
 
-        const rolesPerPage =
-            25;
+        // =========================
+        // PAGINATION
+        // =========================
+
+        const rolesPerPage = 25;
 
         const totalRoles =
             roleArray.length;
+
+        const totalPages =
+            Math.max(
+                1,
+                Math.ceil(
+                    totalRoles /
+                    rolesPerPage
+                )
+            );
+
+        const page = 1;
 
         const start =
             (page - 1) *
@@ -184,14 +178,21 @@ module.exports = {
                 : "No roles found.";
 
         // =========================
-        // UPDATE EMBED
+        // EMBED
         // =========================
 
         const embed =
-            EmbedBuilder
-                .from(currentEmbed)
-                .setDescription(
+            globalEmbeds
+                .regular(
                     description
+                )
+                .setTitle(
+                    `${message.guild.name}'s Roles`
+                )
+                .setThumbnail(
+                    message.guild.iconURL({
+                        dynamic: true
+                    })
                 )
                 .setFooter({
                     text:
@@ -199,7 +200,7 @@ module.exports = {
                 });
 
         // =========================
-        // UPDATE BUTTONS
+        // BUTTONS
         // =========================
 
         const row =
@@ -208,7 +209,7 @@ module.exports = {
 
                     new ButtonBuilder()
                         .setCustomId(
-                            `role_list:previous:${ownerId}`
+                            `role_list_previous_${message.author.id}`
                         )
                         .setLabel("‹")
                         .setStyle(
@@ -220,7 +221,7 @@ module.exports = {
 
                     new ButtonBuilder()
                         .setCustomId(
-                            `role_list:page:${ownerId}`
+                            `role_list_page_${message.author.id}`
                         )
                         .setLabel(
                             `${page}/${totalPages}`
@@ -232,7 +233,7 @@ module.exports = {
 
                     new ButtonBuilder()
                         .setCustomId(
-                            `role_list:next:${ownerId}`
+                            `role_list_next_${message.author.id}`
                         )
                         .setLabel("›")
                         .setStyle(
@@ -245,107 +246,105 @@ module.exports = {
                 );
 
         // =========================
-        // UPDATE MESSAGE
+        // SEND
         // =========================
 
-        await interaction.update({
-            embeds: [
-                embed
-            ],
-            components: [
-                row
-            ]
-        });
+        const sentMessage =
+            await message.channel.send({
+                embeds: [
+                    embed
+                ],
+                components: [
+                    row
+                ]
+            });
 
         // =========================
-        // RESET 60 SECOND TIMER
+        // TIMER STORAGE
         // =========================
 
-        if (
-            client.roleListTimers
-        ) {
+        if (!client.roleListTimers) {
+            client.roleListTimers =
+                new Map();
+        }
 
-            const timer =
-                client.roleListTimers.get(
-                    interaction.message.id
-                );
+        // =========================
+        // 60 SECOND TIMEOUT
+        // =========================
 
-            if (timer) {
-                clearTimeout(timer);
-            }
+        const timer =
+            setTimeout(
+                async () => {
 
-            const newTimer =
-                setTimeout(
-                    async () => {
+                    try {
 
-                        try {
+                        const disabledRow =
+                            new ActionRowBuilder()
+                                .addComponents(
 
-                            const disabledRow =
-                                new ActionRowBuilder()
-                                    .addComponents(
+                                    new ButtonBuilder()
+                                        .setCustomId(
+                                            `role_list_previous_${message.author.id}`
+                                        )
+                                        .setLabel("‹")
+                                        .setStyle(
+                                            ButtonStyle.Secondary
+                                        )
+                                        .setDisabled(true),
 
-                                        new ButtonBuilder()
-                                            .setCustomId(
-                                                `role_list:previous:${ownerId}`
-                                            )
-                                            .setLabel("‹")
-                                            .setStyle(
-                                                ButtonStyle.Secondary
-                                            )
-                                            .setDisabled(true),
+                                    new ButtonBuilder()
+                                        .setCustomId(
+                                            `role_list_page_${message.author.id}`
+                                        )
+                                        .setLabel(
+                                            `${page}/${totalPages}`
+                                        )
+                                        .setStyle(
+                                            ButtonStyle.Secondary
+                                        )
+                                        .setDisabled(true),
 
-                                        new ButtonBuilder()
-                                            .setCustomId(
-                                                `role_list:page:${ownerId}`
-                                            )
-                                            .setLabel(
-                                                `${page}/${totalPages}`
-                                            )
-                                            .setStyle(
-                                                ButtonStyle.Secondary
-                                            )
-                                            .setDisabled(true),
+                                    new ButtonBuilder()
+                                        .setCustomId(
+                                            `role_list_next_${message.author.id}`
+                                        )
+                                        .setLabel("›")
+                                        .setStyle(
+                                            ButtonStyle.Secondary
+                                        )
+                                        .setDisabled(true)
 
-                                        new ButtonBuilder()
-                                            .setCustomId(
-                                                `role_list:next:${ownerId}`
-                                            )
-                                            .setLabel("›")
-                                            .setStyle(
-                                                ButtonStyle.Secondary
-                                            )
-                                            .setDisabled(true)
+                                );
 
-                                    );
+                        await sentMessage.edit({
+                            components: [
+                                disabledRow
+                            ]
+                        });
 
-                            await interaction.message.edit({
-                                components: [
-                                    disabledRow
-                                ]
-                            });
+                    } catch (error) {
 
-                        } catch (error) {
-
-                            console.error(
-                                "Role List Timeout Error:",
-                                error
-                            );
-
-                        }
-
-                        client.roleListTimers.delete(
-                            interaction.message.id
+                        console.error(
+                            "Role List Timeout Error:",
+                            error
                         );
 
-                    },
-                    60000
-                );
+                    }
 
-            client.roleListTimers.set(
-                interaction.message.id,
-                newTimer
+                    client.roleListTimers.delete(
+                        sentMessage.id
+                    );
+
+                },
+                60000
             );
-        }
+
+        client.roleListTimers.set(
+            sentMessage.id,
+            timer
+        );
+
+        return sentMessage;
 
     }
 
