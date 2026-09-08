@@ -11,7 +11,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.error)
             .setDescription(
-                `${config.emojis.error} ${user}: I couldn't find that member.`
+                `${config.emojis.error} ${user}: I couldn't find that \`member\`.`
             );
     },
 
@@ -19,7 +19,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.error)
             .setDescription(
-                `${config.emojis.error} ${user}: Please provide a role.`
+                `${config.emojis.error} ${user}: Please provide a \`role\`.`
             );
     },
 
