@@ -35,7 +35,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.error)
             .setDescription(
-                `${config.emojis.error} ${user}: I can't manage ${role} because it's above my highest role.`
+                `${config.emojis.error} ${user}: I can't manage \`${role}\` because it's above my highest role.`
             );
     },
 
@@ -43,7 +43,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.error)
             .setDescription(
-                `${config.emojis.error} ${user}: You can't manage ${role} because it's above your highest role.`
+                `${config.emojis.error} ${user}: You can't manage \`${role}\` because it's above your highest role.`
             );
     },
 
@@ -51,7 +51,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.failed)
             .setDescription(
-                `${config.emojis.failed} ${user}: Already has ${role}.`
+                `${config.emojis.failed} ${user}: Already has \`${role}\`.`
             );
     },
 
@@ -59,7 +59,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.failed)
             .setDescription(
-                `${config.emojis.failed} ${user}: Doesn't have ${role}.`
+                `${config.emojis.failed} ${user}: Doesn't have \`${role}\`.`
             );
     },
 
@@ -67,7 +67,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.error)
             .setDescription(
-                `${config.emojis.error} ${user}: ${style} roles aren't available or enabled.`
+                `${config.emojis.error} ${user}: \`${style}\` roles aren't available or enabled.`
             );
     },
 
@@ -75,7 +75,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.error)
             .setDescription(
-                `${config.emojis.error} ${user}: \`${style}\` isn't a valid role style.`
+                `${config.emojis.error} ${user}: \`${style}\` isn't a valid **role style**.`
             );
     },
 
@@ -83,7 +83,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.error)
             .setDescription(
-                `${config.emojis.error} ${user}: \`${color}\` isn't a valid color.`
+                `${config.emojis.error} ${user}: \`${color}\` isn't a **valid color**.`
             );
     },
 
@@ -91,7 +91,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.error)
             .setDescription(
-                `${config.emojis.error} ${user}: \`${icon}\` isn't a valid role icon.`
+                `${config.emojis.error} ${user}: \`${icon}\` isn't a valid **role icon**.`
             );
     },
 
@@ -103,7 +103,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.role)
             .setDescription(
-                `${config.emojis.add} ${user}: Created role ${role}`
+                `${config.emojis.add} ${user}: Created **role** \`${role}\``
             );
     },
 
@@ -111,7 +111,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.failed)
             .setDescription(
-                `${config.emojis.failed} ${user}: I couldn't create role ${role}.`
+                `${config.emojis.failed} ${user}: I couldn't **create role** \`${role}\`.`
             );
     },
 
@@ -123,7 +123,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.role)
             .setDescription(
-                `${user}: Updated ${role} **role color** to ${color}`
+                `${user}: Updated ${role} **role color** to \`${color}\``
             );
     },
 
