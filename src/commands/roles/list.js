@@ -221,6 +221,18 @@ module.exports = {
 
                     new ButtonBuilder()
                         .setCustomId(
+                            `role_list_page_${message.author.id}`
+                        )
+                        .setLabel(
+                            `${page}/${totalPages}`
+                        )
+                        .setStyle(
+                            ButtonStyle.Secondary
+                        )
+                        .setDisabled(true),
+
+                    new ButtonBuilder()
+                        .setCustomId(
                             `role_list_next_${message.author.id}`
                         )
                         .setLabel("›")
@@ -275,6 +287,18 @@ module.exports = {
                                             `role_list_previous_${message.author.id}`
                                         )
                                         .setLabel("‹")
+                                        .setStyle(
+                                            ButtonStyle.Secondary
+                                        )
+                                        .setDisabled(true),
+
+                                    new ButtonBuilder()
+                                        .setCustomId(
+                                            `role_list_page_${message.author.id}`
+                                        )
+                                        .setLabel(
+                                            `${page}/${totalPages}`
+                                        )
                                         .setStyle(
                                             ButtonStyle.Secondary
                                         )
