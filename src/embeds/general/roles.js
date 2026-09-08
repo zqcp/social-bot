@@ -123,7 +123,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.role)
             .setDescription(
-                `${user}: Updated ${role} **role color** to \`${color}\``
+                `${user}: Updated \`${role}\` **role color** to \`${color}\``
             );
     },
 
@@ -131,7 +131,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.role)
             .setDescription(
-                `${user}: Updated ${role} **gradient color** to ${color1} and ${color2}`
+                `${user}: Updated \`${role}\` **gradient color** to \`${color1}\` and \`${color2}\``
             );
     },
 
@@ -139,7 +139,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.role)
             .setDescription(
-                `${user}: Updated ${role} **holographic style** to ${style}`
+                `${user}: Updated \`${role}\` **holographic style** to \`${style}\``
             );
     },
 
@@ -147,7 +147,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.role)
             .setDescription(
-                `${user}: Updated ${role} **role icon** to ${icon}`
+                `${user}: Updated \`${role}\` **role icon** to ${icon}`
             );
     },
 
@@ -159,7 +159,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.role)
             .setDescription(
-                `${config.emojis.add} ${user}: Added ${role} to **${member.user.username}**.`
+                `${config.emojis.add} ${user}: Added \`${role}\` to **${member.user.username}**.`
             );
     },
 
@@ -167,7 +167,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.failed)
             .setDescription(
-                `${config.emojis.failed} ${user}: I couldn't add ${role} to **${member.user.username}**.`
+                `${config.emojis.failed} ${user}: I couldn't add \`${role}\` to **${member.user.username}**.`
             );
     },
 
@@ -179,7 +179,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.role)
             .setDescription(
-                `${config.emojis.remove} ${user}: Removed ${role} from **${member.user.username}**.`
+                `${config.emojis.remove} ${user}: Removed \`${role}\` from **${member.user.username}**.`
             );
     },
 
