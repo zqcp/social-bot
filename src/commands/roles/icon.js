@@ -146,13 +146,32 @@ module.exports = {
         }
 
         // =========================
+        // ROLE ICON AVAILABILITY
+        // =========================
+
+        if (
+            !message.guild.features.includes(
+                "ROLE_ICONS"
+            )
+        ) {
+            return message.channel.send({
+                embeds: [
+                    roleEmbeds.unavailable(
+                        message.author,
+                        "role icon"
+                    )
+                ]
+            });
+        }
+
+        // =========================
         // EMOJI
         // =========================
 
-        const icon =
+        const iconInput =
             args[1];
 
-        if (!icon) {
+        if (!iconInput) {
             return message.channel.send({
                 embeds: [
                     globalEmbeds.missing(
@@ -161,6 +180,23 @@ module.exports = {
                     )
                 ]
             });
+        }
+
+        let icon =
+            iconInput;
+
+        // =========================
+        // CUSTOM EMOJI
+        // =========================
+
+        const customEmoji =
+            iconInput.match(
+                /^<a?:\w+:(\d+)>$/
+            );
+
+        if (customEmoji) {
+            icon =
+                customEmoji[1];
         }
 
         // =========================
@@ -202,8 +238,7 @@ module.exports = {
         try {
 
             await role.setIcon(
-                icon,
-                `Role icon updated by ${message.author.tag}`
+                icon
             );
 
             return message.channel.send({
@@ -211,7 +246,7 @@ module.exports = {
                     roleEmbeds.roleIcon(
                         message.author,
                         role,
-                        icon
+                        iconInput
                     )
                 ]
             });
@@ -227,7 +262,7 @@ module.exports = {
                 embeds: [
                     roleEmbeds.invalidIcon(
                         message.author,
-                        icon
+                        iconInput
                     )
                 ]
             });
