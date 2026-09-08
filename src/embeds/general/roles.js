@@ -121,33 +121,33 @@ module.exports = {
 
     solid(user, role, color) {
         return new EmbedBuilder()
-            .setColor(config.colors.role)
+            .setColor(config.colors.success)
             .setDescription(
-                `${user}: Updated \`${role.name}\` **role color** to \`${color}\``
+                `${config.emojis.success} ${user}: Updated \`${role.name}\` **role color** to \`${color}\`.`
             );
     },
 
     gradient(user, role, color1, color2) {
         return new EmbedBuilder()
-            .setColor(config.colors.role)
+            .setColor(config.colors.success)
             .setDescription(
-                `${user}: Updated \`${role.name}\` **gradient color** to \`${color1}\` and \`${color2}\``
+                `${config.emojis.success} ${user}: Updated \`${role.name}\` **gradient color** to \`${color1}\` and \`${color2}\`.`
             );
     },
 
     holographic(user, role, style) {
         return new EmbedBuilder()
-            .setColor(config.colors.role)
+            .setColor(config.colors.success)
             .setDescription(
-                `${user}: Updated \`${role.name}\` **holographic style** to \`${style}\``
+                `${config.emojis.success} ${user}: Updated \`${role.name}\` **holographic style** to \`${style}\`.`
             );
     },
 
     roleIcon(user, role, icon) {
         return new EmbedBuilder()
-            .setColor(config.colors.role)
+            .setColor(config.colors.success)
             .setDescription(
-                `${user}: Updated \`${role.name}\` **role icon** to ${icon}`
+                `${config.emojis.success} ${user}: Updated \`${role.name}\` **role icon** to ${icon}.`
             );
     },
 
