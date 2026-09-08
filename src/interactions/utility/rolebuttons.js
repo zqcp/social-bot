@@ -1,4 +1,5 @@
 const {
+    EmbedBuilder,
     ActionRowBuilder,
     ButtonBuilder,
     ButtonStyle
@@ -10,7 +11,9 @@ const {
 
 module.exports = {
 
-    name: "role list",
+    name: "role_list",
+
+    type: "button",
 
     async execute(
         client,
@@ -29,49 +32,38 @@ module.exports = {
 
         if (
             !interaction.customId.startsWith(
-                "role_list_"
+                "role_list:"
             )
         ) {
             return;
         }
 
         // =========================
-        // COMMAND USER
+        // BUTTON DATA
         // =========================
 
+        const parts =
+            interaction.customId.split(":");
+
+        const action =
+            parts[1];
+
         const ownerId =
-            interaction.message.interaction
-                ?.user?.id;
+            parts[2];
 
         // =========================
         // BUTTON OWNER CHECK
         // =========================
 
         if (
-            ownerId &&
-            interaction.user.id !== ownerId
+            interaction.user.id !==
+            ownerId
         ) {
             return interaction.reply({
                 content:
                     "These buttons don't belong to you.",
                 flags: 64
             });
-        }
-
-        // =========================
-        // MESSAGE ID CHECK
-        // =========================
-
-        const messageId =
-            interaction.customId
-                .split("_")
-                .pop();
-
-        if (
-            interaction.message.id !==
-            messageId
-        ) {
-            return;
         }
 
         // =========================
@@ -108,17 +100,13 @@ module.exports = {
         // =========================
 
         if (
-            interaction.customId.startsWith(
-                "role_list_previous_"
-            )
+            action === "previous"
         ) {
             page--;
         }
 
         if (
-            interaction.customId.startsWith(
-                "role_list_next_"
-            )
+            action === "next"
         ) {
             page++;
         }
@@ -200,7 +188,8 @@ module.exports = {
         // =========================
 
         const embed =
-            currentEmbed
+            EmbedBuilder
+                .from(currentEmbed)
                 .setDescription(
                     description
                 )
@@ -219,7 +208,7 @@ module.exports = {
 
                     new ButtonBuilder()
                         .setCustomId(
-                            `role_list_previous_${interaction.message.id}`
+                            `role_list:previous:${ownerId}`
                         )
                         .setLabel("‹")
                         .setStyle(
@@ -231,7 +220,19 @@ module.exports = {
 
                     new ButtonBuilder()
                         .setCustomId(
-                            `role_list_next_${interaction.message.id}`
+                            `role_list:page:${ownerId}`
+                        )
+                        .setLabel(
+                            `${page}/${totalPages}`
+                        )
+                        .setStyle(
+                            ButtonStyle.Secondary
+                        )
+                        .setDisabled(true),
+
+                    new ButtonBuilder()
+                        .setCustomId(
+                            `role_list:next:${ownerId}`
                         )
                         .setLabel("›")
                         .setStyle(
@@ -263,6 +264,7 @@ module.exports = {
         if (
             client.roleListTimers
         ) {
+
             const timer =
                 client.roleListTimers.get(
                     interaction.message.id
@@ -284,7 +286,7 @@ module.exports = {
 
                                         new ButtonBuilder()
                                             .setCustomId(
-                                                `role_list_previous_${interaction.message.id}`
+                                                `role_list:previous:${ownerId}`
                                             )
                                             .setLabel("‹")
                                             .setStyle(
@@ -294,7 +296,19 @@ module.exports = {
 
                                         new ButtonBuilder()
                                             .setCustomId(
-                                                `role_list_next_${interaction.message.id}`
+                                                `role_list:page:${ownerId}`
+                                            )
+                                            .setLabel(
+                                                `${page}/${totalPages}`
+                                            )
+                                            .setStyle(
+                                                ButtonStyle.Secondary
+                                            )
+                                            .setDisabled(true),
+
+                                        new ButtonBuilder()
+                                            .setCustomId(
+                                                `role_list:next:${ownerId}`
                                             )
                                             .setLabel("›")
                                             .setStyle(
