@@ -91,7 +91,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.error)
             .setDescription(
-                `${config.emojis.error} ${user}: \`${icon}\` isn't a valid **role icon**.`
+                `${config.emojis.error} ${user}: ${icon} isn't a valid **role icon**.`
             );
     },
 
@@ -187,7 +187,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.failed)
             .setDescription(
-                `${config.emojis.failed} ${user}: I couldn't remove ${role} from **${member.user.username}**.`
+                `${config.emojis.failed} ${user}: I couldn't remove \`${role}\` from **${member.user.username}**.`
             );
     },
 
@@ -199,7 +199,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.role)
             .setDescription(
-                `${config.emojis.remove} ${user}: Deleted role ${role}.`
+                `${config.emojis.remove} ${user}: Deleted **role** \`${role}\`.`
             );
     },
 
@@ -207,7 +207,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.failed)
             .setDescription(
-                `${config.emojis.failed} ${user}: I couldn't delete role ${role}.`
+                `${config.emojis.failed} ${user}: I couldn't **delete role** \`${role}\`.`
             );
     }
 
