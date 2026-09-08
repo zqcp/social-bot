@@ -111,9 +111,8 @@ module.exports = {
         if (!memberValue) {
             return message.channel.send({
                 embeds: [
-                    globalEmbeds.missing(
-                        message.author,
-                        "member"
+                    globalEmbeds.memberNotFound(
+                        message.author
                     )
                 ]
             });
