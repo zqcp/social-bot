@@ -209,7 +209,7 @@ module.exports = {
 
                     new ButtonBuilder()
                         .setCustomId(
-                            `role_list_previous_${message.id}`
+                            `role_list_previous_${message.author.id}`
                         )
                         .setLabel("‹")
                         .setStyle(
@@ -221,7 +221,7 @@ module.exports = {
 
                     new ButtonBuilder()
                         .setCustomId(
-                            `role_list_next_${message.id}`
+                            `role_list_next_${message.author.id}`
                         )
                         .setLabel("›")
                         .setStyle(
@@ -237,14 +237,90 @@ module.exports = {
         // SEND
         // =========================
 
-        return message.channel.send({
-            embeds: [
-                embed
-            ],
-            components: [
-                row
-            ]
-        });
+        const sentMessage =
+            await message.channel.send({
+                embeds: [
+                    embed
+                ],
+                components: [
+                    row
+                ]
+            });
+
+        // =========================
+        // TIMER STORAGE
+        // =========================
+
+        if (!client.roleListTimers) {
+            client.roleListTimers =
+                new Map();
+        }
+
+        // =========================
+        // 60 SECOND TIMEOUT
+        // =========================
+
+        const timer =
+            setTimeout(
+                async () => {
+
+                    try {
+
+                        const disabledRow =
+                            new ActionRowBuilder()
+                                .addComponents(
+
+                                    new ButtonBuilder()
+                                        .setCustomId(
+                                            `role_list_previous_${message.author.id}`
+                                        )
+                                        .setLabel("‹")
+                                        .setStyle(
+                                            ButtonStyle.Secondary
+                                        )
+                                        .setDisabled(true),
+
+                                    new ButtonBuilder()
+                                        .setCustomId(
+                                            `role_list_next_${message.author.id}`
+                                        )
+                                        .setLabel("›")
+                                        .setStyle(
+                                            ButtonStyle.Secondary
+                                        )
+                                        .setDisabled(true)
+
+                                );
+
+                        await sentMessage.edit({
+                            components: [
+                                disabledRow
+                            ]
+                        });
+
+                    } catch (error) {
+
+                        console.error(
+                            "Role List Timeout Error:",
+                            error
+                        );
+
+                    }
+
+                    client.roleListTimers.delete(
+                        sentMessage.id
+                    );
+
+                },
+                60000
+            );
+
+        client.roleListTimers.set(
+            sentMessage.id,
+            timer
+        );
+
+        return sentMessage;
 
     }
 
