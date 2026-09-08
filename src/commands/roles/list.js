@@ -1,115 +1,135 @@
 const {
-    PermissionFlagsBits,
+    EmbedBuilder,
     ActionRowBuilder,
     ButtonBuilder,
     ButtonStyle
 } = require("discord.js");
 
-const globalEmbeds =
-    require("../../embeds/general/global");
-
 // =========================
-// COMMAND
+// ROLE LIST BUTTONS
 // =========================
 
 module.exports = {
 
-    name: "roles",
+    name: "role_list",
 
-    aliases: [ ],
+    type: "button",
 
     async execute(
         client,
-        message,
-        args
+        interaction
     ) {
 
         // =========================
-        // GUILD CHECK
-        // =========================
-
-        if (!message.guild) {
-            return message.channel.send({
-                embeds: [
-                    globalEmbeds.error(
-                        "This command can only be used in a server."
-                    )
-                ]
-            });
-        }
-
-        // =========================
-        // USER PERMISSION
+        // BUTTON CHECK
         // =========================
 
         if (
-            !message.member.permissions.has(
-                PermissionFlagsBits.ManageRoles
+            !interaction.isButton()
+        ) {
+            return;
+        }
+
+        if (
+            !interaction.customId.startsWith(
+                "role_list:"
             )
         ) {
-            return message.channel.send({
-                embeds: [
-                    globalEmbeds.permission(
-                        message.author,
-                        "ManageRoles"
-                    )
-                ]
+            return;
+        }
+
+        // =========================
+        // BUTTON DATA
+        // =========================
+
+        const parts =
+            interaction.customId.split(":");
+
+        const action =
+            parts[1];
+
+        const ownerId =
+            parts[2];
+
+        // =========================
+        // BUTTON OWNER CHECK
+        // =========================
+
+        if (
+            interaction.user.id !==
+            ownerId
+        ) {
+            return interaction.reply({
+                content:
+                    "These buttons don't belong to you.",
+                flags: 64
             });
         }
 
         // =========================
-        // BOT PERMISSIONS
+        // GET CURRENT PAGE
         // =========================
 
-        const botMember =
-            message.guild.members.me;
+        const currentEmbed =
+            interaction.message.embeds[0];
 
-        const requiredPermissions = [
-            PermissionFlagsBits.ViewChannel,
-            PermissionFlagsBits.SendMessages,
-            PermissionFlagsBits.EmbedLinks
-        ];
+        if (!currentEmbed) {
+            return interaction.deferUpdate();
+        }
 
-        const missingPermissions =
-            requiredPermissions.filter(
-                permission =>
-                    !message.channel
-                        .permissionsFor(botMember)
-                        ?.has(permission)
+        const footer =
+            currentEmbed.footer?.text || "";
+
+        const pageMatch =
+            footer.match(
+                /Page (\d+)\/(\d+)/
             );
 
-        if (missingPermissions.length) {
-            const permissionNames =
-                missingPermissions.map(
-                    permission =>
-                        Object.entries(
-                            PermissionFlagsBits
-                        ).find(
-                            ([, value]) =>
-                                value === permission
-                        )?.[0] || permission
-                );
-
-            return message.channel.send({
-                embeds: [
-                    globalEmbeds.botPermission(
-                        message.author,
-                        permissionNames
-                    )
-                ]
-            });
+        if (!pageMatch) {
+            return interaction.deferUpdate();
         }
+
+        let page =
+            Number(pageMatch[1]);
+
+        const totalPages =
+            Number(pageMatch[2]);
+
+        // =========================
+        // CHANGE PAGE
+        // =========================
+
+        if (
+            action === "previous"
+        ) {
+            page--;
+        }
+
+        if (
+            action === "next"
+        ) {
+            page++;
+        }
+
+        page =
+            Math.max(
+                1,
+                Math.min(
+                    page,
+                    totalPages
+                )
+            );
 
         // =========================
         // GET ROLES
         // =========================
 
         const roles =
-            message.guild.roles.cache
+            interaction.guild.roles.cache
                 .filter(
                     role =>
                         role.id !==
-                            message.guild.id &&
+                            interaction.guild.id &&
                         !role.managed
                 )
                 .sort(
@@ -121,25 +141,11 @@ module.exports = {
         const roleArray =
             [...roles.values()];
 
-        // =========================
-        // PAGINATION
-        // =========================
-
-        const rolesPerPage = 25;
+        const rolesPerPage =
+            25;
 
         const totalRoles =
             roleArray.length;
-
-        const totalPages =
-            Math.max(
-                1,
-                Math.ceil(
-                    totalRoles /
-                    rolesPerPage
-                )
-            );
-
-        const page = 1;
 
         const start =
             (page - 1) *
@@ -178,21 +184,14 @@ module.exports = {
                 : "No roles found.";
 
         // =========================
-        // EMBED
+        // UPDATE EMBED
         // =========================
 
         const embed =
-            globalEmbeds
-                .regular(
+            EmbedBuilder
+                .from(currentEmbed)
+                .setDescription(
                     description
-                )
-                .setTitle(
-                    `${message.guild.name}'s Roles`
-                )
-                .setThumbnail(
-                    message.guild.iconURL({
-                        dynamic: true
-                    })
                 )
                 .setFooter({
                     text:
@@ -200,7 +199,7 @@ module.exports = {
                 });
 
         // =========================
-        // BUTTONS
+        // UPDATE BUTTONS
         // =========================
 
         const row =
@@ -209,7 +208,7 @@ module.exports = {
 
                     new ButtonBuilder()
                         .setCustomId(
-                            `role_list_previous_${message.author.id}`
+                            `role_list:previous:${ownerId}`
                         )
                         .setLabel("‹")
                         .setStyle(
@@ -221,7 +220,7 @@ module.exports = {
 
                     new ButtonBuilder()
                         .setCustomId(
-                            `role_list_page_${message.author.id}`
+                            `role_list:page:${ownerId}`
                         )
                         .setLabel(
                             `${page}/${totalPages}`
@@ -233,7 +232,7 @@ module.exports = {
 
                     new ButtonBuilder()
                         .setCustomId(
-                            `role_list_next_${message.author.id}`
+                            `role_list:next:${ownerId}`
                         )
                         .setLabel("›")
                         .setStyle(
@@ -246,105 +245,107 @@ module.exports = {
                 );
 
         // =========================
-        // SEND
+        // UPDATE MESSAGE
         // =========================
 
-        const sentMessage =
-            await message.channel.send({
-                embeds: [
-                    embed
-                ],
-                components: [
-                    row
-                ]
-            });
+        await interaction.update({
+            embeds: [
+                embed
+            ],
+            components: [
+                row
+            ]
+        });
 
         // =========================
-        // TIMER STORAGE
+        // RESET 60 SECOND TIMER
         // =========================
 
-        if (!client.roleListTimers) {
-            client.roleListTimers =
-                new Map();
-        }
+        if (
+            client.roleListTimers
+        ) {
 
-        // =========================
-        // 60 SECOND TIMEOUT
-        // =========================
+            const timer =
+                client.roleListTimers.get(
+                    interaction.message.id
+                );
 
-        const timer =
-            setTimeout(
-                async () => {
+            if (timer) {
+                clearTimeout(timer);
+            }
 
-                    try {
+            const newTimer =
+                setTimeout(
+                    async () => {
 
-                        const disabledRow =
-                            new ActionRowBuilder()
-                                .addComponents(
+                        try {
 
-                                    new ButtonBuilder()
-                                        .setCustomId(
-                                            `role_list_previous_${message.author.id}`
-                                        )
-                                        .setLabel("‹")
-                                        .setStyle(
-                                            ButtonStyle.Secondary
-                                        )
-                                        .setDisabled(true),
+                            const disabledRow =
+                                new ActionRowBuilder()
+                                    .addComponents(
 
-                                    new ButtonBuilder()
-                                        .setCustomId(
-                                            `role_list_page_${message.author.id}`
-                                        )
-                                        .setLabel(
-                                            `${page}/${totalPages}`
-                                        )
-                                        .setStyle(
-                                            ButtonStyle.Secondary
-                                        )
-                                        .setDisabled(true),
+                                        new ButtonBuilder()
+                                            .setCustomId(
+                                                `role_list:previous:${ownerId}`
+                                            )
+                                            .setLabel("‹")
+                                            .setStyle(
+                                                ButtonStyle.Secondary
+                                            )
+                                            .setDisabled(true),
 
-                                    new ButtonBuilder()
-                                        .setCustomId(
-                                            `role_list_next_${message.author.id}`
-                                        )
-                                        .setLabel("›")
-                                        .setStyle(
-                                            ButtonStyle.Secondary
-                                        )
-                                        .setDisabled(true)
+                                        new ButtonBuilder()
+                                            .setCustomId(
+                                                `role_list:page:${ownerId}`
+                                            )
+                                            .setLabel(
+                                                `${page}/${totalPages}`
+                                            )
+                                            .setStyle(
+                                                ButtonStyle.Secondary
+                                            )
+                                            .setDisabled(true),
 
-                                );
+                                        new ButtonBuilder()
+                                            .setCustomId(
+                                                `role_list:next:${ownerId}`
+                                            )
+                                            .setLabel("›")
+                                            .setStyle(
+                                                ButtonStyle.Secondary
+                                            )
+                                            .setDisabled(true)
 
-                        await sentMessage.edit({
-                            components: [
-                                disabledRow
-                            ]
-                        });
+                                    );
 
-                    } catch (error) {
+                            await interaction.message.edit({
+                                components: [
+                                    disabledRow
+                                ]
+                            });
 
-                        console.error(
-                            "Role List Timeout Error:",
-                            error
+                        } catch (error) {
+
+                            console.error(
+                                "Role List Timeout Error:",
+                                error
+                            );
+
+                        }
+
+                        client.roleListTimers.delete(
+                            interaction.message.id
                         );
 
-                    }
+                    },
+                    60000
+                );
 
-                    client.roleListTimers.delete(
-                        sentMessage.id
-                    );
-
-                },
-                60000
+            client.roleListTimers.set(
+                interaction.message.id,
+                newTimer
             );
-
-        client.roleListTimers.set(
-            sentMessage.id,
-            timer
-        );
-
-        return sentMessage;
+        }
 
     }
 
