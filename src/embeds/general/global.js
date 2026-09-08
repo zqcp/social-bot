@@ -81,7 +81,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.error)
             .setDescription(
-                `${config.emojis.error} ${user}: Couldn't find that **user**.`
+                `${config.emojis.error} ${user}: Couldn't find that \`member\`.`
             );
     },
 
@@ -89,7 +89,15 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.error)
             .setDescription(
-                `${config.emojis.error} ${user}: Couldn't find that **user** matching \`${value}\`.`
+                `${config.emojis.error} ${user}: Couldn't find that **member** matching \`${value}\`.`
+            );
+    },
+
+    memberNotFound(user) {
+        return new EmbedBuilder()
+            .setColor(config.colors.error)
+            .setDescription(
+                `${config.emojis.error} ${user}: You need to provide a \`member\`.`
             );
     },
 
