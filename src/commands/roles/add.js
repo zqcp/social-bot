@@ -16,7 +16,7 @@ module.exports = {
 
     name: "role add",
 
-    aliases: ["r"],
+    aliases: ["r", "role"],
 
     async execute(
         client,
@@ -105,14 +105,54 @@ module.exports = {
         // MEMBER
         // =========================
 
-        const member =
+        const memberValue =
+            args[0];
+
+        if (!memberValue) {
+            return message.channel.send({
+                embeds: [
+                    globalEmbeds.missing(
+                        message.author,
+                        "member"
+                    )
+                ]
+            });
+        }
+
+        let member =
             message.mentions.members.first();
+
+        if (!member) {
+
+            if (/^\d{17,20}$/.test(memberValue)) {
+
+                try {
+                    member =
+                        await message.guild.members.fetch(
+                            memberValue
+                        );
+                } catch {
+                    member = null;
+                }
+
+            } else {
+
+                member =
+                    message.guild.members.cache.find(
+                        member =>
+                            member.user.username.toLowerCase() ===
+                            memberValue.toLowerCase()
+                    );
+            }
+
+        }
 
         if (!member) {
             return message.channel.send({
                 embeds: [
-                    roleEmbeds.memberNotFound(
-                        message.author
+                    globalEmbeds.userNotFound(
+                        message.author,
+                        memberValue
                     )
                 ]
             });
@@ -122,14 +162,53 @@ module.exports = {
         // ROLE
         // =========================
 
-        const role =
-            message.mentions.roles.first();
+        const roleValue =
+            args[1];
 
-        if (!role) {
+        if (!roleValue) {
             return message.channel.send({
                 embeds: [
                     roleEmbeds.noRole(
                         message.author
+                    )
+                ]
+            });
+        }
+
+        let role =
+            message.mentions.roles.first();
+
+        if (!role) {
+
+            if (/^\d{17,20}$/.test(roleValue)) {
+
+                try {
+                    role =
+                        await message.guild.roles.fetch(
+                            roleValue
+                        );
+                } catch {
+                    role = null;
+                }
+
+            } else {
+
+                role =
+                    message.guild.roles.cache.find(
+                        role =>
+                            role.name.toLowerCase() ===
+                            roleValue.toLowerCase()
+                    );
+            }
+
+        }
+
+        if (!role) {
+            return message.channel.send({
+                embeds: [
+                    roleEmbeds.roleNotFound(
+                        message.author,
+                        roleValue
                     )
                 ]
             });
