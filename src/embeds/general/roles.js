@@ -27,7 +27,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.error)
             .setDescription(
-                `${config.emojis.error} ${user}: I couldn't find the role ${role}.`
+                `${config.emojis.error} ${user}: Couldn't find that role matching \`${role}\`.`
             );
     },
 
