@@ -8,7 +8,7 @@ const SIGHTENGINE_URL =
     "https://api.sightengine.com/1.0/video/check-sync.json";
 
 const MODELS =
-    "nudity-2.1,offensive-2.0,gore-2.0";
+    "nudity-2.1,offensive-2.0,gore-2.0,self-harm";
 
 const THRESHOLD = 0.90;
 
@@ -29,33 +29,61 @@ async function scanVideo(
 
     try {
 
-        const url =
-            new URL(
-                SIGHTENGINE_URL
+        // =========================
+        // DOWNLOAD VIDEO
+        // =========================
+
+        const videoResponse =
+            await fetch(videoUrl);
+
+        if (!videoResponse.ok) {
+            return false;
+        }
+
+        const videoBuffer =
+            Buffer.from(
+                await videoResponse.arrayBuffer()
             );
 
-        url.searchParams.set(
-            "stream_url",
-            videoUrl
+        // =========================
+        // BUILD FORM DATA
+        // =========================
+
+        const formData =
+            new FormData();
+
+        formData.append(
+            "media",
+            new Blob([videoBuffer])
         );
 
-        url.searchParams.set(
+        formData.append(
             "models",
             MODELS
         );
 
-        url.searchParams.set(
+        formData.append(
             "api_user",
             SIGHTENGINE_USER
         );
 
-        url.searchParams.set(
+        formData.append(
             "api_secret",
             SIGHTENGINE_SECRET
         );
 
+        // =========================
+        // SEND TO SIGHTENGINE
+        // =========================
+
         const response =
-            await fetch(url);
+            await fetch(
+                SIGHTENGINE_URL,
+                {
+                    method: "POST",
+                    body: formData
+                }
+            );
 
         if (!response.ok) {
             return false;
@@ -107,16 +135,16 @@ async function scanVideo(
                 offensive.nazi
             ) >= THRESHOLD ||
             Number(
-                offensive.kkk
-            ) >= THRESHOLD ||
-            Number(
                 offensive.terrorist
             ) >= THRESHOLD ||
             Number(
                 offensive.supremacist
             ) >= THRESHOLD ||
             Number(
-                offensive.prob
+                offensive.confederate
+            ) >= THRESHOLD ||
+            Number(
+                offensive.offensive
             ) >= THRESHOLD
         ) {
             return true;
@@ -131,7 +159,25 @@ async function scanVideo(
 
         if (
             Number(
-                gore.prob
+                gore.gore
+            ) >= THRESHOLD
+        ) {
+            return true;
+        }
+
+        // =========================
+        // SELF-HARM
+        // =========================
+
+        const selfHarm =
+            data["self-harm"] || {};
+
+        if (
+            Number(
+                selfHarm.prob
+            ) >= THRESHOLD ||
+            Number(
+                selfHarm.type?.real
             ) >= THRESHOLD
         ) {
             return true;
