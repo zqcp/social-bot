@@ -234,7 +234,7 @@ module.exports = {
                         .setCustomId(
                             `role_list:next:${ownerId}`
                         )
-                        .setLabel("›")
+                        .setLabel("▶")
                         .setStyle(
                             ButtonStyle.Secondary
                         )
