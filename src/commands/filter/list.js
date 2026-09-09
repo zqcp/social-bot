@@ -219,6 +219,10 @@ module.exports = {
 
             let page = 0;
 
+            // =========================
+            // BUILD EMBED
+            // =========================
+
             const buildEmbed = () => {
 
                 const start =
@@ -274,7 +278,7 @@ module.exports = {
 
                         new ButtonBuilder()
                             .setCustomId(
-                                "filter_list_previous"
+                                `filter_list:previous:${message.author.id}`
                             )
                             .setLabel("◀")
                             .setStyle(
@@ -286,7 +290,7 @@ module.exports = {
 
                         new ButtonBuilder()
                             .setCustomId(
-                                "filter_list_page"
+                                `filter_list:page:${message.author.id}`
                             )
                             .setLabel(
                                 `${page + 1}/${totalPages}`
@@ -298,7 +302,7 @@ module.exports = {
 
                         new ButtonBuilder()
                             .setCustomId(
-                                "filter_list_next"
+                                `filter_list:next:${message.author.id}`
                             )
                             .setLabel("▶")
                             .setStyle(
@@ -310,6 +314,10 @@ module.exports = {
 
                     );
             };
+
+            // =========================
+            // SEND LIST
+            // =========================
 
             return message.channel.send({
                 embeds: [
