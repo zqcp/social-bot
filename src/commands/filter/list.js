@@ -1,6 +1,9 @@
 const {
     PermissionFlagsBits,
-    EmbedBuilder
+    EmbedBuilder,
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle
 } = require("discord.js");
 
 const config =
@@ -252,7 +255,7 @@ module.exports = {
                     .addFields({
                         name: "\u200B",
                         value:
-                            `**blacklisted words**\n\n${description}`
+                            `**blacklisted words**\n${description}`
                     })
                     .setFooter({
                         text:
@@ -263,12 +266,6 @@ module.exports = {
             // =========================
             // BUTTONS
             // =========================
-
-            const {
-                ActionRowBuilder,
-                ButtonBuilder,
-                ButtonStyle
-            } = require("discord.js");
 
             const createButtons = () => {
 
