@@ -150,6 +150,24 @@ module.exports = {
             }
 
             // =========================
+            // ALREADY ENABLED
+            // =========================
+
+            if (
+                option === "yes" &&
+                filter.premade === true
+            ) {
+                return message.channel.send({
+                    embeds: [
+                        globalEmbeds.failed(
+                            message.author,
+                            "Premade filter is already **enabled**."
+                        )
+                    ]
+                });
+            }
+
+            // =========================
             // ENABLE
             // =========================
 
@@ -162,7 +180,26 @@ module.exports = {
                 return message.channel.send({
                     embeds: [
                         globalEmbeds.success(
-                            `${config.emojis.success} ${message.author}: Premade filter has been **enabled**.`
+                            message.author,
+                            "Premade filter has been **enabled**."
+                        )
+                    ]
+                });
+            }
+
+            // =========================
+            // ALREADY DISABLED
+            // =========================
+
+            if (
+                option === "no" &&
+                filter.premade === false
+            ) {
+                return message.channel.send({
+                    embeds: [
+                        globalEmbeds.failed(
+                            message.author,
+                            "Premade filter is already **disabled**."
                         )
                     ]
                 });
@@ -179,7 +216,8 @@ module.exports = {
             return message.channel.send({
                 embeds: [
                     globalEmbeds.success(
-                        `${config.emojis.success} ${message.author}: Premade filter has been **disabled**.`
+                        message.author,
+                        "Premade filter has been **disabled**."
                     )
                 ]
             });
