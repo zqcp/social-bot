@@ -22,6 +22,8 @@ module.exports = {
 
     name: "filter_list",
 
+    type: "button",
+
     async execute(
         client,
         interaction
@@ -31,29 +33,101 @@ module.exports = {
         // BUTTON CHECK
         // =========================
 
-        if (!interaction.isButton()) {
+        if (
+            !interaction.isButton()
+        ) {
+            return;
+        }
+
+        if (
+            !interaction.customId.startsWith(
+                "filter_list:"
+            )
+        ) {
             return;
         }
 
         // =========================
-        // GET PAGE
+        // BUTTON DATA
+        // =========================
+
+        const parts =
+            interaction.customId.split(":");
+
+        const action =
+            parts[1];
+
+        const ownerId =
+            parts[2];
+
+        // =========================
+        // BUTTON OWNER CHECK
+        // =========================
+
+        if (
+            interaction.user.id !==
+            ownerId
+        ) {
+            return interaction.reply({
+                content:
+                    "These buttons don't belong to you.",
+                flags: 64
+            });
+        }
+
+        // =========================
+        // GET CURRENT PAGE
         // =========================
 
         const currentEmbed =
             interaction.message.embeds[0];
 
+        if (!currentEmbed) {
+            return interaction.deferUpdate();
+        }
+
         const footer =
-            currentEmbed?.footer?.text || "";
+            currentEmbed.footer?.text || "";
 
         const pageMatch =
             footer.match(
                 /Page (\d+)\/(\d+)/
             );
 
+        if (!pageMatch) {
+            return interaction.deferUpdate();
+        }
+
         let page =
-            pageMatch
-                ? Number(pageMatch[1]) - 1
-                : 0;
+            Number(pageMatch[1]);
+
+        const totalPages =
+            Number(pageMatch[2]);
+
+        // =========================
+        // CHANGE PAGE
+        // =========================
+
+        if (
+            action === "previous"
+        ) {
+            page--;
+        }
+
+        if (
+            action === "next"
+        ) {
+            page++;
+        }
+
+        page =
+            Math.max(
+                1,
+                Math.min(
+                    page,
+                    totalPages
+                )
+            );
 
         // =========================
         // LOAD FILTER
@@ -150,7 +224,7 @@ module.exports = {
 
         const pageSize = 25;
 
-        const totalPages =
+        const calculatedTotalPages =
             Math.max(
                 1,
                 Math.ceil(
@@ -159,30 +233,12 @@ module.exports = {
                 )
             );
 
-        // =========================
-        // BUTTON ACTION
-        // =========================
-
-        if (
-            interaction.customId ===
-            "filter_list_previous"
-        ) {
-            page--;
-        }
-
-        if (
-            interaction.customId ===
-            "filter_list_next"
-        ) {
-            page++;
-        }
-
         page =
             Math.max(
-                0,
+                1,
                 Math.min(
                     page,
-                    totalPages - 1
+                    calculatedTotalPages
                 )
             );
 
@@ -191,7 +247,8 @@ module.exports = {
         // =========================
 
         const start =
-            page * pageSize;
+            (page - 1) *
+            pageSize;
 
         const pageWords =
             uniqueWords.slice(
@@ -204,8 +261,13 @@ module.exports = {
                 .map(
                     (word, index) =>
                         `\`${String(
-                            start + index + 1
-                        ).padStart(2, "0")}\` **${word}**`
+                            start +
+                            index +
+                            1
+                        ).padStart(
+                            2,
+                            "0"
+                        )}\` **${word}**`
                 )
                 .join("\n");
 
@@ -229,11 +291,11 @@ module.exports = {
                 .addFields({
                     name: "\u200B",
                     value:
-                        `**blacklisted words**\n\n${description}`
+                        `**blacklisted words**\n${description}`
                 })
                 .setFooter({
                     text:
-                        `Page ${page + 1}/${totalPages} • (${uniqueWords.length} words)`
+                        `Page ${page}/${calculatedTotalPages} • (${uniqueWords.length} words)`
                 });
 
         // =========================
@@ -246,22 +308,22 @@ module.exports = {
 
                     new ButtonBuilder()
                         .setCustomId(
-                            "filter_list_previous"
+                            `filter_list:previous:${ownerId}`
                         )
                         .setLabel("◀")
                         .setStyle(
                             ButtonStyle.Secondary
                         )
                         .setDisabled(
-                            page === 0
+                            page <= 1
                         ),
 
                     new ButtonBuilder()
                         .setCustomId(
-                            "filter_list_page"
+                            `filter_list:page:${ownerId}`
                         )
                         .setLabel(
-                            `${page + 1}/${totalPages}`
+                            `${page}/${calculatedTotalPages}`
                         )
                         .setStyle(
                             ButtonStyle.Secondary
@@ -270,14 +332,15 @@ module.exports = {
 
                     new ButtonBuilder()
                         .setCustomId(
-                            "filter_list_next"
+                            `filter_list:next:${ownerId}`
                         )
                         .setLabel("▶")
                         .setStyle(
                             ButtonStyle.Secondary
                         )
                         .setDisabled(
-                            page >= totalPages - 1
+                            page >=
+                            calculatedTotalPages
                         )
 
                 );
@@ -291,7 +354,7 @@ module.exports = {
                 embed
             ],
             components:
-                totalPages > 1
+                calculatedTotalPages > 1
                     ? [row]
                     : []
         });
