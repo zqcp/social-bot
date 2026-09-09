@@ -210,7 +210,7 @@ module.exports = {
                         .setCustomId(
                             `role_list:previous:${ownerId}`
                         )
-                        .setLabel("‹")
+                        .setLabel("◀")
                         .setStyle(
                             ButtonStyle.Secondary
                         )
