@@ -161,7 +161,7 @@ module.exports = {
 
                 return message.channel.send({
                     embeds: [
-                        globalEmbeds.regular(
+                        globalEmbeds.success(
                             `${config.emojis.success} ${message.author}: Premade filter has been **enabled**.`
                         )
                     ]
@@ -178,7 +178,7 @@ module.exports = {
 
             return message.channel.send({
                 embeds: [
-                    globalEmbeds.regular(
+                    globalEmbeds.success(
                         `${config.emojis.success} ${message.author}: Premade filter has been **disabled**.`
                     )
                 ]
