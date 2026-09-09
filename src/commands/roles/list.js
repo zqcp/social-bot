@@ -211,7 +211,7 @@ module.exports = {
                         .setCustomId(
                             `role_list:previous:${message.author.id}`
                         )
-                        .setLabel("‹")
+                        .setLabel("◀")
                         .setStyle(
                             ButtonStyle.Secondary
                         )
@@ -235,7 +235,7 @@ module.exports = {
                         .setCustomId(
                             `role_list:next:${message.author.id}`
                         )
-                        .setLabel("›")
+                        .setLabel("▶")
                         .setStyle(
                             ButtonStyle.Secondary
                         )
@@ -286,7 +286,7 @@ module.exports = {
                                         .setCustomId(
                                             `role_list:previous:${message.author.id}`
                                         )
-                                        .setLabel("‹")
+                                        .setLabel("◀")
                                         .setStyle(
                                             ButtonStyle.Secondary
                                         )
@@ -308,7 +308,7 @@ module.exports = {
                                         .setCustomId(
                                             `role_list:next:${message.author.id}`
                                         )
-                                        .setLabel("›")
+                                        .setLabel("▶")
                                         .setStyle(
                                             ButtonStyle.Secondary
                                         )
