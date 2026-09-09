@@ -1,6 +1,10 @@
 const {
-    PermissionFlagsBits
+    PermissionFlagsBits,
+    EmbedBuilder
 } = require("discord.js");
+
+const config =
+    require("../../config");
 
 const globalEmbeds =
     require("../../embeds/general/global");
@@ -101,8 +105,10 @@ module.exports = {
             }
 
             const embed =
-                globalEmbeds
-                    .regular("")
+                new EmbedBuilder()
+                    .setColor(
+                        config.colors.regular
+                    )
                     .setAuthor({
                         name:
                             message.guild.name,
