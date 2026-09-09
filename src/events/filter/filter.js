@@ -5,9 +5,14 @@ const filterSystem =
     require("../../systems/filter");
 
 module.exports = {
+
     name: "messageCreate",
 
-    async execute(client, message) {
+    async execute(
+        message,
+        client
+    ) {
+
         if (
             !message.guild ||
             message.author.bot
@@ -16,6 +21,7 @@ module.exports = {
         }
 
         try {
+
             const filter =
                 await Filter.findOne({
                     guildId:
@@ -31,11 +37,8 @@ module.exports = {
                 filter
             );
 
-        } catch (error) {
-            console.error(
-                "Filter Error:",
-                error
-            );
-        }
+        } catch {}
+
     }
+
 };
