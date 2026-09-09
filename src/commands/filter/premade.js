@@ -119,7 +119,7 @@ module.exports = {
             return message.channel.send({
                 embeds: [
                     globalEmbeds.error(
-                        "Please choose **yes** or **no**."
+                        "${message.author}: Please choose **yes** or **no**."
                     )
                 ]
             });
