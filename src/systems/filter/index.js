@@ -56,6 +56,42 @@ async function handleMessage(
     }
 
     // =========================
+    // FIND MATCH
+    // =========================
+
+    const matchedWord =
+        findBlockedWord(
+            message.content,
+            filter.words
+        );
+
+    if (!matchedWord) {
+        return;
+    }
+
+    // =========================
+    // ADMINISTRATOR
+    // =========================
+
+    if (
+        message.member.permissions.has(
+            PermissionFlagsBits.Administrator
+        )
+    ) {
+
+        if (
+            filterConfig.deleteMessage &&
+            message.deletable
+        ) {
+            try {
+                await message.delete();
+            } catch {}
+        }
+
+        return;
+    }
+
+    // =========================
     // BYPASS PERMISSIONS
     // =========================
 
@@ -70,16 +106,6 @@ async function handleMessage(
         return;
     }
 
-    const matchedWord =
-        findBlockedWord(
-            message.content,
-            filter.words
-        );
-
-    if (!matchedWord) {
-        return;
-    }
-
     // =========================
     // DELETE MESSAGE
     // =========================
@@ -91,18 +117,6 @@ async function handleMessage(
         try {
             await message.delete();
         } catch {}
-    }
-
-    // =========================
-    // ADMINISTRATOR
-    // =========================
-
-    if (
-        message.member.permissions.has(
-            PermissionFlagsBits.Administrator
-        )
-    ) {
-        return;
     }
 
     // =========================
@@ -139,6 +153,7 @@ async function handleMessage(
         message.member.communicationDisabledUntilTimestamp >
             now
     ) {
+
         data.lastViolation =
             now;
 
@@ -174,7 +189,6 @@ async function handleMessage(
         );
 
     if (punishment) {
-
         data.timeoutUntil =
             now +
             punishment.duration;
@@ -206,7 +220,7 @@ async function handleMessage(
                             config.colors.error
                         )
                         .setDescription(
-                            `${config.emojis.error} ${message.author}: Message removed. Timeout: \`${punishment.name}\`.`
+                            `⚠️ ${message.author}: Your message was removed because it contained a blocked word. You have been timed out for ${punishment.name}.`
                         )
                 ]
             });
