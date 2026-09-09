@@ -5,7 +5,7 @@
 const {
     scanImage
 } = require(
-    "../../systems/imageModeration/scanner"
+    "../../systems/imageModeration/openai"
 );
 
 // =========================
