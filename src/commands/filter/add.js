@@ -11,6 +11,9 @@ const filterEmbeds =
 const Filter =
     require("../../models/Filter");
 
+const blockedWords =
+    require("../../systems/filter/blockedWords");
+
 module.exports = {
     name: "filter add",
     aliases: [],
@@ -95,6 +98,7 @@ module.exports = {
         }
 
         try {
+
             let filter =
                 await Filter.findOne({
                     guildId:
@@ -107,9 +111,80 @@ module.exports = {
                         guildId:
                             message.guild.id,
                         enabled: false,
+                        premade: false,
+                        disabledPremade: [],
                         words: []
                     });
             }
+
+            // =========================
+            // CHECK PREMADE WORDS
+            // =========================
+
+            const premadeWord =
+                blockedWords.find(
+                    current =>
+                        current.toLowerCase() ===
+                        word.toLowerCase()
+                );
+
+            if (premadeWord) {
+
+                const disabledIndex =
+                    Array.isArray(filter.disabledPremade)
+                        ? filter.disabledPremade.findIndex(
+                            current =>
+                                current.toLowerCase() ===
+                                premadeWord.toLowerCase()
+                        )
+                        : -1;
+
+                // Already active through premade
+                if (
+                    filter.premade === true &&
+                    disabledIndex === -1
+                ) {
+                    return message.channel.send({
+                        embeds: [
+                            filterEmbeds.alreadyBlocked(
+                                message.author,
+                                word
+                            )
+                        ]
+                    });
+                }
+
+                // Already exists as custom
+                const customExists =
+                    filter.words.some(
+                        current =>
+                            current.toLowerCase() ===
+                            word.toLowerCase()
+                    );
+
+                if (customExists) {
+                    return message.channel.send({
+                        embeds: [
+                            filterEmbeds.alreadyBlocked(
+                                message.author,
+                                word
+                            )
+                        ]
+                    });
+                }
+
+                // Remove premade exclusion if present
+                if (disabledIndex !== -1) {
+                    filter.disabledPremade.splice(
+                        disabledIndex,
+                        1
+                    );
+                }
+            }
+
+            // =========================
+            // CHECK CUSTOM WORDS
+            // =========================
 
             const exists =
                 filter.words.some(
@@ -129,6 +204,10 @@ module.exports = {
                 });
             }
 
+            // =========================
+            // ADD CUSTOM WORD
+            // =========================
+
             filter.words.push(
                 word
             );
@@ -145,6 +224,7 @@ module.exports = {
             });
 
         } catch (error) {
+
             console.error(
                 "Filter Add Error:",
                 error
