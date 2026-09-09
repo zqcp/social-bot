@@ -21,6 +21,18 @@ const filterSchema =
                 default: false
             },
 
+            premade: {
+                type: Boolean,
+                default: false
+            },
+
+            disabledPremade: {
+                type: [
+                    String
+                ],
+                default: []
+            },
+
             words: {
                 type: [
                     String
