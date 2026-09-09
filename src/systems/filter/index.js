@@ -9,6 +9,9 @@ const config =
 const filterConfig =
     require("./config");
 
+const blockedWords =
+    require("./blockedWords");
+
 const {
     findBlockedWord
 } = require("./detector");
@@ -23,6 +26,70 @@ const {
 
 const strikes =
     new Map();
+
+// =========================
+// FILTER WORDS
+// =========================
+
+function getFilterWords(filter) {
+
+    const words = [];
+
+    // =========================
+    // PREMADE WORDS
+    // =========================
+
+    if (filter.premade === true) {
+
+        const disabledPremade =
+            Array.isArray(filter.disabledPremade)
+                ? filter.disabledPremade
+                : [];
+
+        for (const word of blockedWords) {
+
+            const disabled =
+                disabledPremade.some(
+                    disabledWord =>
+                        disabledWord.toLowerCase() ===
+                        word.toLowerCase()
+                );
+
+            if (!disabled) {
+                words.push(word);
+            }
+        }
+    }
+
+    // =========================
+    // CUSTOM WORDS
+    // =========================
+
+    if (Array.isArray(filter.words)) {
+        words.push(
+            ...filter.words
+        );
+    }
+
+    // =========================
+    // REMOVE DUPLICATES
+    // =========================
+
+    return [
+        ...new Set(
+            words
+                .filter(
+                    word =>
+                        typeof word === "string" &&
+                        word.trim()
+                )
+                .map(
+                    word =>
+                        word.trim()
+                )
+        )
+    ];
+}
 
 // =========================
 // FILTER SYSTEM
@@ -47,11 +114,14 @@ async function handleMessage(
         return;
     }
 
-    if (
-        !filter?.enabled ||
-        !Array.isArray(filter.words) ||
-        !filter.words.length
-    ) {
+    if (!filter?.enabled) {
+        return;
+    }
+
+    const words =
+        getFilterWords(filter);
+
+    if (!words.length) {
         return;
     }
 
@@ -62,7 +132,7 @@ async function handleMessage(
     const matchedWord =
         findBlockedWord(
             message.content,
-            filter.words
+            words
         );
 
     if (!matchedWord) {
@@ -154,9 +224,6 @@ async function handleMessage(
             now
     ) {
 
-        data.lastViolation =
-            now;
-
         strikes.set(
             key,
             data
@@ -220,7 +287,7 @@ async function handleMessage(
                             config.colors.error
                         )
                         .setDescription(
-                            `⚠️ ${message.author}: Your message was removed because it contained a blocked word. You have been timed out for ${punishment.name}.`
+                            `${config.emojis.error} ${message.author}: Message deleted. Timeout: **${punishment.name}**.`
                         )
                 ]
             });
@@ -268,10 +335,6 @@ function cleanupStrikes() {
     }
 }
 
-// =========================
-// INTERVAL
-// =========================
-
 setInterval(
     cleanupStrikes,
     60 * 60 * 1000
@@ -284,5 +347,6 @@ setInterval(
 module.exports = {
     handleMessage,
     cleanupStrikes,
-    strikes
+    strikes,
+    getFilterWords
 };
