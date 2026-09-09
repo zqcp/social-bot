@@ -14,11 +14,26 @@ const Filter =
 const blockedWords =
     require("../../systems/filter/blockedWords");
 
+// =========================
+// COMMAND
+// =========================
+
 module.exports = {
+
     name: "filter add",
+
     aliases: [],
 
-    async execute(client, message, args) {
+    async execute(
+        client,
+        message,
+        args
+    ) {
+
+        // =========================
+        // GUILD CHECK
+        // =========================
+
         if (!message.guild) {
             return message.channel.send({
                 embeds: [
@@ -28,6 +43,10 @@ module.exports = {
                 ]
             });
         }
+
+        // =========================
+        // USER PERMISSION
+        // =========================
 
         if (
             !message.member.permissions.has(
@@ -43,6 +62,10 @@ module.exports = {
                 ]
             });
         }
+
+        // =========================
+        // BOT PERMISSIONS
+        // =========================
 
         const botMember =
             message.guild.members.me;
@@ -62,6 +85,7 @@ module.exports = {
             );
 
         if (missingPermissions.length) {
+
             const permissionNames =
                 missingPermissions.map(
                     permission =>
@@ -83,6 +107,10 @@ module.exports = {
             });
         }
 
+        // =========================
+        // WORD
+        // =========================
+
         const word =
             args.join(" ").trim();
 
@@ -97,6 +125,10 @@ module.exports = {
             });
         }
 
+        // =========================
+        // DATABASE
+        // =========================
+
         try {
 
             let filter =
@@ -106,6 +138,7 @@ module.exports = {
                 });
 
             if (!filter) {
+
                 filter =
                     await Filter.create({
                         guildId:
@@ -118,7 +151,7 @@ module.exports = {
             }
 
             // =========================
-            // CHECK PREMADE WORDS
+            // PREMADE CHECK
             // =========================
 
             const premadeWord =
@@ -128,62 +161,22 @@ module.exports = {
                         word.toLowerCase()
                 );
 
-            if (premadeWord) {
-
-                const disabledIndex =
-                    Array.isArray(filter.disabledPremade)
-                        ? filter.disabledPremade.findIndex(
-                            current =>
-                                current.toLowerCase() ===
-                                premadeWord.toLowerCase()
+            if (
+                premadeWord &&
+                filter.premade === true
+            ) {
+                return message.channel.send({
+                    embeds: [
+                        filterEmbeds.alreadyBlocked(
+                            message.author,
+                            word
                         )
-                        : -1;
-
-                // Already active through premade
-                if (
-                    filter.premade === true &&
-                    disabledIndex === -1
-                ) {
-                    return message.channel.send({
-                        embeds: [
-                            filterEmbeds.alreadyBlocked(
-                                message.author,
-                                word
-                            )
-                        ]
-                    });
-                }
-
-                // Already exists as custom
-                const customExists =
-                    filter.words.some(
-                        current =>
-                            current.toLowerCase() ===
-                            word.toLowerCase()
-                    );
-
-                if (customExists) {
-                    return message.channel.send({
-                        embeds: [
-                            filterEmbeds.alreadyBlocked(
-                                message.author,
-                                word
-                            )
-                        ]
-                    });
-                }
-
-                // Remove premade exclusion if present
-                if (disabledIndex !== -1) {
-                    filter.disabledPremade.splice(
-                        disabledIndex,
-                        1
-                    );
-                }
+                    ]
+                });
             }
 
             // =========================
-            // CHECK CUSTOM WORDS
+            // CUSTOM WORD CHECK
             // =========================
 
             const exists =
@@ -205,7 +198,7 @@ module.exports = {
             }
 
             // =========================
-            // ADD CUSTOM WORD
+            // ADD WORD
             // =========================
 
             filter.words.push(
@@ -239,5 +232,7 @@ module.exports = {
                 ]
             });
         }
+
     }
+
 };
