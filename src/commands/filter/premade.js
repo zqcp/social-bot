@@ -1,5 +1,6 @@
 const {
-    PermissionFlagsBits
+    PermissionFlagsBits,
+    EmbedBuilder
 } = require("discord.js");
 
 const globalEmbeds =
@@ -157,13 +158,16 @@ module.exports = {
                 option === "yes" &&
                 filter.premade === true
             ) {
+
+                const embed =
+                    new EmbedBuilder()
+                        .setColor(config.colors.error)
+                        .setDescription(
+                            `${config.emojis.error} ${message.author}: Premade filter is already **enabled**.`
+                        );
+
                 return message.channel.send({
-                    embeds: [
-                        globalEmbeds.failed(
-                            message.author,
-                            "Premade filter is already **enabled**."
-                        )
-                    ]
+                    embeds: [embed]
                 });
             }
 
@@ -177,13 +181,15 @@ module.exports = {
 
                 await filter.save();
 
+                const embed =
+                    new EmbedBuilder()
+                        .setColor(config.colors.success)
+                        .setDescription(
+                            `${config.emojis.success} ${message.author}: Premade filter has been **enabled**.`
+                        );
+
                 return message.channel.send({
-                    embeds: [
-                        globalEmbeds.success(
-                            message.author,
-                            "Premade filter has been **enabled**."
-                        )
-                    ]
+                    embeds: [embed]
                 });
             }
 
@@ -195,13 +201,16 @@ module.exports = {
                 option === "no" &&
                 filter.premade === false
             ) {
+
+                const embed =
+                    new EmbedBuilder()
+                        .setColor(config.colors.error)
+                        .setDescription(
+                            `${config.emojis.error} ${message.author}: Premade filter is already **disabled**.`
+                        );
+
                 return message.channel.send({
-                    embeds: [
-                        globalEmbeds.failed(
-                            message.author,
-                            "Premade filter is already **disabled**."
-                        )
-                    ]
+                    embeds: [embed]
                 });
             }
 
@@ -213,13 +222,15 @@ module.exports = {
 
             await filter.save();
 
+            const embed =
+                new EmbedBuilder()
+                    .setColor(config.colors.success)
+                    .setDescription(
+                        `${config.emojis.success} ${message.author}: Premade filter has been **disabled**.`
+                    );
+
             return message.channel.send({
-                embeds: [
-                    globalEmbeds.success(
-                        message.author,
-                        "Premade filter has been **disabled**."
-                    )
-                ]
+                embeds: [embed]
             });
 
         } catch (error) {
@@ -229,13 +240,15 @@ module.exports = {
                 error
             );
 
+            const embed =
+                new EmbedBuilder()
+                    .setColor(config.colors.error)
+                    .setDescription(
+                        `${config.emojis.error} ${message.author}: Failed to update the premade filter.`
+                    );
+
             return message.channel.send({
-                embeds: [
-                    globalEmbeds.actionFailed(
-                        message.author,
-                        "update the premade filter"
-                    )
-                ]
+                embeds: [embed]
             });
         }
     }
