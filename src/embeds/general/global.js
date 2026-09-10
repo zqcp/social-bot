@@ -15,21 +15,29 @@ module.exports = {
             );
     },
 
-    botPermission(user, permissions) {
+    permissions(user, permissions) {
         return new EmbedBuilder()
             .setColor(config.colors.error)
             .setDescription(
-                `${config.emojis.error} ${user}: I'm missing the following permissions: ${permissions
+                `${config.emojis.error} ${user}: You're missing the following permissions: ${permissions
                     .map(permission => `\`${permission}\``)
                     .join(", ")}.`
             );
     },
 
-    permissionMultiple(user, permissions) {
+    botPermission(user, permission) {
         return new EmbedBuilder()
             .setColor(config.colors.error)
             .setDescription(
-                `${config.emojis.error} ${user}: You're missing the following permissions: ${permissions
+                `${config.emojis.error} ${user}: I'm missing the \`${permission}\` permission.`
+            );
+    },
+
+    botPermissions(user, permissions) {
+        return new EmbedBuilder()
+            .setColor(config.colors.error)
+            .setDescription(
+                `${config.emojis.error} ${user}: I'm missing the following permissions: ${permissions
                     .map(permission => `\`${permission}\``)
                     .join(", ")}.`
             );
@@ -76,14 +84,6 @@ module.exports = {
     // =========================
     // NOT FOUND
     // =========================
-
-    notFound(user) {
-        return new EmbedBuilder()
-            .setColor(config.colors.error)
-            .setDescription(
-                `${config.emojis.error} ${user}: Couldn't find that \`member\`.`
-            );
-    },
 
     userNotFound(user, value) {
         return new EmbedBuilder()
