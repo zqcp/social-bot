@@ -24,7 +24,7 @@ async function scanVideo(
         !SIGHTENGINE_USER ||
         !SIGHTENGINE_SECRET
     ) {
-        return false;
+        return null;
     }
 
     try {
@@ -37,7 +37,7 @@ async function scanVideo(
             await fetch(videoUrl);
 
         if (!videoResponse.ok) {
-            return false;
+            return null;
         }
 
         const videoBuffer =
@@ -86,7 +86,7 @@ async function scanVideo(
             );
 
         if (!response.ok) {
-            return false;
+            return null;
         }
 
         const data =
@@ -96,7 +96,7 @@ async function scanVideo(
             data.status !==
             "success"
         ) {
-            return false;
+            return null;
         }
 
         // =========================
@@ -120,7 +120,7 @@ async function scanVideo(
                 nudity.very_suggestive
             ) >= THRESHOLD
         ) {
-            return true;
+            return "nsfw";
         }
 
         // =========================
@@ -133,10 +133,20 @@ async function scanVideo(
         if (
             Number(
                 offensive.nazi
-            ) >= THRESHOLD ||
+            ) >= THRESHOLD
+        ) {
+            return "nazi";
+        }
+
+        if (
             Number(
                 offensive.terrorist
-            ) >= THRESHOLD ||
+            ) >= THRESHOLD
+        ) {
+            return "terrorist";
+        }
+
+        if (
             Number(
                 offensive.supremacist
             ) >= THRESHOLD ||
@@ -147,7 +157,7 @@ async function scanVideo(
                 offensive.offensive
             ) >= THRESHOLD
         ) {
-            return true;
+            return "illegal";
         }
 
         // =========================
@@ -162,7 +172,7 @@ async function scanVideo(
                 gore.gore
             ) >= THRESHOLD
         ) {
-            return true;
+            return "gore";
         }
 
         // =========================
@@ -180,10 +190,10 @@ async function scanVideo(
                 selfHarm.type?.real
             ) >= THRESHOLD
         ) {
-            return true;
+            return "self-harm";
         }
 
-        return false;
+        return null;
 
     } catch (error) {
 
@@ -192,7 +202,7 @@ async function scanVideo(
             error
         );
 
-        return false;
+        return null;
     }
 
 }
