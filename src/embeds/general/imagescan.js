@@ -24,8 +24,7 @@ module.exports = {
                 config.colors.success
             )
             .setDescription(
-                `${config.emojis.success} ${user}: **Image Moderation Setup**\n\n` +
-                `Would you like to enable image and video moderation?`
+                `${config.emojis.success} ${user}: Image moderation has been **enabled**.`
             );
 
     },
@@ -43,25 +42,7 @@ module.exports = {
                 config.colors.error
             )
             .setDescription(
-                `${config.emojis.error} ${user}: Image and video moderation is already **enabled**.`
-            );
-
-    },
-
-    // =========================
-    // SETUP SUCCESS
-    // =========================
-
-    setupSuccess(
-        user
-    ) {
-
-        return new EmbedBuilder()
-            .setColor(
-                config.colors.success
-            )
-            .setDescription(
-                `${config.emojis.success} ${user}: Image and video moderation has been **enabled**.`
+                `${config.emojis.error} ${user}: Image moderation is already **enabled**.`
             );
 
     },
@@ -79,8 +60,7 @@ module.exports = {
                 config.colors.error
             )
             .setDescription(
-                `${config.emojis.error} ${user}: **Disable Image Moderation**\n\n` +
-                `Would you like to disable image and video moderation?`
+                `${config.emojis.error} ${user}: Image moderation has been **disabled**.`
             );
 
     },
@@ -98,25 +78,7 @@ module.exports = {
                 config.colors.error
             )
             .setDescription(
-                `${config.emojis.error} ${user}: Image and video moderation is already **disabled**.`
-            );
-
-    },
-
-    // =========================
-    // DISABLE SUCCESS
-    // =========================
-
-    disableSuccess(
-        user
-    ) {
-
-        return new EmbedBuilder()
-            .setColor(
-                config.colors.success
-            )
-            .setDescription(
-                `${config.emojis.success} ${user}: Image and video moderation has been **disabled**.`
+                `${config.emojis.error} ${user}: Image moderation is already **disabled**.`
             );
 
     }
