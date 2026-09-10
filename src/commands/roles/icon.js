@@ -64,6 +64,16 @@ module.exports = {
         const botMember =
             message.guild.members.me;
 
+        if (!botMember) {
+            return message.channel.send({
+                embeds: [
+                    globalEmbeds.error(
+                        "I couldn't find my member information in this server."
+                    )
+                ]
+            });
+        }
+
         const requiredPermissions = [
             PermissionFlagsBits.ViewChannel,
             PermissionFlagsBits.SendMessages,
@@ -71,15 +81,19 @@ module.exports = {
             PermissionFlagsBits.ManageRoles
         ];
 
+        const permissions =
+            message.channel.permissionsFor(
+                botMember
+            );
+
         const missingPermissions =
             requiredPermissions.filter(
                 permission =>
-                    !message.channel
-                        .permissionsFor(botMember)
-                        ?.has(permission)
+                    !permissions?.has(permission)
             );
 
         if (missingPermissions.length) {
+
             const permissionNames =
                 missingPermissions.map(
                     permission =>
@@ -93,7 +107,7 @@ module.exports = {
 
             return message.channel.send({
                 embeds: [
-                    globalEmbeds.botPermission(
+                    globalEmbeds.botPermissions(
                         message.author,
                         permissionNames
                     )
@@ -108,8 +122,9 @@ module.exports = {
         if (!args.length) {
             return message.channel.send({
                 embeds: [
-                    roleEmbeds.noRole(
-                        message.author
+                    globalEmbeds.missing(
+                        message.author,
+                        "role"
                     )
                 ]
             });
@@ -191,13 +206,23 @@ module.exports = {
 
         const customEmoji =
             iconInput.match(
-                /^<a?:\w+:(\d+)>$/
+                /^<a?:(\w+):(\d+)>$/
             );
 
         if (customEmoji) {
+
             icon =
-                customEmoji[1];
+                customEmoji[2];
+
         }
+
+        // =========================
+        // REGULAR EMOJI
+        // =========================
+
+        // Unicode emojis are passed directly
+        // to Discord. Custom server emojis are
+        // converted to their emoji ID above.
 
         // =========================
         // ROLE HIERARCHY
