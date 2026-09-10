@@ -146,7 +146,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.role)
             .setDescription(
-                `${config.emojis.add} ${user}: Added \`${role.name}\` to **${member.user.username}**.`
+                `${config.emojis.add} ${user}: Added ${role} to **${member.user.username}**.`
             );
     },
 
@@ -154,7 +154,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.failed)
             .setDescription(
-                `${config.emojis.failed} ${user}: Failed to add \`${role.name}\` to **${member.user.username}**. Please try again.`
+                `${config.emojis.failed} ${user}: Failed to add ${role} to **${member.user.username}**. Please try again.`
             );
     },
 
