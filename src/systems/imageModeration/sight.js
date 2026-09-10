@@ -28,7 +28,7 @@ async function scanImage(
         !SIGHTENGINE_USER ||
         !SIGHTENGINE_SECRET
     ) {
-        return false;
+        return null;
     }
 
     try {
@@ -62,7 +62,7 @@ async function scanImage(
             await fetch(url);
 
         if (!response.ok) {
-            return false;
+            return null;
         }
 
         const data =
@@ -72,7 +72,7 @@ async function scanImage(
             data.status !==
             "success"
         ) {
-            return false;
+            return null;
         }
 
         // =========================
@@ -94,29 +94,43 @@ async function scanImage(
             Number(nudity.suggestive) >=
                 THRESHOLD
         ) {
-            return true;
+            return "nsfw";
         }
 
         // =========================
-        // EXTREMIST / HATE
+        // NAZI
         // =========================
 
         const offensive =
             data.offensive || {};
 
         if (
-            Number(offensive.prob) >=
-                THRESHOLD ||
             Number(offensive.nazi) >=
-                THRESHOLD ||
-            Number(offensive.terrorist) >=
-                THRESHOLD ||
-            Number(offensive.supremacist) >=
-                THRESHOLD ||
-            Number(offensive.confederate) >=
-                THRESHOLD
+            THRESHOLD
         ) {
-            return true;
+            return "nazi";
+        }
+
+        // =========================
+        // TERRORIST
+        // =========================
+
+        if (
+            Number(offensive.terrorist) >=
+            THRESHOLD
+        ) {
+            return "terrorist";
+        }
+
+        // =========================
+        // EXTREMIST / SUPREMACIST
+        // =========================
+
+        if (
+            Number(offensive.supremacist) >=
+            THRESHOLD
+        ) {
+            return "nazi";
         }
 
         // =========================
@@ -130,7 +144,7 @@ async function scanImage(
             Number(gore.prob) >=
             THRESHOLD
         ) {
-            return true;
+            return "gore";
         }
 
         // =========================
@@ -142,15 +156,15 @@ async function scanImage(
 
         if (
             Number(selfHarm.prob) >=
-            THRESHOLD ||
+                THRESHOLD ||
             Number(
                 selfHarm.type?.real
             ) >= THRESHOLD
         ) {
-            return true;
+            return "self-harm";
         }
 
-        return false;
+        return null;
 
     } catch (error) {
 
@@ -159,7 +173,7 @@ async function scanImage(
             error
         );
 
-        return false;
+        return null;
     }
 
 }
