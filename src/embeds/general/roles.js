@@ -7,27 +7,11 @@ module.exports = {
     // ERRORS
     // =========================
 
-    memberNotFound(user) {
-        return new EmbedBuilder()
-            .setColor(config.colors.error)
-            .setDescription(
-                `${config.emojis.error} ${user}: I couldn't find that \`member\`.`
-            );
-    },
-
-    noRole(user) {
-        return new EmbedBuilder()
-            .setColor(config.colors.error)
-            .setDescription(
-                `${config.emojis.error} ${user}: Please provide a \`role\`.`
-            );
-    },
-
     roleNotFound(user, role) {
         return new EmbedBuilder()
             .setColor(config.colors.error)
             .setDescription(
-                `${config.emojis.error} ${user}: Couldn't find that role matching \`${role}\`.`
+                `${config.emojis.error} ${user}: Couldn't find a **role** matching \`${role}\`.`
             );
     },
 
@@ -47,19 +31,19 @@ module.exports = {
             );
     },
 
-    alreadyHas(user, role) {
+    alreadyHas(user, role, member) {
         return new EmbedBuilder()
             .setColor(config.colors.failed)
             .setDescription(
-                `${config.emojis.failed} ${user}: Already has \`${role.name}\`.`
+                `${config.emojis.failed} ${user}: **${member.user.username}** already has \`${role.name}\`.`
             );
     },
 
-    notHas(user, role) {
+    notHas(user, role, member) {
         return new EmbedBuilder()
             .setColor(config.colors.failed)
             .setDescription(
-                `${config.emojis.failed} ${user}: Doesn't have \`${role.name}\`.`
+                `${config.emojis.failed} ${user}: **${member.user.username}** doesn't have \`${role.name}\`.`
             );
     },
 
@@ -83,7 +67,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.error)
             .setDescription(
-                `${config.emojis.error} ${user}: \`${color}\` isn't a **valid color**.`
+                `${config.emojis.error} ${user}: \`${color}\` isn't a valid **color**.`
             );
     },
 
@@ -91,9 +75,10 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.error)
             .setDescription(
-                `${config.emojis.error} ${user}: ${icon} isn't a valid **role icon**.`
+                `${config.emojis.error} ${icon} isn't a valid **role icon**.`
             );
     },
+
 
     // =========================
     // CREATE ROLE
@@ -103,7 +88,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.role)
             .setDescription(
-                `${config.emojis.add} ${user}: Created **role** \`${role.name}\``
+                `${config.emojis.add} ${user}: Created **role** \`${role.name}\`.`
             );
     },
 
@@ -111,9 +96,10 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.failed)
             .setDescription(
-                `${config.emojis.failed} ${user}: I couldn't **create role** \`${role.name}\`.`
+                `${config.emojis.failed} ${user}: Failed to **create role** \`${role.name}\`. Please try again.`
             );
     },
+
 
     // =========================
     // ROLE STYLES
@@ -131,7 +117,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.success)
             .setDescription(
-                `${config.emojis.success} ${user}: Updated \`${role.name}\` **gradient color** to \`${color1}\` and \`${color2}\`.`
+                `${config.emojis.success} ${user}: Updated \`${role.name}\` **gradient colors** to \`${color1}\` and \`${color2}\`.`
             );
     },
 
@@ -151,6 +137,7 @@ module.exports = {
             );
     },
 
+
     // =========================
     // ADD ROLE
     // =========================
@@ -167,9 +154,10 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.failed)
             .setDescription(
-                `${config.emojis.failed} ${user}: I couldn't add \`${role.name}\` to **${member.user.username}**.`
+                `${config.emojis.failed} ${user}: Failed to add \`${role.name}\` to **${member.user.username}**. Please try again.`
             );
     },
+
 
     // =========================
     // REMOVE ROLE
@@ -187,9 +175,10 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.failed)
             .setDescription(
-                `${config.emojis.failed} ${user}: I couldn't remove \`${role.name}\` from **${member.user.username}**.`
+                `${config.emojis.failed} ${user}: Failed to remove \`${role.name}\` from **${member.user.username}**. Please try again.`
             );
     },
+
 
     // =========================
     // DELETE ROLE
@@ -207,7 +196,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.failed)
             .setDescription(
-                `${config.emojis.failed} ${user}: I couldn't **delete role** \`${role.name}\`.`
+                `${config.emojis.failed} ${user}: Failed to **delete role** \`${role.name}\`. Please try again.`
             );
     }
 
