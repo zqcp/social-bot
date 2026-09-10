@@ -64,6 +64,16 @@ module.exports = {
         const botMember =
             message.guild.members.me;
 
+        if (!botMember) {
+            return message.channel.send({
+                embeds: [
+                    globalEmbeds.error(
+                        "I couldn't find my member information in this server."
+                    )
+                ]
+            });
+        }
+
         const requiredPermissions = [
             PermissionFlagsBits.ViewChannel,
             PermissionFlagsBits.SendMessages,
@@ -71,15 +81,19 @@ module.exports = {
             PermissionFlagsBits.ManageRoles
         ];
 
+        const permissions =
+            message.channel.permissionsFor(
+                botMember
+            );
+
         const missingPermissions =
             requiredPermissions.filter(
                 permission =>
-                    !message.channel
-                        .permissionsFor(botMember)
-                        ?.has(permission)
+                    !permissions?.has(permission)
             );
 
         if (missingPermissions.length) {
+
             const permissionNames =
                 missingPermissions.map(
                     permission =>
@@ -93,7 +107,7 @@ module.exports = {
 
             return message.channel.send({
                 embeds: [
-                    globalEmbeds.botPermission(
+                    globalEmbeds.botPermissions(
                         message.author,
                         permissionNames
                     )
@@ -124,25 +138,34 @@ module.exports = {
 
         if (!role) {
 
-            if (/^\d{17,20}$/.test(roleValue)) {
+            const roleId =
+                roleValue.replace(
+                    /[<@&>]/g,
+                    ""
+                );
+
+            if (/^\d{17,20}$/.test(roleId)) {
 
                 try {
 
                     role =
                         await message.guild.roles.fetch(
-                            roleValue
+                            roleId
                         );
 
                 } catch {
+
                     role = null;
+
                 }
 
             } else {
 
                 role =
                     message.guild.roles.cache.find(
-                        role =>
-                            role.name.toLowerCase() ===
+                        guildRole =>
+                            guildRole.name
+                                .toLowerCase() ===
                             roleValue.toLowerCase()
                     );
 
@@ -173,7 +196,21 @@ module.exports = {
                 embeds: [
                     roleEmbeds.unavailable(
                         message.author,
-                        role
+                        role.name
+                    )
+                ]
+            });
+        }
+
+        if (
+            role.id ===
+            message.guild.id
+        ) {
+            return message.channel.send({
+                embeds: [
+                    roleEmbeds.unavailable(
+                        message.author,
+                        role.name
                     )
                 ]
             });
