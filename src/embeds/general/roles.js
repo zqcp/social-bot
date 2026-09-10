@@ -143,18 +143,30 @@ module.exports = {
     // =========================
 
     success(user, role, member) {
+
+        const roleName =
+            role?.name ||
+            role?.replace?.(/[<@&>]/g, "") ||
+            role;
+
         return new EmbedBuilder()
             .setColor(config.colors.role)
             .setDescription(
-                `${config.emojis.add} ${user}: Added ${role} to **${member.user.username}**.`
+                `${config.emojis.add} ${user}: Added \`${roleName}\` to **${member.user.username}**.`
             );
     },
 
     failed(user, role, member) {
+
+        const roleName =
+            role?.name ||
+            role?.replace?.(/[<@&>]/g, "") ||
+            role;
+
         return new EmbedBuilder()
             .setColor(config.colors.failed)
             .setDescription(
-                `${config.emojis.failed} ${user}: Failed to add ${role} to **${member.user.username}**. Please try again.`
+                `${config.emojis.failed} ${user}: Failed to add \`${roleName}\` to **${member.user.username}**. Please try again.`
             );
     },
 
