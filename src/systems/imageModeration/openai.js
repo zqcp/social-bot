@@ -16,7 +16,7 @@ async function scanImage(
 ) {
 
     if (!OPENAI_API_KEY) {
-        return false;
+        return null;
     }
 
     try {
@@ -52,7 +52,7 @@ async function scanImage(
             );
 
         if (!response.ok) {
-            return false;
+            return null;
         }
 
         const data =
@@ -62,24 +62,49 @@ async function scanImage(
             data.results?.[0];
 
         if (!result) {
-            return false;
+            return null;
         }
 
         // =========================
-        // BLOCKED CONTENT
+        // CATEGORIES
         // =========================
 
         const categories =
             result.categories || {};
 
-        return (
-            categories.sexual === true ||
-            categories.violence === true ||
-            categories["violence/graphic"] === true ||
+        // =========================
+        // NSFW
+        // =========================
+
+        if (
+            categories.sexual === true
+        ) {
+            return "nsfw";
+        }
+
+        // =========================
+        // GORE
+        // =========================
+
+        if (
+            categories["violence/graphic"] === true
+        ) {
+            return "gore";
+        }
+
+        // =========================
+        // SELF HARM
+        // =========================
+
+        if (
             categories["self-harm"] === true ||
             categories["self-harm/intent"] === true ||
             categories["self-harm/instructions"] === true
-        );
+        ) {
+            return "self-harm";
+        }
+
+        return null;
 
     } catch (error) {
 
@@ -88,7 +113,7 @@ async function scanImage(
             error
         );
 
-        return false;
+        return null;
     }
 
 }
