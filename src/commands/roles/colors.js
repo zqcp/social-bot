@@ -224,6 +224,16 @@ module.exports = {
         const botMember =
             message.guild.members.me;
 
+        if (!botMember) {
+            return message.channel.send({
+                embeds: [
+                    globalEmbeds.error(
+                        "I couldn't find my member information in this server."
+                    )
+                ]
+            });
+        }
+
         const requiredPermissions = [
             PermissionFlagsBits.ViewChannel,
             PermissionFlagsBits.SendMessages,
@@ -231,12 +241,15 @@ module.exports = {
             PermissionFlagsBits.ManageRoles
         ];
 
+        const permissions =
+            message.channel.permissionsFor(
+                botMember
+            );
+
         const missingPermissions =
             requiredPermissions.filter(
                 permission =>
-                    !message.channel
-                        .permissionsFor(botMember)
-                        ?.has(permission)
+                    !permissions?.has(permission)
             );
 
         if (missingPermissions.length) {
@@ -254,7 +267,7 @@ module.exports = {
 
             return message.channel.send({
                 embeds: [
-                    globalEmbeds.botPermission(
+                    globalEmbeds.botPermissions(
                         message.author,
                         permissionNames
                     )
@@ -269,8 +282,9 @@ module.exports = {
         if (!args.length) {
             return message.channel.send({
                 embeds: [
-                    roleEmbeds.noRole(
-                        message.author
+                    globalEmbeds.missing(
+                        message.author,
+                        "role"
                     )
                 ]
             });
@@ -301,6 +315,35 @@ module.exports = {
                     roleEmbeds.roleNotFound(
                         message.author,
                         roleInput
+                    )
+                ]
+            });
+        }
+
+        // =========================
+        // ROLE AVAILABILITY
+        // =========================
+
+        if (
+            role.id ===
+            message.guild.id
+        ) {
+            return message.channel.send({
+                embeds: [
+                    roleEmbeds.unavailable(
+                        message.author,
+                        role.name
+                    )
+                ]
+            });
+        }
+
+        if (role.managed) {
+            return message.channel.send({
+                embeds: [
+                    roleEmbeds.unavailable(
+                        message.author,
+                        role.name
                     )
                 ]
             });
@@ -429,9 +472,8 @@ module.exports = {
                         roleEmbeds.gradient(
                             message.author,
                             role,
-                            primaryInput,
-                            secondaryInput ||
-                                secondaryColor
+                            primaryColor,
+                            secondaryColor
                         )
                     ]
                 });
@@ -450,7 +492,7 @@ module.exports = {
                     roleEmbeds.solid(
                         message.author,
                         role,
-                        primaryInput
+                        primaryColor
                     )
                 ]
             });
