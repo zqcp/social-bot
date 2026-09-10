@@ -2,11 +2,14 @@ const {
     PermissionFlagsBits
 } = require("discord.js");
 
+const roleEmbeds =
+    require("../../embeds/general/roles");
+
 const globalEmbeds =
     require("../../embeds/general/global");
 
-const roleEmbeds =
-    require("../../embeds/general/roles");
+const config =
+    require("../../config");
 
 // =========================
 // COMMAND
@@ -16,7 +19,7 @@ module.exports = {
 
     name: "role create",
 
-    aliases: ["rc"],
+    aliases: ["rolecreate", "create role"],
 
     async execute(
         client,
@@ -64,6 +67,16 @@ module.exports = {
         const botMember =
             message.guild.members.me;
 
+        if (!botMember) {
+            return message.channel.send({
+                embeds: [
+                    globalEmbeds.error(
+                        "I couldn't find my member information in this server."
+                    )
+                ]
+            });
+        }
+
         const requiredPermissions = [
             PermissionFlagsBits.ViewChannel,
             PermissionFlagsBits.SendMessages,
@@ -71,15 +84,19 @@ module.exports = {
             PermissionFlagsBits.ManageRoles
         ];
 
+        const permissions =
+            message.channel.permissionsFor(
+                botMember
+            );
+
         const missingPermissions =
             requiredPermissions.filter(
                 permission =>
-                    !message.channel
-                        .permissionsFor(botMember)
-                        ?.has(permission)
+                    !permissions?.has(permission)
             );
 
         if (missingPermissions.length) {
+
             const permissionNames =
                 missingPermissions.map(
                     permission =>
@@ -93,7 +110,7 @@ module.exports = {
 
             return message.channel.send({
                 embeds: [
-                    globalEmbeds.botPermission(
+                    globalEmbeds.botPermissions(
                         message.author,
                         permissionNames
                     )
@@ -102,7 +119,7 @@ module.exports = {
         }
 
         // =========================
-        // ROLE NAME
+        // NAME
         // =========================
 
         if (!args.length) {
@@ -116,68 +133,50 @@ module.exports = {
             });
         }
 
-        const roleName =
-            args[0];
-
         // =========================
-        // ROLE STYLE
+        // STYLE
         // =========================
 
-        const style =
-            args[1]?.toLowerCase() ||
-            "solid";
+        let style = "solid";
 
-        const validStyles = [
+        const possibleStyle =
+            args[args.length - 1]?.toLowerCase();
+
+        const styles = [
             "solid",
             "gradient",
             "holographic"
         ];
 
-        if (
-            !validStyles.includes(style)
-        ) {
+        if (styles.includes(possibleStyle)) {
+            style = possibleStyle;
+            args.pop();
+        }
+
+        // =========================
+        // ROLE NAME
+        // =========================
+
+        const name =
+            args.join(" ").trim();
+
+        if (!name) {
             return message.channel.send({
                 embeds: [
-                    roleEmbeds.invalidStyle(
+                    globalEmbeds.missing(
                         message.author,
-                        style
+                        "role name"
                     )
                 ]
             });
         }
 
-        // =========================
-        // ROLE NAME LIMIT
-        // =========================
-
-        if (roleName.length > 100) {
+        if (name.length > 100) {
             return message.channel.send({
                 embeds: [
                     globalEmbeds.invalid(
                         message.author,
-                        roleName
-                    )
-                ]
-            });
-        }
-
-        // =========================
-        // EXISTING ROLE
-        // =========================
-
-        const existingRole =
-            message.guild.roles.cache.find(
-                role =>
-                    role.name.toLowerCase() ===
-                    roleName.toLowerCase()
-            );
-
-        if (existingRole) {
-            return message.channel.send({
-                embeds: [
-                    globalEmbeds.alreadyExists(
-                        message.author,
-                        roleName
+                        "Role name"
                     )
                 ]
             });
@@ -189,62 +188,83 @@ module.exports = {
 
         try {
 
-            const role =
-                await message.guild.roles.create({
-                    name: roleName,
-                    reason:
-                        `Created by ${message.author.tag}`
-                });
+            let role;
 
             // =========================
-            // APPLY STYLE
+            // SOLID
             // =========================
 
             if (style === "solid") {
 
-                await role.edit({
-                    colors: {
-                        primaryColor:
-                            0x000000
-                    }
-                });
+                role =
+                    await message.guild.roles.create({
+                        name,
+                        colors: {
+                            primaryColor:
+                                config.colors.role
+                        },
+                        reason:
+                            `Created by ${message.author.tag}`
+                    });
 
             }
+
+            // =========================
+            // GRADIENT
+            // =========================
 
             if (style === "gradient") {
 
-                await role.edit({
-                    colors: {
-                        primaryColor:
-                            0x5865F2,
-
-                        secondaryColor:
-                            0xEB459E
-                    }
-                });
+                role =
+                    await message.guild.roles.create({
+                        name,
+                        colors: {
+                            primaryColor:
+                                config.colors.role,
+                            secondaryColor:
+                                config.colors.regular
+                        },
+                        reason:
+                            `Created by ${message.author.tag}`
+                    });
 
             }
+
+            // =========================
+            // HOLOGRAPHIC
+            // =========================
 
             if (style === "holographic") {
 
-                await role.edit({
-                    colors: {
-                        primaryColor:
-                            0x5865F2,
-
-                        secondaryColor:
-                            0xEB459E,
-
-                        tertiaryColor:
-                            0x57F287
-                    }
-                });
+                role =
+                    await message.guild.roles.create({
+                        name,
+                        colors: {
+                            primaryColor:
+                                config.colors.role,
+                            secondaryColor:
+                                config.colors.regular,
+                            tertiaryColor:
+                                config.colors.success
+                        },
+                        reason:
+                            `Created by ${message.author.tag}`
+                    });
 
             }
 
-            // =========================
-            // SUCCESS
-            // =========================
+            if (!role) {
+                return message.channel.send({
+                    embeds: [
+                        roleEmbeds.createFailed(
+                            message.author,
+                            {
+                                name
+                            }
+                        )
+                    ]
+                });
+            }
 
             return message.channel.send({
                 embeds: [
@@ -266,7 +286,9 @@ module.exports = {
                 embeds: [
                     roleEmbeds.createFailed(
                         message.author,
-                        roleName
+                        {
+                            name
+                        }
                     )
                 ]
             });
