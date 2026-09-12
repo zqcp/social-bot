@@ -421,12 +421,7 @@ module.exports = {
                 embeds: [
                     roleEmbeds.success(
                         message.author,
-                        roles
-                            .map(
-                                role =>
-                                    role.toString()
-                            )
-                            .join(", "),
+                        roles,
                         member
                     )
                 ]
@@ -443,12 +438,7 @@ module.exports = {
                 embeds: [
                     roleEmbeds.failed(
                         message.author,
-                        roles
-                            .map(
-                                role =>
-                                    role.toString()
-                            )
-                            .join(", "),
+                        roles,
                         member
                     )
                 ]
