@@ -86,9 +86,9 @@ module.exports = {
 
     createSuccess(user, role) {
         return new EmbedBuilder()
-            .setColor(config.colors.role)
+            .setColor(config.colors.success)
             .setDescription(
-                `${config.emojis.add} ${user}: Created **role** \`${role.name}\`.`
+                `${config.emojis.success} ${user}: Created **role** \`${role.name}\`.`
             );
     },
 
@@ -145,9 +145,11 @@ module.exports = {
     success(user, role, member) {
 
         const roleName =
-            role?.name ||
-            role?.replace?.(/[<@&>]/g, "") ||
-            role;
+            Array.isArray(role)
+                ? role.map(currentRole => currentRole.name).join(", ")
+                : role?.name ||
+                  role?.replace?.(/[<@&>]/g, "") ||
+                  role;
 
         return new EmbedBuilder()
             .setColor(config.colors.role)
@@ -159,9 +161,11 @@ module.exports = {
     failed(user, role, member) {
 
         const roleName =
-            role?.name ||
-            role?.replace?.(/[<@&>]/g, "") ||
-            role;
+            Array.isArray(role)
+                ? role.map(currentRole => currentRole.name).join(", ")
+                : role?.name ||
+                  role?.replace?.(/[<@&>]/g, "") ||
+                  role;
 
         return new EmbedBuilder()
             .setColor(config.colors.failed)
@@ -176,18 +180,34 @@ module.exports = {
     // =========================
 
     removeSuccess(user, role, member) {
+
+        const roleName =
+            Array.isArray(role)
+                ? role.map(currentRole => currentRole.name).join(", ")
+                : role?.name ||
+                  role?.replace?.(/[<@&>]/g, "") ||
+                  role;
+
         return new EmbedBuilder()
             .setColor(config.colors.role)
             .setDescription(
-                `${config.emojis.remove} ${user}: Removed \`${role.name}\` from **${member.user.username}**.`
+                `${config.emojis.remove} ${user}: Removed \`${roleName}\` from **${member.user.username}**.`
             );
     },
 
     removeFailed(user, role, member) {
+
+        const roleName =
+            Array.isArray(role)
+                ? role.map(currentRole => currentRole.name).join(", ")
+                : role?.name ||
+                  role?.replace?.(/[<@&>]/g, "") ||
+                  role;
+
         return new EmbedBuilder()
             .setColor(config.colors.failed)
             .setDescription(
-                `${config.emojis.failed} ${user}: Failed to remove \`${role.name}\` from **${member.user.username}**. Please try again.`
+                `${config.emojis.failed} ${user}: Failed to remove \`${roleName}\` from **${member.user.username}**. Please try again.`
             );
     },
 
@@ -198,9 +218,9 @@ module.exports = {
 
     deleteSuccess(user, role) {
         return new EmbedBuilder()
-            .setColor(config.colors.role)
+            .setColor(config.colors.success)
             .setDescription(
-                `${config.emojis.remove} ${user}: Deleted **role** \`${role.name}\`.`
+                `${config.emojis.success} ${user}: Deleted **role** \`${role.name}\`.`
             );
     },
 
