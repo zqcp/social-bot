@@ -64,6 +64,16 @@ module.exports = {
         const botMember =
             message.guild.members.me;
 
+        if (!botMember) {
+            return message.channel.send({
+                embeds: [
+                    globalEmbeds.error(
+                        "I couldn't find my member information in this server."
+                    )
+                ]
+            });
+        }
+
         const requiredPermissions = [
             PermissionFlagsBits.ViewChannel,
             PermissionFlagsBits.SendMessages,
@@ -71,15 +81,19 @@ module.exports = {
             PermissionFlagsBits.ManageRoles
         ];
 
+        const permissions =
+            message.channel.permissionsFor(
+                botMember
+            );
+
         const missingPermissions =
             requiredPermissions.filter(
                 permission =>
-                    !message.channel
-                        .permissionsFor(botMember)
-                        ?.has(permission)
+                    !permissions?.has(permission)
             );
 
         if (missingPermissions.length) {
+
             const permissionNames =
                 missingPermissions.map(
                     permission =>
@@ -93,7 +107,7 @@ module.exports = {
 
             return message.channel.send({
                 embeds: [
-                    globalEmbeds.botPermission(
+                    globalEmbeds.botPermissions(
                         message.author,
                         permissionNames
                     )
@@ -111,8 +125,9 @@ module.exports = {
         if (!memberValue) {
             return message.channel.send({
                 embeds: [
-                    globalEmbeds.memberNotFound(
-                        message.author
+                    globalEmbeds.missing(
+                        message.author,
+                        "member"
                     )
                 ]
             });
@@ -123,24 +138,37 @@ module.exports = {
 
         if (!member) {
 
-            if (/^\d{17,20}$/.test(memberValue)) {
+            if (
+                /^\d{17,20}$/.test(
+                    memberValue
+                )
+            ) {
 
                 try {
+
                     member =
                         await message.guild.members.fetch(
                             memberValue
                         );
+
                 } catch {
+
                     member = null;
+
                 }
 
             } else {
 
+                const search =
+                    memberValue.toLowerCase();
+
                 member =
                     message.guild.members.cache.find(
-                        member =>
-                            member.user.username.toLowerCase() ===
-                            memberValue.toLowerCase()
+                        guildMember =>
+                            guildMember.user.username
+                                .toLowerCase() === search ||
+                            guildMember.displayName
+                                .toLowerCase() === search
                     );
 
             }
@@ -168,8 +196,9 @@ module.exports = {
         if (!roleValues.length) {
             return message.channel.send({
                 embeds: [
-                    roleEmbeds.noRole(
-                        message.author
+                    globalEmbeds.missing(
+                        message.author,
+                        "role"
                     )
                 ]
             });
@@ -179,38 +208,53 @@ module.exports = {
 
         for (const roleValue of roleValues) {
 
+            const roleId =
+                roleValue.replace(
+                    /[<@&>]/g,
+                    ""
+                );
+
             let role =
-                message.mentions.roles.find(
-                    role =>
-                        role.id === roleValue.replace(
-                            /[<@&>]/g,
-                            ""
-                        )
+                message.guild.roles.cache.get(
+                    roleId
                 );
 
             if (!role) {
 
-                if (/^\d{17,20}$/.test(roleValue)) {
+                if (
+                    /^\d{17,20}$/.test(
+                        roleValue
+                    )
+                ) {
 
                     try {
+
                         role =
                             await message.guild.roles.fetch(
                                 roleValue
                             );
+
                     } catch {
+
                         role = null;
+
                     }
 
-                } else {
-
-                    role =
-                        message.guild.roles.cache.find(
-                            role =>
-                                role.name.toLowerCase() ===
-                                roleValue.toLowerCase()
-                        );
-
                 }
+
+            }
+
+            if (!role) {
+
+                const search =
+                    roleValue.toLowerCase();
+
+                role =
+                    message.guild.roles.cache.find(
+                        guildRole =>
+                            guildRole.name
+                                .toLowerCase() === search
+                    );
 
             }
 
@@ -240,7 +284,10 @@ module.exports = {
         // MEMBER PROTECTION
         // =========================
 
-        if (member.id === message.author.id) {
+        if (
+            member.id ===
+            message.author.id
+        ) {
             return message.channel.send({
                 embeds: [
                     globalEmbeds.self(
@@ -250,7 +297,10 @@ module.exports = {
             });
         }
 
-        if (member.id === message.guild.ownerId) {
+        if (
+            member.id ===
+            message.guild.ownerId
+        ) {
             return message.channel.send({
                 embeds: [
                     globalEmbeds.owner(
@@ -266,7 +316,10 @@ module.exports = {
 
         for (const role of roles) {
 
+            // =========================
             // USER HIERARCHY
+            // =========================
+
             if (
                 role.position >=
                 message.member.roles.highest.position
@@ -281,7 +334,10 @@ module.exports = {
                 });
             }
 
+            // =========================
             // BOT HIERARCHY
+            // =========================
+
             if (
                 role.position >=
                 botMember.roles.highest.position
@@ -296,7 +352,10 @@ module.exports = {
                 });
             }
 
+            // =========================
             // DOESN'T HAVE ROLE
+            // =========================
+
             if (
                 !member.roles.cache.has(
                     role.id
@@ -306,7 +365,8 @@ module.exports = {
                     embeds: [
                         roleEmbeds.notHas(
                             message.author,
-                            role
+                            role,
+                            member
                         )
                     ]
                 });
@@ -328,9 +388,7 @@ module.exports = {
                 embeds: [
                     roleEmbeds.removeSuccess(
                         message.author,
-                        roles
-                            .map(role => role.toString())
-                            .join(", "),
+                        roles,
                         member
                     )
                 ]
@@ -347,9 +405,7 @@ module.exports = {
                 embeds: [
                     roleEmbeds.removeFailed(
                         message.author,
-                        roles
-                            .map(role => role.toString())
-                            .join(", "),
+                        roles,
                         member
                     )
                 ]
