@@ -1,6 +1,7 @@
 const {
     StringSelectMenuBuilder,
     UserSelectMenuBuilder,
+    RoleSelectMenuBuilder,
     ChannelSelectMenuBuilder,
     MentionableSelectMenuBuilder
 } = require("discord.js");
@@ -12,7 +13,7 @@ const {
 const types = {
     string: StringSelectMenuBuilder,
     user: UserSelectMenuBuilder,
-    role: StringSelectMenuBuilder,
+    role: RoleSelectMenuBuilder,
     channel: ChannelSelectMenuBuilder,
     mentionable: MentionableSelectMenuBuilder
 };
@@ -82,14 +83,11 @@ function create(data = {}) {
     }
 
     // =========================
-    // SELECT OPTIONS
+    // STRING SELECT OPTIONS
     // =========================
 
     if (
-        (
-            type === "string" ||
-            type === "role"
-        ) &&
+        type === "string" &&
         Array.isArray(data.options) &&
         data.options.length
     ) {
