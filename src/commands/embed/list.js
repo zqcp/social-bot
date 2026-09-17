@@ -1,5 +1,6 @@
 const {
-    PermissionFlagsBits
+    PermissionFlagsBits,
+    EmbedBuilder
 } = require("discord.js");
 
 const globalEmbeds =
@@ -7,6 +8,9 @@ const globalEmbeds =
 
 const embedEmbeds =
     require("../../embeds/general/embed");
+
+const config =
+    require("../../config");
 
 const Embed =
     require("../../models/Embed");
@@ -20,6 +24,10 @@ module.exports = {
     name: "embed list",
 
     aliases: [],
+
+    permissions: [
+        PermissionFlagsBits.ManageMessages
+    ],
 
     async execute(
         client,
@@ -112,7 +120,9 @@ module.exports = {
             const embeds =
                 await Embed.find({
                     guildId:
-                        message.guild.id
+                        message.guild.id,
+                    userId:
+                        message.author.id
                 }).sort({
                     name: 1
                 });
@@ -134,18 +144,28 @@ module.exports = {
             const description =
                 embeds
                     .map(
-                        (embed, index) =>
-                            `**${index + 1}.** \`${embed.name}\``
+                        (saved, index) =>
+                            `**${index + 1}.** \`${saved.name}\``
                     )
                     .join("\n");
 
             const embed =
-                globalEmbeds.regular();
-
-            embed.addFields({
-                name: "**Saved Embeds**",
-                value: description
-            });
+                new EmbedBuilder()
+                    .setTitle("Saved Embeds")
+                    .setAuthor({
+                        name:
+                            message.author.username,
+                        iconURL:
+                            message.author.displayAvatarURL({
+                                dynamic: true
+                            })
+                    })
+                    .setColor(
+                        config.colors.regular
+                    )
+                    .setDescription(
+                        description
+                    );
 
             return message.channel.send({
                 embeds: [
@@ -167,9 +187,6 @@ module.exports = {
                     )
                 ]
             });
-
         }
-
     }
-
 };
