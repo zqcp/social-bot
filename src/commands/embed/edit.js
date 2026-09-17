@@ -8,6 +8,9 @@ const globalEmbeds =
 const embedEmbeds =
     require("../../embeds/general/embed");
 
+const helpEmbeds =
+    require("../../embeds/help/embed");
+
 const embedCreator =
     require("../../systems/embedCreator");
 
@@ -26,6 +29,10 @@ module.exports = {
     name: "embed edit",
 
     aliases: [],
+
+    permissions: [
+        PermissionFlagsBits.ManageMessages
+    ],
 
     async execute(
         client,
@@ -119,7 +126,7 @@ module.exports = {
         if (!name) {
             return message.channel.send({
                 embeds: [
-                    embedEmbeds.noName(
+                    helpEmbeds.edit(
                         message.author
                     )
                 ]
@@ -127,7 +134,7 @@ module.exports = {
         }
 
         // =========================
-        // FIND EMBED
+        // FIND SAVED EMBED
         // =========================
 
         try {
@@ -153,62 +160,62 @@ module.exports = {
             }
 
             // =========================
-            // START SESSION
+            // START FRESH EDIT SESSION
             // =========================
 
-            let session =
-                embedCreator.get(
-                    message.author.id
+            const session =
+                await embedCreator.start(
+                    client,
+                    message,
+                    []
                 );
 
             if (!session) {
-                session =
-                    await embedCreator.start(
-                        client,
-                        message,
-                        args
-                    );
-
-                if (!session) {
-                    return message.channel.send({
-                        embeds: [
-                            embedEmbeds.failed(
-                                message.author
-                            )
-                        ]
-                    });
-                }
+                return message.channel.send({
+                    embeds: [
+                        embedEmbeds.failed(
+                            message.author
+                        )
+                    ]
+                });
             }
 
             // =========================
-            // LOAD SAVED DATA
+            // LOAD SAVED EMBED
             // =========================
 
             embedCreator.update(
                 message.author.id,
                 {
                     name: saved.name,
+
                     content:
                         saved.content || "",
+
                     embed:
                         saved.embed || {},
+
                     components:
                         Array.isArray(
                             saved.components
                         )
-                            ? saved.components
+                            ? [...saved.components]
                             : [],
+
+                    // Only existing messages.
+                    // Do not create a new message
+                    // from the edit command.
                     sentMessages:
                         Array.isArray(
                             saved.sentMessages
                         )
-                            ? saved.sentMessages
+                            ? [...saved.sentMessages]
                             : []
                 }
             );
 
             // =========================
-            // SEND CREATOR
+            // SEND EDITOR
             // =========================
 
             return message.channel.send(
@@ -233,9 +240,6 @@ module.exports = {
                     )
                 ]
             });
-
         }
-
     }
-
 };
