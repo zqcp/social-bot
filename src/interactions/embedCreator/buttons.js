@@ -1,4 +1,5 @@
 const {
+    EmbedBuilder,
     ActionRowBuilder,
     ButtonBuilder,
     ButtonStyle
@@ -35,9 +36,9 @@ async function updatePanel(
     interaction,
     session
 ) {
-    const view = panel.build(session);
-
-    await interaction.update(view);
+    return interaction.update(
+        panel.build(session)
+    );
 }
 
 // =========================
@@ -48,7 +49,7 @@ async function openModal(
     interaction,
     modal
 ) {
-    await interaction.showModal(modal);
+    return interaction.showModal(modal);
 }
 
 // =========================
@@ -139,8 +140,7 @@ async function fields(
 // =========================
 
 async function fieldAdd(
-    interaction,
-    session
+    interaction
 ) {
     return openModal(
         interaction,
@@ -228,9 +228,7 @@ async function buttonTypeMenu(
     interaction
 ) {
     const rows = [];
-
-    const types =
-        buttonTypes.list();
+    const types = buttonTypes.list();
 
     for (
         let index = 0;
@@ -254,9 +252,6 @@ async function buttonTypeMenu(
                         .setLabel(
                             data.label
                         )
-                        .setEmoji(
-                            data.emoji
-                        )
                         .setStyle(
                             data.style
                         )
@@ -273,16 +268,21 @@ async function buttonTypeMenu(
                     "embedCreator:components:back"
                 )
                 .setLabel("Back")
-                .setEmoji("↩️")
                 .setStyle(
                     ButtonStyle.Secondary
                 )
         )
     );
 
+    const embed =
+        new EmbedBuilder()
+            .setTitle("Button Type")
+            .setDescription(
+                "Select the type of button you want to add."
+            );
+
     return interaction.update({
-        content:
-            "### 🔘 Choose a Button Type\n\nSelect the type of button you want to add.",
+        embeds: [embed],
         components: rows
     });
 }
@@ -295,9 +295,7 @@ async function selectTypeMenu(
     interaction
 ) {
     const rows = [];
-
-    const types =
-        selectTypes.list();
+    const types = selectTypes.list();
 
     for (
         let index = 0;
@@ -321,9 +319,6 @@ async function selectTypeMenu(
                         .setLabel(
                             data.label
                         )
-                        .setEmoji(
-                            data.emoji
-                        )
                         .setStyle(
                             ButtonStyle.Primary
                         )
@@ -340,16 +335,21 @@ async function selectTypeMenu(
                     "embedCreator:components:back"
                 )
                 .setLabel("Back")
-                .setEmoji("↩️")
                 .setStyle(
                     ButtonStyle.Secondary
                 )
         )
     );
 
+    const embed =
+        new EmbedBuilder()
+            .setTitle("Select Menu Type")
+            .setDescription(
+                "Select the type of select menu you want to add."
+            );
+
     return interaction.update({
-        content:
-            "### 📋 Choose a Select Menu Type\n\nSelect the type of select menu you want to add.",
+        embeds: [embed],
         components: rows
     });
 }
@@ -477,10 +477,6 @@ async function componentSelect(
         });
     }
 
-    // -------------------------
-    // BUTTON
-    // -------------------------
-
     if (
         component.type === "button"
     ) {
@@ -493,10 +489,6 @@ async function componentSelect(
         );
     }
 
-    // -------------------------
-    // SELECT MENU
-    // -------------------------
-
     if (
         component.type === "select"
     ) {
@@ -504,8 +496,7 @@ async function componentSelect(
             (
                 component.selectType ||
                 "string"
-            )
-                .toLowerCase();
+            ).toLowerCase();
 
         if (
             !selectTypes.has(
@@ -629,13 +620,66 @@ async function send(
         });
     }
 
-    await interaction.channel.send(
-        result.payload
-    );
+    const sentMessages =
+        Array.isArray(session.sentMessages)
+            ? session.sentMessages
+            : [];
+
+    let existingMessage = null;
+
+    for (
+        const entry of sentMessages
+    ) {
+        try {
+            const channel =
+                await interaction.client.channels.fetch(
+                    entry.channelId
+                );
+
+            if (!channel) continue;
+
+            existingMessage =
+                await channel.messages.fetch(
+                    entry.messageId
+                );
+
+            if (existingMessage) {
+                break;
+            }
+        } catch {
+            state.removeSentMessage(
+                session.userId,
+                entry.messageId
+            );
+        }
+    }
+
+    if (existingMessage) {
+        await existingMessage.edit(
+            result.payload
+        );
+    } else {
+        const sent =
+            await interaction.channel.send(
+                result.payload
+            );
+
+        state.addSentMessage(
+            session.userId,
+            {
+                guildId:
+                    sent.guildId,
+                channelId:
+                    sent.channelId,
+                messageId:
+                    sent.id
+            }
+        );
+    }
 
     return interaction.reply({
         content:
-            "📤 Embed sent successfully.",
+            "Embed sent successfully.",
         flags: 64
     });
 }
@@ -681,7 +725,8 @@ async function cancel(
             .embedCreatorCancelled();
 
     return interaction.update({
-        content: embed.data.description,
+        content:
+            embed.data.description,
         embeds: [],
         components: []
     });
@@ -773,8 +818,7 @@ async function execute(
 
             case "field:add":
                 return fieldAdd(
-                    interaction,
-                    session
+                    interaction
                 );
 
             case "field:manage":
@@ -848,10 +892,6 @@ async function execute(
                 );
 
             default:
-                // -------------------------
-                // BUTTON TYPE
-                // -------------------------
-
                 if (
                     action.startsWith(
                         "component:buttontype:"
@@ -867,10 +907,6 @@ async function execute(
                     );
                 }
 
-                // -------------------------
-                // SELECT TYPE
-                // -------------------------
-
                 if (
                     action.startsWith(
                         "component:selecttype:"
@@ -885,10 +921,6 @@ async function execute(
                         type
                     );
                 }
-
-                // -------------------------
-                // FIELD SELECT
-                // -------------------------
 
                 if (
                     action.startsWith(
@@ -906,10 +938,6 @@ async function execute(
                         index
                     );
                 }
-
-                // -------------------------
-                // COMPONENT SELECT
-                // -------------------------
 
                 if (
                     action.startsWith(
