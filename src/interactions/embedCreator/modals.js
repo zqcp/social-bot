@@ -1,9 +1,18 @@
-const Embed = require("../../models/Embed");
-const state = require("../../systems/embedCreator/state");
-const panel = require("../../systems/embedCreator/panel");
-const builder = require("../../systems/embedCreator/builder");
+const Embed =
+    require("../../models/Embed");
+
+const state =
+    require("../../systems/embedCreator/state");
+
+const panel =
+    require("../../systems/embedCreator/panel");
+
+const builder =
+    require("../../systems/embedCreator/builder");
+
 const componentManager =
     require("../../systems/embedCreator/components/manager");
+
 const interactionEmbeds =
     require("../../embeds/general/interaction");
 
@@ -11,7 +20,10 @@ const interactionEmbeds =
 // OWNERSHIP
 // =========================
 
-function isOwner(interaction, session) {
+function isOwner(
+    interaction,
+    session
+) {
     return (
         session &&
         interaction.user.id === session.userId
@@ -304,9 +316,7 @@ function addField(
             ]
             : [];
 
-    if (
-        fields.length >= 25
-    ) {
+    if (fields.length >= 25) {
         throw new Error(
             "An embed cannot contain more than 25 fields."
         );
@@ -829,9 +839,7 @@ function addRole(
         );
     }
 
-    if (
-        options.length >= 25
-    ) {
+    if (options.length >= 25) {
         throw new Error(
             "A role select cannot contain more than 25 roles."
         );
@@ -996,6 +1004,12 @@ function updateName(
         );
     }
 
+    if (name.length > 100) {
+        throw new Error(
+            "Embed name cannot be longer than 100 characters."
+        );
+    }
+
     state.update(
         session.userId,
         {
@@ -1025,33 +1039,121 @@ async function saveEmbed(
         );
     }
 
-    await Embed.findOneAndUpdate(
-        {
+    const oldName =
+        session.name;
+
+    const existing =
+        await Embed.findOne({
             guildId:
                 current.guildId,
             userId:
                 current.userId,
-            name:
-                session.name
-        },
-        {
-            $set: {
-                name,
-                content:
-                    current.content || "",
-                embed:
-                    current.embed || {},
-                components:
-                    current.components || []
-            }
-        },
-        {
-            new: true,
-            runValidators: true
-        }
-    );
+            name
+        });
 
-    return true;
+    if (
+        existing &&
+        String(existing._id) !==
+            String(
+                session.savedEmbedId
+            )
+    ) {
+        throw new Error(
+            "An embed with that name already exists."
+        );
+    }
+
+    const data = {
+        guildId:
+            current.guildId,
+
+        userId:
+            current.userId,
+
+        name,
+
+        content:
+            current.content || "",
+
+        embed:
+            current.embed || {},
+
+        components:
+            Array.isArray(
+                current.components
+            )
+                ? current.components
+                : [],
+
+        sentMessages:
+            Array.isArray(
+                current.sentMessages
+            )
+                ? current.sentMessages
+                : []
+    };
+
+    // =========================
+    // EXISTING EMBED
+    // =========================
+
+    if (
+        session.savedEmbedId
+    ) {
+        const saved =
+            await Embed.findOneAndUpdate(
+                {
+                    _id:
+                        session.savedEmbedId,
+                    guildId:
+                        current.guildId,
+                    userId:
+                        current.userId
+                },
+                {
+                    $set: {
+                        name:
+                            data.name,
+                        content:
+                            data.content,
+                        embed:
+                            data.embed,
+                        components:
+                            data.components,
+                        sentMessages:
+                            data.sentMessages
+                    }
+                },
+                {
+                    new: true,
+                    runValidators: true
+                }
+            );
+
+        if (!saved) {
+            throw new Error(
+                "The saved embed could not be found."
+            );
+        }
+
+        return saved;
+    }
+
+    // =========================
+    // NEW EMBED
+    // =========================
+
+    const saved =
+        await Embed.create(
+            data
+        );
+
+    // Keep the saved document
+    // attached to this session.
+    session.savedEmbedId =
+        saved._id;
+
+    return saved;
 }
 
 // =========================
@@ -1118,6 +1220,7 @@ async function execute(
         );
 
         switch (action) {
+
             case "content":
                 updateContent(
                     interaction,
@@ -1189,6 +1292,7 @@ async function execute(
                 break;
 
             default:
+
                 if (
                     action.startsWith(
                         "field:edit:"
@@ -1246,9 +1350,11 @@ async function execute(
                     break;
                 }
 
+                // =========================
+                // SAVE
+                // =========================
+
                 if (action === "save") {
-                    const oldName =
-                        session.name;
 
                     const name =
                         updateName(
@@ -1256,36 +1362,16 @@ async function execute(
                             session
                         );
 
+                    const saved =
+                        await saveEmbed(
+                            session,
+                            name
+                        );
+
                     const updated =
                         state.get(
                             session.userId
                         );
-
-                    await Embed.findOneAndUpdate(
-                        {
-                            guildId:
-                                updated.guildId,
-                            userId:
-                                updated.userId,
-                            name:
-                                oldName
-                        },
-                        {
-                            $set: {
-                                name,
-                                content:
-                                    updated.content || "",
-                                embed:
-                                    updated.embed || {},
-                                components:
-                                    updated.components || []
-                            }
-                        },
-                        {
-                            new: true,
-                            runValidators: true
-                        }
-                    );
 
                     if (
                         interaction.message
@@ -1325,6 +1411,7 @@ async function execute(
         );
 
     } catch (error) {
+
         console.error(
             "Embed Creator Modal Error:",
             error
