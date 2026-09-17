@@ -1,6 +1,7 @@
 const state = require("../../systems/embedCreator/state");
 const variables = require("../../systems/embedCreator/variables");
 const panel = require("../../systems/embedCreator/panel");
+const inputs = require("../../systems/embedCreator/inputs");
 const interactionEmbeds = require("../../embeds/general/interaction");
 
 // =========================
@@ -19,19 +20,6 @@ function isOwner(
 }
 
 // =========================
-// UPDATE PANEL
-// =========================
-
-async function updatePanel(
-    interaction,
-    view
-) {
-    await interaction.update(
-        view
-    );
-}
-
-// =========================
 // VARIABLE LIST
 // =========================
 
@@ -42,11 +30,54 @@ function getVariableList() {
 }
 
 // =========================
-// VARIABLE PICKER
+// VARIABLES PAGE
 // =========================
 
 async function variablePicker(
-    interaction
+    interaction,
+    session
+) {
+    const variableData =
+        variables.getVariables();
+
+    const embed =
+        new (require("discord.js").EmbedBuilder)()
+            .setTitle("Embed Variables")
+            .setDescription(
+                Object.entries(variableData)
+                    .map(
+                        ([name, data]) =>
+                            `> \`${data.token || name}\` — ${data.description || "No description."}`
+                    )
+                    .join("\n") ||
+                "> No variables available."
+            );
+
+    return interaction.update({
+        embeds: [embed],
+        components: [
+            new (require("discord.js").ActionRowBuilder)()
+                .addComponents(
+                    new (require("discord.js").ButtonBuilder)()
+                        .setCustomId(
+                            "embedCreator:cancel"
+                        )
+                        .setLabel("Close")
+                        .setStyle(
+                            require("discord.js").ButtonStyle.Secondary
+                        )
+                )
+        ]
+    });
+}
+
+// =========================
+// MAIN EDIT MENU
+// =========================
+
+async function edit(
+    interaction,
+    session
 ) {
     const selected =
         interaction.values?.[0];
@@ -55,34 +86,80 @@ async function variablePicker(
         return interaction.reply({
             embeds: [
                 interactionEmbeds.embedCreatorInvalid(
-                    "Please select a variable."
+                    "Please select an embed setting."
                 )
             ],
             flags: 64
         });
     }
 
-    const token =
-        variables.getToken(
-            selected
-        );
+    switch (
+        selected.toLowerCase()
+    ) {
+        case "content":
+            return interaction.showModal(
+                inputs.content(session)
+            );
 
-    if (!token) {
-        return interaction.reply({
-            embeds: [
-                interactionEmbeds.embedCreatorInvalid(
-                    "That variable is not available."
-                )
-            ],
-            flags: 64
-        });
+        case "title":
+        case "description":
+        case "color":
+        case "url":
+            return interaction.showModal(
+                inputs.embed(session)
+            );
+
+        case "author":
+            return interaction.showModal(
+                inputs.author(session)
+            );
+
+        case "footer":
+            return interaction.showModal(
+                inputs.footer(session)
+            );
+
+        case "thumbnail":
+        case "image":
+            return interaction.showModal(
+                inputs.media(session)
+            );
+
+        case "fields":
+            return interaction.update(
+                panel.buildFields(session)
+            );
+
+        case "timestamp": {
+            const enabled =
+                session.embed?.timestamp === true;
+
+            state.updateEmbed(
+                session.userId,
+                "timestamp",
+                !enabled
+            );
+
+            const updated =
+                state.get(
+                    session.userId
+                );
+
+            return interaction.update(
+                panel.build(updated)
+            );
+        }
+
+        default:
+            return interaction.reply({
+                embeds: [
+                    interactionEmbeds.embedCreatorInvalid(
+                        "That embed setting is not available."
+                    )
+                ],
+                flags: 64
+            });
     }
-
-    return interaction.reply({
-        content:
-            `Variable: \`${token}\``,
-        flags: 64
-    });
 }
 
 // =========================
@@ -90,7 +167,8 @@ async function variablePicker(
 // =========================
 
 async function fieldManager(
-    interaction
+    interaction,
+    session
 ) {
     const selected =
         interaction.values?.[0];
@@ -126,8 +204,11 @@ async function fieldManager(
     }
 
     return interaction.reply({
-        content:
-            `📋 Selected field \`${index + 1}\`.`,
+        embeds: [
+            interactionEmbeds.embedCreatorInvalid(
+                `Field \`${index + 1}\` selected.`
+            )
+        ],
         flags: 64
     });
 }
@@ -137,7 +218,8 @@ async function fieldManager(
 // =========================
 
 async function componentManager(
-    interaction
+    interaction,
+    session
 ) {
     const selected =
         interaction.values?.[0];
@@ -173,8 +255,11 @@ async function componentManager(
     }
 
     return interaction.reply({
-        content:
-            `🧩 Selected component \`${index + 1}\`.`,
+        embeds: [
+            interactionEmbeds.embedCreatorInvalid(
+                `Component \`${index + 1}\` selected.`
+            )
+        ],
         flags: 64
     });
 }
@@ -227,22 +312,47 @@ async function execute(
 
     try {
         switch (action) {
+            // -------------------------
+            // MAIN EDIT DROPDOWN
+            // -------------------------
+
+            case "edit":
+                return edit(
+                    interaction,
+                    session
+                );
+
+            // -------------------------
+            // VARIABLES
+            // -------------------------
+
             case "variables":
             case "variable":
                 return variablePicker(
-                    interaction
+                    interaction,
+                    session
                 );
+
+            // -------------------------
+            // FIELDS
+            // -------------------------
 
             case "fields":
             case "field":
                 return fieldManager(
-                    interaction
+                    interaction,
+                    session
                 );
+
+            // -------------------------
+            // COMPONENTS
+            // -------------------------
 
             case "components":
             case "component":
                 return componentManager(
-                    interaction
+                    interaction,
+                    session
                 );
 
             default:
