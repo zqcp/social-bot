@@ -8,6 +8,9 @@ const globalEmbeds =
 const embedEmbeds =
     require("../../embeds/general/embed");
 
+const helpEmbeds =
+    require("../../embeds/help/embed");
+
 const Embed =
     require("../../models/Embed");
 
@@ -20,6 +23,10 @@ module.exports = {
     name: "embed delete",
 
     aliases: [],
+
+    permissions: [
+        PermissionFlagsBits.ManageMessages
+    ],
 
     async execute(
         client,
@@ -113,7 +120,7 @@ module.exports = {
         if (!name) {
             return message.channel.send({
                 embeds: [
-                    embedEmbeds.noName(
+                    helpEmbeds.delete(
                         message.author
                     )
                 ]
