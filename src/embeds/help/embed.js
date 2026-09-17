@@ -14,12 +14,14 @@ module.exports = {
             })
             .setColor(config.colors.regular)
             .setDescription(
-`Create a custom message with embeds, buttons, select menus, fields, authors and more.
+`Create a new embed using the embed creator.
+
 \`\`\`
 Syntax:
-${config.prefix}embed create
+${config.prefix}embed create [name]
+
 Example:
-${config.prefix}embed create
+${config.prefix}embed create welcome
 \`\`\``
             );
     },
@@ -35,19 +37,21 @@ ${config.prefix}embed create
             })
             .setColor(config.colors.regular)
             .setDescription(
-`Edit a saved embed message.
+`Edit a saved embed using the embed creator.
+
 \`\`\`
 Syntax:
 ${config.prefix}embed edit [name]
+
 Example:
 ${config.prefix}embed edit welcome
 \`\`\``
             );
     },
 
-    preview(user) {
+    list(user) {
         return new EmbedBuilder()
-            .setTitle("Command: embed preview")
+            .setTitle("Command: embed list")
             .setAuthor({
                 name: user.username,
                 iconURL: user.displayAvatarURL({
@@ -56,12 +60,14 @@ ${config.prefix}embed edit welcome
             })
             .setColor(config.colors.regular)
             .setDescription(
-`Preview a saved embed message.
+`View your saved embeds.
+
 \`\`\`
 Syntax:
-${config.prefix}embed preview [name]
+${config.prefix}embed list
+
 Example:
-${config.prefix}embed preview welcome
+${config.prefix}embed list
 \`\`\``
             );
     },
@@ -77,33 +83,14 @@ ${config.prefix}embed preview welcome
             })
             .setColor(config.colors.regular)
             .setDescription(
-`Delete a saved embed message.
+`Delete a saved embed.
+
 \`\`\`
 Syntax:
 ${config.prefix}embed delete [name]
+
 Example:
 ${config.prefix}embed delete welcome
-\`\`\``
-            );
-    },
-
-    send(user) {
-        return new EmbedBuilder()
-            .setTitle("Command: embed send")
-            .setAuthor({
-                name: user.username,
-                iconURL: user.displayAvatarURL({
-                    dynamic: true
-                })
-            })
-            .setColor(config.colors.regular)
-            .setDescription(
-`Send a saved embed message to a channel.
-\`\`\`
-Syntax:
-${config.prefix}embed send [name] [channel]
-Example:
-${config.prefix}embed send welcome #general
 \`\`\``
             );
     }
