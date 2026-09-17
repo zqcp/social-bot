@@ -378,6 +378,10 @@ function buildEmbed(
         embed.setURL(url);
     }
 
+    if (prepared.timestamp === true) {
+        embed.setTimestamp();
+    }
+
     if (clean(author.name)) {
         const authorData = {
             name: clean(
@@ -622,8 +626,13 @@ const selectBuilders = {
 function buildSelect(
     data = {}
 ) {
-    const type = clean(data.selectType || data.type || "string").toLowerCase();
-    
+    const type =
+        clean(
+            data.selectType ||
+            data.type ||
+            "string"
+        ).toLowerCase();
+
     const SelectBuilder =
         selectBuilders[type];
 
