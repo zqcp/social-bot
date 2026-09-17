@@ -7,9 +7,17 @@ const {
     StringSelectMenuOptionBuilder
 } = require("discord.js");
 
+// =========================
+// HELPERS
+// =========================
+
 function value(value, fallback = "Not set") {
     return value || fallback;
 }
+
+// =========================
+// MAIN PANEL
+// =========================
 
 function build(state) {
     const embed = new EmbedBuilder()
@@ -37,222 +45,345 @@ function build(state) {
             new StringSelectMenuOptionBuilder()
                 .setLabel("Content")
                 .setValue("content"),
+
             new StringSelectMenuOptionBuilder()
                 .setLabel("Title")
                 .setValue("title"),
+
             new StringSelectMenuOptionBuilder()
                 .setLabel("Description")
                 .setValue("description"),
+
             new StringSelectMenuOptionBuilder()
                 .setLabel("Color")
                 .setValue("color"),
+
             new StringSelectMenuOptionBuilder()
                 .setLabel("URL")
                 .setValue("url"),
+
             new StringSelectMenuOptionBuilder()
                 .setLabel("Author")
                 .setValue("author"),
+
             new StringSelectMenuOptionBuilder()
                 .setLabel("Thumbnail")
                 .setValue("thumbnail"),
+
             new StringSelectMenuOptionBuilder()
                 .setLabel("Image")
                 .setValue("image"),
+
             new StringSelectMenuOptionBuilder()
                 .setLabel("Footer")
                 .setValue("footer"),
+
             new StringSelectMenuOptionBuilder()
                 .setLabel("Fields")
                 .setValue("fields"),
+
             new StringSelectMenuOptionBuilder()
                 .setLabel("Timestamp")
                 .setValue("timestamp")
         );
 
-    const selectRow = new ActionRowBuilder()
-        .addComponents(select);
+    const selectRow =
+        new ActionRowBuilder()
+            .addComponents(select);
 
-    const buttons = new ActionRowBuilder()
-        .addComponents(
-            new ButtonBuilder()
-                .setCustomId("embedCreator:preview")
-                .setLabel("Preview")
-                .setStyle(ButtonStyle.Secondary),
-            new ButtonBuilder()
-                .setCustomId("embedCreator:save")
-                .setLabel("Save")
-                .setStyle(ButtonStyle.Success),
-            new ButtonBuilder()
-                .setCustomId("embedCreator:send")
-                .setLabel("Send")
-                .setStyle(ButtonStyle.Primary),
-            new ButtonBuilder()
-                .setCustomId("embedCreator:reset")
-                .setLabel("Reset")
-                .setStyle(ButtonStyle.Danger),
-            new ButtonBuilder()
-                .setCustomId("embedCreator:cancel")
-                .setLabel("Cancel")
-                .setStyle(ButtonStyle.Secondary)
-        );
+    const buttons =
+        new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId("embedCreator:preview")
+                    .setLabel("Preview")
+                    .setStyle(ButtonStyle.Secondary),
+
+                new ButtonBuilder()
+                    .setCustomId("embedCreator:save")
+                    .setLabel("Save")
+                    .setStyle(ButtonStyle.Success),
+
+                new ButtonBuilder()
+                    .setCustomId("embedCreator:send")
+                    .setLabel("Send")
+                    .setStyle(ButtonStyle.Primary),
+
+                new ButtonBuilder()
+                    .setCustomId("embedCreator:reset")
+                    .setLabel("Reset")
+                    .setStyle(ButtonStyle.Danger),
+
+                new ButtonBuilder()
+                    .setCustomId("embedCreator:cancel")
+                    .setLabel("Cancel")
+                    .setStyle(ButtonStyle.Secondary)
+            );
 
     return {
         embeds: [embed],
-        components: [selectRow, buttons]
+        components: [
+            selectRow,
+            buttons
+        ]
     };
 }
+
+// =========================
+// FIELDS PAGE
+// =========================
 
 function buildFields(state) {
-    const fields = state.embed?.fields || [];
+    const fields =
+        state.embed?.fields || [];
 
-    const embed = new EmbedBuilder()
-        .setTitle("Embed Fields")
-        .setDescription(
-            [
-                `> Fields: ${fields.length}`,
-                "",
-                fields.length
-                    ? fields
-                        .map(
-                            (field, index) =>
-                                `> ${index + 1}. ${value(field.name)} — ${value(field.value)}`
-                        )
-                        .join("\n")
-                    : "> No fields added."
-            ].join("\n")
-        );
+    const embed =
+        new EmbedBuilder()
+            .setTitle("Embed Fields")
+            .setDescription(
+                [
+                    `> Fields: ${fields.length}`,
+                    "",
+                    fields.length
+                        ? fields
+                            .map(
+                                (field, index) =>
+                                    `> ${index + 1}. ${value(field.name)} — ${value(field.value)}`
+                            )
+                            .join("\n")
+                        : "> No fields added."
+                ].join("\n")
+            );
 
-    const buttons = new ActionRowBuilder()
-        .addComponents(
-            new ButtonBuilder()
-                .setCustomId("embedCreator:field:add")
-                .setLabel("Add Field")
-                .setStyle(ButtonStyle.Success),
-            new ButtonBuilder()
-                .setCustomId("embedCreator:field:back")
-                .setLabel("Back")
-                .setStyle(ButtonStyle.Secondary)
-        );
+    const buttons =
+        new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId(
+                        "embedCreator:field:add"
+                    )
+                    .setLabel("Add Field")
+                    .setStyle(
+                        ButtonStyle.Success
+                    ),
+
+                new ButtonBuilder()
+                    .setCustomId(
+                        "embedCreator:field:manage"
+                    )
+                    .setLabel("Manage Fields")
+                    .setStyle(
+                        ButtonStyle.Primary
+                    ),
+
+                new ButtonBuilder()
+                    .setCustomId(
+                        "embedCreator:fields:back"
+                    )
+                    .setLabel("Back")
+                    .setStyle(
+                        ButtonStyle.Secondary
+                    )
+            );
 
     return {
         embeds: [embed],
         components: [buttons]
     };
 }
+
+// =========================
+// COMPONENTS PAGE
+// =========================
 
 function buildComponents(state) {
-    const components = state.components || [];
+    const components =
+        state.components || [];
 
-    const embed = new EmbedBuilder()
-        .setTitle("Embed Components")
-        .setDescription(
-            [
-                `> Components: ${components.length}`,
-                "",
-                components.length
-                    ? components
-                        .map(
-                            (component, index) =>
-                                `> ${index + 1}. ${value(component.type)}`
-                        )
-                        .join("\n")
-                    : "> No components added."
-            ].join("\n")
-        );
+    const embed =
+        new EmbedBuilder()
+            .setTitle("Embed Components")
+            .setDescription(
+                [
+                    `> Components: ${components.length}`,
+                    "",
+                    components.length
+                        ? components
+                            .map(
+                                (component, index) =>
+                                    `> ${index + 1}. ${value(component.type)}`
+                            )
+                            .join("\n")
+                        : "> No components added."
+                ].join("\n")
+            );
 
-    const buttons = new ActionRowBuilder()
-        .addComponents(
-            new ButtonBuilder()
-                .setCustomId("embedCreator:component:add")
-                .setLabel("Add Component")
-                .setStyle(ButtonStyle.Success),
-            new ButtonBuilder()
-                .setCustomId("embedCreator:component:back")
-                .setLabel("Back")
-                .setStyle(ButtonStyle.Secondary)
-        );
+    const buttons =
+        new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId(
+                        "embedCreator:component:addbutton"
+                    )
+                    .setLabel("Add Button")
+                    .setStyle(
+                        ButtonStyle.Success
+                    ),
+
+                new ButtonBuilder()
+                    .setCustomId(
+                        "embedCreator:component:addselect"
+                    )
+                    .setLabel("Add Select")
+                    .setStyle(
+                        ButtonStyle.Primary
+                    ),
+
+                new ButtonBuilder()
+                    .setCustomId(
+                        "embedCreator:component:manage"
+                    )
+                    .setLabel("Manage Components")
+                    .setStyle(
+                        ButtonStyle.Primary
+                    ),
+
+                new ButtonBuilder()
+                    .setCustomId(
+                        "embedCreator:components:back"
+                    )
+                    .setLabel("Back")
+                    .setStyle(
+                        ButtonStyle.Secondary
+                    )
+            );
 
     return {
         embeds: [embed],
         components: [buttons]
     };
 }
+
+// =========================
+// FIELD LIST
+// =========================
 
 function buildFieldList(state) {
-    const fields = state.embed?.fields || [];
+    const fields =
+        state.embed?.fields || [];
 
-    const embed = new EmbedBuilder()
-        .setTitle("Manage Fields")
-        .setDescription(
-            [
-                `> Fields: ${fields.length}`,
-                "",
-                fields.length
-                    ? fields
-                        .map(
-                            (field, index) =>
-                                `> ${index + 1}. ${value(field.name)} — ${value(field.value)}`
-                        )
-                        .join("\n")
-                    : "> No fields added."
-            ].join("\n")
-        );
+    const embed =
+        new EmbedBuilder()
+            .setTitle("Manage Fields")
+            .setDescription(
+                [
+                    `> Fields: ${fields.length}`,
+                    "",
+                    fields.length
+                        ? fields
+                            .map(
+                                (field, index) =>
+                                    `> ${index + 1}. ${value(field.name)} — ${value(field.value)}`
+                            )
+                            .join("\n")
+                        : "> No fields added."
+                ].join("\n")
+            );
 
-    const buttons = new ActionRowBuilder()
-        .addComponents(
-            new ButtonBuilder()
-                .setCustomId("embedCreator:field:add")
-                .setLabel("Add Field")
-                .setStyle(ButtonStyle.Success),
-            new ButtonBuilder()
-                .setCustomId("embedCreator:field:back")
-                .setLabel("Back")
-                .setStyle(ButtonStyle.Secondary)
-        );
+    const buttons =
+        new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId(
+                        "embedCreator:field:add"
+                    )
+                    .setLabel("Add Field")
+                    .setStyle(
+                        ButtonStyle.Success
+                    ),
+
+                new ButtonBuilder()
+                    .setCustomId(
+                        "embedCreator:fields"
+                    )
+                    .setLabel("Back")
+                    .setStyle(
+                        ButtonStyle.Secondary
+                    )
+            );
 
     return {
         embeds: [embed],
         components: [buttons]
     };
 }
+
+// =========================
+// COMPONENT LIST
+// =========================
 
 function buildComponentList(state) {
-    const components = state.components || [];
+    const components =
+        state.components || [];
 
-    const embed = new EmbedBuilder()
-        .setTitle("Manage Components")
-        .setDescription(
-            [
-                `> Components: ${components.length}`,
-                "",
-                components.length
-                    ? components
-                        .map(
-                            (component, index) =>
-                                `> ${index + 1}. ${value(component.type)}`
-                        )
-                        .join("\n")
-                    : "> No components added."
-            ].join("\n")
-        );
+    const embed =
+        new EmbedBuilder()
+            .setTitle("Manage Components")
+            .setDescription(
+                [
+                    `> Components: ${components.length}`,
+                    "",
+                    components.length
+                        ? components
+                            .map(
+                                (component, index) =>
+                                    `> ${index + 1}. ${value(component.type)}`
+                            )
+                            .join("\n")
+                        : "> No components added."
+                ].join("\n")
+            );
 
-    const buttons = new ActionRowBuilder()
-        .addComponents(
-            new ButtonBuilder()
-                .setCustomId("embedCreator:component:add")
-                .setLabel("Add Component")
-                .setStyle(ButtonStyle.Success),
-            new ButtonBuilder()
-                .setCustomId("embedCreator:component:back")
-                .setLabel("Back")
-                .setStyle(ButtonStyle.Secondary)
-        );
+    const buttons =
+        new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId(
+                        "embedCreator:component:addbutton"
+                    )
+                    .setLabel("Add Button")
+                    .setStyle(
+                        ButtonStyle.Success
+                    ),
+
+                new ButtonBuilder()
+                    .setCustomId(
+                        "embedCreator:component:addselect"
+                    )
+                    .setLabel("Add Select")
+                    .setStyle(
+                        ButtonStyle.Primary
+                    ),
+
+                new ButtonBuilder()
+                    .setCustomId(
+                        "embedCreator:components"
+                    )
+                    .setLabel("Back")
+                    .setStyle(
+                        ButtonStyle.Secondary
+                    )
+            );
 
     return {
         embeds: [embed],
         components: [buttons]
     };
 }
+
+// =========================
+// EXPORTS
+// =========================
 
 module.exports = {
     build,
