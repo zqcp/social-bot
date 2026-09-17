@@ -1,500 +1,258 @@
 const {
+    EmbedBuilder,
     ActionRowBuilder,
     ButtonBuilder,
-    ButtonStyle
+    ButtonStyle,
+    StringSelectMenuBuilder,
+    StringSelectMenuOptionBuilder
 } = require("discord.js");
 
-// =========================
-// HELPERS
-// =========================
-
-function getValue(
-    value,
-    fallback = "Not set"
-) {
-    if (
-        value === null ||
-        value === undefined ||
-        value === ""
-    ) {
-        return fallback;
-    }
-
-    return String(value);
+function value(value, fallback = "Not set") {
+    return value || fallback;
 }
-
-// =========================
-// MAIN PANEL
-// =========================
 
 function build(state) {
-    const embed = state?.embed || {};
+    const embed = new EmbedBuilder()
+        .setTitle("Embed Creator")
+        .setDescription(
+            [
+                `> Content: ${value(state.content)}`,
+                `> Title: ${value(state.embed?.title)}`,
+                `> Description: ${value(state.embed?.description)}`,
+                `> Color: ${value(state.embed?.color)}`,
+                `> URL: ${value(state.embed?.url)}`,
+                `> Author: ${value(state.embed?.author?.name)}`,
+                `> Thumbnail: ${value(state.embed?.thumbnail)}`,
+                `> Image: ${value(state.embed?.image)}`,
+                `> Footer: ${value(state.embed?.footer?.text)}`,
+                `> Fields: ${state.embed?.fields?.length || 0}`,
+                `> Timestamp: ${state.embed?.timestamp ? "Enabled" : "Disabled"}`
+            ].join("\n")
+        );
 
-    const fields = Array.isArray(embed.fields)
-        ? embed.fields.length
-        : 0;
-
-    const components = Array.isArray(state?.components)
-        ? state.components.length
-        : 0;
-
-    const description = [
-        "### 📝 Embed Creator",
-        "",
-        `**Content:** ${getValue(state?.content)}`,
-        `**Title:** ${getValue(embed.title)}`,
-        `**Description:** ${getValue(embed.description)}`,
-        `**Color:** ${getValue(embed.color, "Default")}`,
-        `**URL:** ${getValue(embed.url)}`,
-        `**Author:** ${getValue(embed.author?.name)}`,
-        `**Footer:** ${getValue(embed.footer?.text)}`,
-        `**Thumbnail:** ${getValue(embed.thumbnail)}`,
-        `**Image:** ${getValue(embed.image)}`,
-        `**Fields:** ${fields}`,
-        `**Components:** ${components}`
-    ].join("\n");
-
-    const rows = [
-        new ActionRowBuilder().addComponents(
-            new ButtonBuilder()
-                .setCustomId(
-                    "embedCreator:content"
-                )
+    const select = new StringSelectMenuBuilder()
+        .setCustomId("embedCreator:edit")
+        .setPlaceholder("Select an embed setting")
+        .addOptions(
+            new StringSelectMenuOptionBuilder()
                 .setLabel("Content")
-                .setEmoji("📝")
-                .setStyle(
-                    ButtonStyle.Primary
-                ),
-
-            new ButtonBuilder()
-                .setCustomId(
-                    "embedCreator:embed"
-                )
-                .setLabel("Embed")
-                .setEmoji("🎨")
-                .setStyle(
-                    ButtonStyle.Primary
-                )
-        ),
-
-        new ActionRowBuilder().addComponents(
-            new ButtonBuilder()
-                .setCustomId(
-                    "embedCreator:author"
-                )
+                .setValue("content"),
+            new StringSelectMenuOptionBuilder()
+                .setLabel("Title")
+                .setValue("title"),
+            new StringSelectMenuOptionBuilder()
+                .setLabel("Description")
+                .setValue("description"),
+            new StringSelectMenuOptionBuilder()
+                .setLabel("Color")
+                .setValue("color"),
+            new StringSelectMenuOptionBuilder()
+                .setLabel("URL")
+                .setValue("url"),
+            new StringSelectMenuOptionBuilder()
                 .setLabel("Author")
-                .setEmoji("👤")
-                .setStyle(
-                    ButtonStyle.Secondary
-                ),
-
-            new ButtonBuilder()
-                .setCustomId(
-                    "embedCreator:footer"
-                )
+                .setValue("author"),
+            new StringSelectMenuOptionBuilder()
+                .setLabel("Thumbnail")
+                .setValue("thumbnail"),
+            new StringSelectMenuOptionBuilder()
+                .setLabel("Image")
+                .setValue("image"),
+            new StringSelectMenuOptionBuilder()
                 .setLabel("Footer")
-                .setEmoji("🦶")
-                .setStyle(
-                    ButtonStyle.Secondary
-                ),
-
-            new ButtonBuilder()
-                .setCustomId(
-                    "embedCreator:media"
-                )
-                .setLabel("Media")
-                .setEmoji("🖼️")
-                .setStyle(
-                    ButtonStyle.Secondary
-                )
-        ),
-
-        new ActionRowBuilder().addComponents(
-            new ButtonBuilder()
-                .setCustomId(
-                    "embedCreator:fields"
-                )
+                .setValue("footer"),
+            new StringSelectMenuOptionBuilder()
                 .setLabel("Fields")
-                .setEmoji("📋")
-                .setStyle(
-                    ButtonStyle.Secondary
-                ),
+                .setValue("fields"),
+            new StringSelectMenuOptionBuilder()
+                .setLabel("Timestamp")
+                .setValue("timestamp")
+        );
 
-            new ButtonBuilder()
-                .setCustomId(
-                    "embedCreator:components"
-                )
-                .setLabel("Components")
-                .setEmoji("🧩")
-                .setStyle(
-                    ButtonStyle.Secondary
-                )
-        ),
+    const selectRow = new ActionRowBuilder()
+        .addComponents(select);
 
-        new ActionRowBuilder().addComponents(
+    const buttons = new ActionRowBuilder()
+        .addComponents(
             new ButtonBuilder()
-                .setCustomId(
-                    "embedCreator:preview"
-                )
+                .setCustomId("embedCreator:preview")
                 .setLabel("Preview")
-                .setEmoji("👁️")
-                .setStyle(
-                    ButtonStyle.Success
-                ),
-
+                .setStyle(ButtonStyle.Secondary),
             new ButtonBuilder()
-                .setCustomId(
-                    "embedCreator:save"
-                )
+                .setCustomId("embedCreator:save")
                 .setLabel("Save")
-                .setEmoji("💾")
-                .setStyle(
-                    ButtonStyle.Success
-                ),
-
+                .setStyle(ButtonStyle.Success),
             new ButtonBuilder()
-                .setCustomId(
-                    "embedCreator:send"
-                )
+                .setCustomId("embedCreator:send")
                 .setLabel("Send")
-                .setEmoji("📤")
-                .setStyle(
-                    ButtonStyle.Success
-                )
-        ),
-
-        new ActionRowBuilder().addComponents(
+                .setStyle(ButtonStyle.Primary),
             new ButtonBuilder()
-                .setCustomId(
-                    "embedCreator:reset"
-                )
+                .setCustomId("embedCreator:reset")
                 .setLabel("Reset")
-                .setEmoji("🔄")
-                .setStyle(
-                    ButtonStyle.Danger
-                ),
-
+                .setStyle(ButtonStyle.Danger),
             new ButtonBuilder()
-                .setCustomId(
-                    "embedCreator:cancel"
-                )
+                .setCustomId("embedCreator:cancel")
                 .setLabel("Cancel")
-                .setEmoji("❌")
-                .setStyle(
-                    ButtonStyle.Danger
-                )
-        )
-    ];
+                .setStyle(ButtonStyle.Secondary)
+        );
 
     return {
-        content: description,
-        components: rows
+        embeds: [embed],
+        components: [selectRow, buttons]
     };
 }
-
-// =========================
-// FIELD MANAGER
-// =========================
 
 function buildFields(state) {
-    const fields = Array.isArray(
-        state?.embed?.fields
-    )
-        ? state.embed.fields
-        : [];
+    const fields = state.embed?.fields || [];
 
-    const description = [
-        "### 📋 Field Manager",
-        "",
-        `**Fields:** ${fields.length}`,
-        ""
-    ];
-
-    if (!fields.length) {
-        description.push(
-            "No fields have been added yet."
+    const embed = new EmbedBuilder()
+        .setTitle("Embed Fields")
+        .setDescription(
+            [
+                `> Fields: ${fields.length}`,
+                "",
+                fields.length
+                    ? fields
+                        .map(
+                            (field, index) =>
+                                `> ${index + 1}. ${value(field.name)} — ${value(field.value)}`
+                        )
+                        .join("\n")
+                    : "> No fields added."
+            ].join("\n")
         );
-    } else {
-        fields.forEach(
-            (field, index) => {
-                description.push(
-                    `**${index + 1}.** ${getValue(
-                        field.name,
-                        "Unnamed"
-                    )}`
-                );
 
-                description.push(
-                    `└ ${getValue(
-                        field.value,
-                        "No value"
-                    )}`
-                );
-            }
-        );
-    }
-
-    const rows = [];
-
-    rows.push(
-        new ActionRowBuilder().addComponents(
+    const buttons = new ActionRowBuilder()
+        .addComponents(
             new ButtonBuilder()
-                .setCustomId(
-                    "embedCreator:field:add"
-                )
+                .setCustomId("embedCreator:field:add")
                 .setLabel("Add Field")
-                .setEmoji("➕")
-                .setStyle(
-                    ButtonStyle.Success
-                )
-                .setDisabled(
-                    fields.length >= 25
-                ),
-
+                .setStyle(ButtonStyle.Success),
             new ButtonBuilder()
-                .setCustomId(
-                    "embedCreator:field:manage"
-                )
-                .setLabel("Manage")
-                .setEmoji("⚙️")
-                .setStyle(
-                    ButtonStyle.Primary
-                )
-                .setDisabled(
-                    fields.length === 0
-                )
-        )
-    );
-
-    rows.push(
-        new ActionRowBuilder().addComponents(
-            new ButtonBuilder()
-                .setCustomId(
-                    "embedCreator:fields:back"
-                )
+                .setCustomId("embedCreator:field:back")
                 .setLabel("Back")
-                .setEmoji("↩️")
-                .setStyle(
-                    ButtonStyle.Secondary
-                )
-        )
-    );
+                .setStyle(ButtonStyle.Secondary)
+        );
 
     return {
-        content: description.join("\n"),
-        components: rows
+        embeds: [embed],
+        components: [buttons]
     };
 }
-
-// =========================
-// COMPONENT MANAGER
-// =========================
 
 function buildComponents(state) {
-    const components =
-        Array.isArray(state?.components)
-            ? state.components
-            : [];
+    const components = state.components || [];
 
-    const buttons = components.filter(
-        component =>
-            component?.type === "button"
-    ).length;
-
-    const selects = components.filter(
-        component =>
-            component?.type !== "button"
-    ).length;
-
-    const description = [
-        "### 🧩 Components",
-        "",
-        `**Buttons:** ${buttons}`,
-        `**Select Menus:** ${selects}`,
-        `**Total:** ${components.length}`
-    ].join("\n");
-
-    const rows = [
-        new ActionRowBuilder().addComponents(
-            new ButtonBuilder()
-                .setCustomId(
-                    "embedCreator:component:addButton"
-                )
-                .setLabel("Add Button")
-                .setEmoji("🔘")
-                .setStyle(
-                    ButtonStyle.Primary
-                ),
-
-            new ButtonBuilder()
-                .setCustomId(
-                    "embedCreator:component:addSelect"
-                )
-                .setLabel("Add Select Menu")
-                .setEmoji("📋")
-                .setStyle(
-                    ButtonStyle.Primary
-                )
-        ),
-
-        new ActionRowBuilder().addComponents(
-            new ButtonBuilder()
-                .setCustomId(
-                    "embedCreator:component:manage"
-                )
-                .setLabel("Manage Components")
-                .setEmoji("🗑️")
-                .setStyle(
-                    ButtonStyle.Secondary
-                )
-                .setDisabled(
-                    components.length === 0
-                ),
-
-            new ButtonBuilder()
-                .setCustomId(
-                    "embedCreator:components:back"
-                )
-                .setLabel("Back")
-                .setEmoji("↩️")
-                .setStyle(
-                    ButtonStyle.Secondary
-                )
-        )
-    ];
-
-    return {
-        content: description,
-        components: rows
-    };
-}
-
-// =========================
-// FIELD LIST
-// =========================
-
-function buildFieldList(state) {
-    const fields = Array.isArray(
-        state?.embed?.fields
-    )
-        ? state.embed.fields
-        : [];
-
-    const rows = [];
-
-    if (fields.length) {
-        for (
-            let index = 0;
-            index < fields.length && index < 25;
-            index++
-        ) {
-            rows.push(
-                new ActionRowBuilder().addComponents(
-                    new ButtonBuilder()
-                        .setCustomId(
-                            `embedCreator:field:select:${index}`
+    const embed = new EmbedBuilder()
+        .setTitle("Embed Components")
+        .setDescription(
+            [
+                `> Components: ${components.length}`,
+                "",
+                components.length
+                    ? components
+                        .map(
+                            (component, index) =>
+                                `> ${index + 1}. ${value(component.type)}`
                         )
-                        .setLabel(
-                            `${index + 1}. ${String(
-                                fields[index]?.name ||
-                                    "Unnamed"
-                            ).slice(0, 70)}`
-                        )
-                        .setStyle(
-                            ButtonStyle.Secondary
-                        )
-                )
-            );
-        }
-    }
-
-    rows.push(
-        new ActionRowBuilder().addComponents(
-            new ButtonBuilder()
-                .setCustomId(
-                    "embedCreator:fields:back"
-                )
-                .setLabel("Back")
-                .setEmoji("↩️")
-                .setStyle(
-                    ButtonStyle.Secondary
-                )
-        )
-    );
-
-    return {
-        content:
-            "### 📋 Select a field to manage.",
-        components: rows.slice(0, 5)
-    };
-}
-
-// =========================
-// COMPONENT LIST
-// =========================
-
-function buildComponentList(state) {
-    const components =
-        Array.isArray(state?.components)
-            ? state.components
-            : [];
-
-    const rows = [];
-
-    components
-        .slice(0, 20)
-        .forEach(
-            (component, index) => {
-                const label =
-                    component?.type === "button"
-                        ? component.label ||
-                          "Button"
-                        : component?.type ||
-                          "Select Menu";
-
-                rows.push(
-                    new ActionRowBuilder().addComponents(
-                        new ButtonBuilder()
-                            .setCustomId(
-                                `embedCreator:component:select:${index}`
-                            )
-                            .setLabel(
-                                `${index + 1}. ${String(
-                                    label
-                                ).slice(0, 70)}`
-                            )
-                            .setStyle(
-                                ButtonStyle.Secondary
-                            )
-                    )
-                );
-            }
+                        .join("\n")
+                    : "> No components added."
+            ].join("\n")
         );
 
-    rows.push(
-        new ActionRowBuilder().addComponents(
+    const buttons = new ActionRowBuilder()
+        .addComponents(
             new ButtonBuilder()
-                .setCustomId(
-                    "embedCreator:components:back"
-                )
+                .setCustomId("embedCreator:component:add")
+                .setLabel("Add Component")
+                .setStyle(ButtonStyle.Success),
+            new ButtonBuilder()
+                .setCustomId("embedCreator:component:back")
                 .setLabel("Back")
-                .setEmoji("↩️")
-                .setStyle(
-                    ButtonStyle.Secondary
-                )
-        )
-    );
+                .setStyle(ButtonStyle.Secondary)
+        );
 
     return {
-        content:
-            "### 🧩 Select a component to manage.",
-        components: rows.slice(0, 5)
+        embeds: [embed],
+        components: [buttons]
     };
 }
 
-// =========================
-// EXPORTS
-// =========================
+function buildFieldList(state) {
+    const fields = state.embed?.fields || [];
+
+    const embed = new EmbedBuilder()
+        .setTitle("Manage Fields")
+        .setDescription(
+            [
+                `> Fields: ${fields.length}`,
+                "",
+                fields.length
+                    ? fields
+                        .map(
+                            (field, index) =>
+                                `> ${index + 1}. ${value(field.name)} — ${value(field.value)}`
+                        )
+                        .join("\n")
+                    : "> No fields added."
+            ].join("\n")
+        );
+
+    const buttons = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder()
+                .setCustomId("embedCreator:field:add")
+                .setLabel("Add Field")
+                .setStyle(ButtonStyle.Success),
+            new ButtonBuilder()
+                .setCustomId("embedCreator:field:back")
+                .setLabel("Back")
+                .setStyle(ButtonStyle.Secondary)
+        );
+
+    return {
+        embeds: [embed],
+        components: [buttons]
+    };
+}
+
+function buildComponentList(state) {
+    const components = state.components || [];
+
+    const embed = new EmbedBuilder()
+        .setTitle("Manage Components")
+        .setDescription(
+            [
+                `> Components: ${components.length}`,
+                "",
+                components.length
+                    ? components
+                        .map(
+                            (component, index) =>
+                                `> ${index + 1}. ${value(component.type)}`
+                        )
+                        .join("\n")
+                    : "> No components added."
+            ].join("\n")
+        );
+
+    const buttons = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder()
+                .setCustomId("embedCreator:component:add")
+                .setLabel("Add Component")
+                .setStyle(ButtonStyle.Success),
+            new ButtonBuilder()
+                .setCustomId("embedCreator:component:back")
+                .setLabel("Back")
+                .setStyle(ButtonStyle.Secondary)
+        );
+
+    return {
+        embeds: [embed],
+        components: [buttons]
+    };
+}
 
 module.exports = {
     build,
