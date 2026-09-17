@@ -8,6 +8,9 @@ const globalEmbeds =
 const embedEmbeds =
     require("../../embeds/general/embed");
 
+const helpEmbeds =
+    require("../../embeds/help/embed");
+
 const Embed =
     require("../../models/Embed");
 
@@ -20,6 +23,10 @@ const panel =
 module.exports = {
     name: "embed create",
     aliases: [],
+
+    permissions: [
+        PermissionFlagsBits.ManageMessages
+    ],
 
     async execute(client, message, args) {
         if (!message.guild) {
@@ -47,7 +54,8 @@ module.exports = {
             });
         }
 
-        const botMember = message.guild.members.me;
+        const botMember =
+            message.guild.members.me;
 
         const requiredPermissions = [
             PermissionFlagsBits.ViewChannel,
@@ -85,12 +93,13 @@ module.exports = {
             });
         }
 
-        const name = args.join(" ").trim();
+        const name =
+            args.join(" ").trim();
 
         if (!name) {
             return message.channel.send({
                 embeds: [
-                    embedEmbeds.noName(
+                    helpEmbeds.create(
                         message.author
                     )
                 ]
@@ -124,16 +133,6 @@ module.exports = {
                 });
             }
 
-            await Embed.create({
-                guildId: message.guild.id,
-                userId: message.author.id,
-                name,
-                content: "",
-                embed: {},
-                components: [],
-                sentMessages: []
-            });
-
             const session =
                 await embedCreator.start(
                     client,
@@ -142,12 +141,6 @@ module.exports = {
                 );
 
             if (!session) {
-                await Embed.deleteOne({
-                    guildId: message.guild.id,
-                    userId: message.author.id,
-                    name
-                });
-
                 return message.channel.send({
                     embeds: [
                         embedEmbeds.failed(
