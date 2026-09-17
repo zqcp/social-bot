@@ -181,6 +181,13 @@ module.exports = {
             }
 
             // =========================
+            // REMEMBER SAVED EMBED
+            // =========================
+
+            session.savedEmbedId =
+                saved._id;
+
+            // =========================
             // LOAD SAVED EMBED
             // =========================
 
@@ -202,9 +209,6 @@ module.exports = {
                             ? [...saved.components]
                             : [],
 
-                    // Only existing messages.
-                    // Do not create a new message
-                    // from the edit command.
                     sentMessages:
                         Array.isArray(
                             saved.sentMessages
