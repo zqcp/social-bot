@@ -15,7 +15,7 @@ module.exports = {
             .setColor(config.colors.regular)
             .setDescription(
 `Ban a user from the server.
-\`\`\` Syntax: ${config.prefix}ban [member] [reason]
+\`\`\`Syntax: ${config.prefix}ban [member] [reason]
 Example: ${config.prefix}ban @user spam \`\`\``
             );
     },
@@ -30,7 +30,7 @@ Example: ${config.prefix}ban @user spam \`\`\``
             .setColor(config.colors.regular)
             .setDescription(
 `Unban a user from the server.
-\`\`\` Syntax: ${config.prefix}unban [member]
+\`\`\`Syntax: ${config.prefix}unban [member]
 Example: ${config.prefix}unban 123456789012345678 \`\`\``
             );
     },
@@ -45,7 +45,7 @@ Example: ${config.prefix}unban 123456789012345678 \`\`\``
             .setColor(config.colors.regular)
             .setDescription(
 `Unban all users from the server.
-\`\`\` Syntax: ${config.prefix}unbanall
+\`\`\`Syntax: ${config.prefix}unbanall
 Example: ${config.prefix}unbanall \`\`\``
             );
     },
@@ -60,7 +60,7 @@ Example: ${config.prefix}unbanall \`\`\``
             .setColor(config.colors.regular)
             .setDescription(
 `Ban a user and delete their recent messages.
-\`\`\` Syntax: ${config.prefix}hardban [member] [reason]
+\`\`\`Syntax: ${config.prefix}hardban [member] [reason]
 Example: ${config.prefix}hardban @user spam \`\`\``
             );
     },
@@ -75,7 +75,7 @@ Example: ${config.prefix}hardban @user spam \`\`\``
             .setColor(config.colors.regular)
             .setDescription(
 `Remove a user's hardban.
-\`\`\` Syntax: ${config.prefix}unhardban [member]
+\`\`\`Syntax: ${config.prefix}unhardban [member]
 Example: ${config.prefix}unhardban 123456789012345678 \`\`\``
             );
     },
@@ -90,7 +90,7 @@ Example: ${config.prefix}unhardban 123456789012345678 \`\`\``
             .setColor(config.colors.regular)
             .setDescription(
 `Kick a user from the server.
-\`\`\` Syntax: ${config.prefix}kick [member] [reason]
+\`\`\`Syntax: ${config.prefix}kick [member] [reason]
 Example: ${config.prefix}kick @user spam \`\`\``
             );
     },
@@ -105,7 +105,7 @@ Example: ${config.prefix}kick @user spam \`\`\``
             .setColor(config.colors.regular)
             .setDescription(
 `Accept a pending server join request.
-\`\`\` Syntax: ${config.prefix}accept [member]
+\`\`\`Syntax: ${config.prefix}accept [member]
 Example: ${config.prefix}accept @user \`\`\``
             );
     },
@@ -120,7 +120,7 @@ Example: ${config.prefix}accept @user \`\`\``
             .setColor(config.colors.regular)
             .setDescription(
 `Restrict a user using the configured jail role.
-\`\`\` Syntax: ${config.prefix}jail [member] [reason]
+\`\`\`Syntax: ${config.prefix}jail [member] [reason]
 Example: ${config.prefix}jail @user spam \`\`\``
             );
     },
@@ -135,7 +135,7 @@ Example: ${config.prefix}jail @user spam \`\`\``
             .setColor(config.colors.regular)
             .setDescription(
 `Release a user from jail.
-\`\`\` Syntax: ${config.prefix}unjail [member]
+\`\`\`Syntax: ${config.prefix}unjail [member]
 Example: ${config.prefix}unjail @user \`\`\``
             );
     },
@@ -150,7 +150,7 @@ Example: ${config.prefix}unjail @user \`\`\``
             .setColor(config.colors.regular)
             .setDescription(
 `Timeout a user.
-\`\`\` Syntax: ${config.prefix}timeout [member] [duration] [reason]
+\`\`\`Syntax: ${config.prefix}timeout [member] [duration] [reason]
 Example: ${config.prefix}timeout @user 10m spam \`\`\``
             );
     },
@@ -165,7 +165,7 @@ Example: ${config.prefix}timeout @user 10m spam \`\`\``
             .setColor(config.colors.regular)
             .setDescription(
 `Remove a user's timeout.
-\`\`\` Syntax: ${config.prefix}untimeout [member]
+\`\`\`Syntax: ${config.prefix}untimeout [member]
 Example: ${config.prefix}untimeout @user \`\`\``
             );
     },
@@ -180,7 +180,7 @@ Example: ${config.prefix}untimeout @user \`\`\``
             .setColor(config.colors.regular)
             .setDescription(
 `Mute a user.
-\`\`\` Syntax: ${config.prefix}mute [member] [reason]
+\`\`\`Syntax: ${config.prefix}mute [member] [reason]
 Example: ${config.prefix}mute @user spam \`\`\``
             );
     },
@@ -195,7 +195,7 @@ Example: ${config.prefix}mute @user spam \`\`\``
             .setColor(config.colors.regular)
             .setDescription(
 `Unmute a user.
-\`\`\` Syntax: ${config.prefix}unmute [member]
+\`\`\`Syntax: ${config.prefix}unmute [member]
 Example: ${config.prefix}unmute @user \`\`\``
             );
     },
@@ -210,7 +210,7 @@ Example: ${config.prefix}unmute @user \`\`\``
             .setColor(config.colors.regular)
             .setDescription(
 `Prevent a user from sending images and media.
-\`\`\` Syntax: ${config.prefix}imagemute [member] [reason]
+\`\`\`Syntax: ${config.prefix}imagemute [member] [reason]
 Example: ${config.prefix}imagemute @user spam \`\`\``
             );
     },
@@ -225,7 +225,7 @@ Example: ${config.prefix}imagemute @user spam \`\`\``
             .setColor(config.colors.regular)
             .setDescription(
 `Allow a user to send images and media again.
-\`\`\` Syntax: ${config.prefix}imageunmute [member]
+\`\`\`Syntax: ${config.prefix}imageunmute [member]
 Example: ${config.prefix}imageunmute @user \`\`\``
             );
     },
@@ -240,7 +240,7 @@ Example: ${config.prefix}imageunmute @user \`\`\``
             .setColor(config.colors.regular)
             .setDescription(
 `Prevent a user from using reactions.
-\`\`\` Syntax: ${config.prefix}reactionmute [member] [reason]
+\`\`\`Syntax: ${config.prefix}reactionmute [member] [reason]
 Example: ${config.prefix}reactionmute @user spam \`\`\``
             );
     },
@@ -255,7 +255,7 @@ Example: ${config.prefix}reactionmute @user spam \`\`\``
             .setColor(config.colors.regular)
             .setDescription(
 `Allow a user to use reactions again.
-\`\`\` Syntax: ${config.prefix}reactionunmute [member]
+\`\`\`Syntax: ${config.prefix}reactionunmute [member]
 Example: ${config.prefix}reactionunmute @user \`\`\``
             );
     },
@@ -270,7 +270,7 @@ Example: ${config.prefix}reactionunmute @user \`\`\``
             .setColor(config.colors.regular)
             .setDescription(
 `Set up the roles required for mute systems.
-\`\`\` Syntax: ${config.prefix}setupmute
+\`\`\`Syntax: ${config.prefix}setupmute
 Example: ${config.prefix}setupmute \`\`\``
             );
     },
@@ -285,7 +285,7 @@ Example: ${config.prefix}setupmute \`\`\``
             .setColor(config.colors.regular)
             .setDescription(
 `Warn a user.
-\`\`\` Syntax: ${config.prefix}warn [member] [reason]
+\`\`\`Syntax: ${config.prefix}warn [member] [reason]
 Example: ${config.prefix}warn @user spam \`\`\``
             );
     },
@@ -300,7 +300,7 @@ Example: ${config.prefix}warn @user spam \`\`\``
             .setColor(config.colors.regular)
             .setDescription(
 `View a user's warnings.
-\`\`\` Syntax: ${config.prefix}warnings [member]
+\`\`\`Syntax: ${config.prefix}warnings [member]
 Example: ${config.prefix}warnings @user \`\`\``
             );
     },
@@ -315,7 +315,7 @@ Example: ${config.prefix}warnings @user \`\`\``
             .setColor(config.colors.regular)
             .setDescription(
 `Clear all warnings from a user.
-\`\`\` Syntax: ${config.prefix}clearwarnings [member]
+\`\`\`Syntax: ${config.prefix}clearwarnings [member]
 Example: ${config.prefix}clearwarnings @user \`\`\``
             );
     },
@@ -330,7 +330,7 @@ Example: ${config.prefix}clearwarnings @user \`\`\``
             .setColor(config.colors.regular)
             .setDescription(
 `Remove all removable roles from a user.
-\`\`\` Syntax: ${config.prefix}strip [member]
+\`\`\`Syntax: ${config.prefix}strip [member]
 Example: ${config.prefix}strip @user \`\`\``
             );
     },
@@ -345,7 +345,7 @@ Example: ${config.prefix}strip @user \`\`\``
             .setColor(config.colors.regular)
             .setDescription(
 `Manage automatic role protection.
-\`\`\` Syntax: ${config.prefix}autostrip [add/remove] [member]
+\`\`\`Syntax: ${config.prefix}autostrip [add/remove] [member]
 Example: ${config.prefix}autostrip add @user \`\`\``
             );
     },
@@ -360,7 +360,7 @@ Example: ${config.prefix}autostrip add @user \`\`\``
             .setColor(config.colors.regular)
             .setDescription(
 `View a user's role history.
-\`\`\` Syntax: ${config.prefix}rolehistory [member]
+\`\`\`Syntax: ${config.prefix}rolehistory [member]
 Example: ${config.prefix}rolehistory @user \`\`\``
             );
     },
@@ -375,7 +375,7 @@ Example: ${config.prefix}rolehistory @user \`\`\``
             .setColor(config.colors.regular)
             .setDescription(
 `View moderator action statistics.
-\`\`\` Syntax: ${config.prefix}modstats
+\`\`\`Syntax: ${config.prefix}modstats
 Example: ${config.prefix}modstats \`\`\``
             );
     },
@@ -390,7 +390,7 @@ Example: ${config.prefix}modstats \`\`\``
             .setColor(config.colors.regular)
             .setDescription(
 `View a user's moderation history.
-\`\`\` Syntax: ${config.prefix}modhistory [member]
+\`\`\`Syntax: ${config.prefix}modhistory [member]
 Example: ${config.prefix}modhistory @user \`\`\``
             );
     },
@@ -405,7 +405,7 @@ Example: ${config.prefix}modhistory @user \`\`\``
             .setColor(config.colors.regular)
             .setDescription(
 `Hide a channel from @everyone.
-\`\`\` Syntax: ${config.prefix}hide
+\`\`\`Syntax: ${config.prefix}hide
 Example: ${config.prefix}hide \`\`\``
             );
     },
@@ -420,7 +420,7 @@ Example: ${config.prefix}hide \`\`\``
             .setColor(config.colors.regular)
             .setDescription(
 `Unhide a channel for @everyone.
-\`\`\` Syntax: ${config.prefix}unhide
+\`\`\`Syntax: ${config.prefix}unhide
 Example: ${config.prefix}unhide \`\`\``
             );
     },
@@ -435,7 +435,7 @@ Example: ${config.prefix}unhide \`\`\``
             .setColor(config.colors.regular)
             .setDescription(
 `Lock a channel.
-\`\`\` Syntax: ${config.prefix}lock
+\`\`\`Syntax: ${config.prefix}lock
 Example: ${config.prefix}lock \`\`\``
             );
     },
@@ -450,7 +450,7 @@ Example: ${config.prefix}lock \`\`\``
             .setColor(config.colors.regular)
             .setDescription(
 `Unlock a channel.
-\`\`\` Syntax: ${config.prefix}unlock
+\`\`\`Syntax: ${config.prefix}unlock
 Example: ${config.prefix}unlock \`\`\``
             );
     },
@@ -465,7 +465,7 @@ Example: ${config.prefix}unlock \`\`\``
             .setColor(config.colors.regular)
             .setDescription(
 `Clear all messages from a channel.
-\`\`\` Syntax: ${config.prefix}nuke
+\`\`\`Syntax: ${config.prefix}nuke
 Example: ${config.prefix}nuke \`\`\``
             );
     },
@@ -480,7 +480,7 @@ Example: ${config.prefix}nuke \`\`\``
             .setColor(config.colors.regular)
             .setDescription(
 `Delete multiple messages from a channel.
-\`\`\` Syntax: ${config.prefix}purge [amount]
+\`\`\`Syntax: ${config.prefix}purge [amount]
 Example: ${config.prefix}purge 100 \`\`\``
             );
     },
@@ -495,7 +495,7 @@ Example: ${config.prefix}purge 100 \`\`\``
             .setColor(config.colors.regular)
             .setDescription(
 `Set the slowmode for a channel.
-\`\`\` Syntax: ${config.prefix}slowmode [duration]
+\`\`\`Syntax: ${config.prefix}slowmode [duration]
 Example: ${config.prefix}slowmode 10s \`\`\``
             );
     }
