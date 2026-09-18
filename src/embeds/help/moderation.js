@@ -65,6 +65,21 @@ Example: ${config.prefix}hardban @user spam \`\`\``
             );
     },
 
+    softban(user) {
+        return new EmbedBuilder()
+            .setTitle("Command: softban")
+            .setAuthor({
+                name: user.username,
+                iconURL: user.displayAvatarURL({ dynamic: true })
+            })
+            .setColor(config.colors.regular)
+            .setDescription(
+`Softban a user and delete their recent messages.
+\`\`\`Syntax: ${config.prefix}softban [member] [reason]
+Example: ${config.prefix}softban @user spam \`\`\``
+            );
+    },
+
     unhardban(user) {
         return new EmbedBuilder()
             .setTitle("Command: unhardban")
