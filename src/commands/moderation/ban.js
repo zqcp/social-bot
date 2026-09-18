@@ -8,6 +8,9 @@ const globalEmbeds =
 const moderationEmbeds =
     require("../../embeds/general/moderation");
 
+const moderationHelp =
+    require("../../embeds/help/moderation");
+
 module.exports = {
     name: "ban",
     aliases: ["b"],
@@ -101,7 +104,7 @@ module.exports = {
         if (!target) {
             return message.channel.send({
                 embeds: [
-                    globalEmbeds.memberNotFound(
+                    moderationHelp.ban(
                         message.author
                     )
                 ]
