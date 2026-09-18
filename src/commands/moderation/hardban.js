@@ -13,7 +13,7 @@ const moderationHelp =
 
 module.exports = {
     name: "hardban",
-    aliases: [],
+    aliases: ["hb"],
     permissions: [
         PermissionFlagsBits.BanMembers
     ],
