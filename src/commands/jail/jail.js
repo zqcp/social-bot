@@ -127,8 +127,8 @@ module.exports = {
         if (!member) {
             member =
                 message.guild.members.cache.find(
-                    member =>
-                        member.user.username.toLowerCase() ===
+                    cachedMember =>
+                        cachedMember.user.username.toLowerCase() ===
                         target.toLowerCase()
                 );
         }
@@ -232,36 +232,30 @@ module.exports = {
         }
 
         const memberRecord =
-            jail.members.find(
-                member =>
-                    member.userId ===
-                    member.id
+            Array.isArray(jail.members)
+                ? jail.members.find(
+                    record =>
+                        record.userId ===
+                        member.id
+                )
+                : null;
+
+        const isJailed =
+            Boolean(memberRecord) ||
+            member.roles.cache.has(
+                jailRole.id
             );
 
-        if (memberRecord) {
+        if (isJailed) {
             return message.channel.send({
                 embeds: [
                     jailEmbeds.alreadyJailed(
                         message.author,
-                        member
+                        member.user
                     )
                 ]
             });
         }
-
-        /*
-         * Duration
-         *
-         * Optional:
-         * 5d
-         * 5 days
-         * 1m
-         * 1 min
-         * 1 minute
-         * 2h
-         * 2 hours
-         * 1d 5h
-         */
 
         const durationParts = [];
         let durationMs = 0;
@@ -381,6 +375,9 @@ module.exports = {
                         role.id
                 );
 
+        const caseNumber =
+            jail.nextCase || 1;
+
         try {
             await member.roles.set(
                 [jailRole.id],
@@ -391,6 +388,7 @@ module.exports = {
                 userId: member.id,
                 roles,
                 reason,
+                caseNumber,
                 jailedAt: new Date(),
                 duration,
                 durationMs:
@@ -404,18 +402,34 @@ module.exports = {
                         : null
             });
 
+            jail.nextCase =
+                caseNumber + 1;
+
             await jail.save();
 
-            return message.channel.send({
+            await message.channel.send({
                 embeds: [
                     jailEmbeds.jailed(
                         message.author,
-                        member,
+                        member.user,
                         duration,
                         reason
                     )
                 ]
             });
+
+            client.emit("jail", {
+                action: "jailed",
+                guildId:
+                    message.guild.id,
+                member,
+                moderator:
+                    message.author,
+                reason,
+                duration,
+                caseNumber
+            });
+
         } catch (error) {
             console.error(
                 "[JAIL] Failed to jail member:",
@@ -426,7 +440,7 @@ module.exports = {
                 embeds: [
                     jailEmbeds.jailFailed(
                         message.author,
-                        member
+                        member.user
                     )
                 ]
             });
