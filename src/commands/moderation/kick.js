@@ -13,7 +13,7 @@ const moderationHelp =
 
 module.exports = {
     name: "kick",
-    aliases: [],
+    aliases: ["k"],
     permissions: [
         PermissionFlagsBits.KickMembers
     ],
