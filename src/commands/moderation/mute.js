@@ -15,6 +15,9 @@ const moderationHelp =
 const GuildConfig =
     require("../../models/GuildConfig");
 
+const Mute =
+    require("../../models/Mute");
+
 const config =
     require("../../config");
 
@@ -314,13 +317,18 @@ module.exports = {
                 guildId: message.guild.id
             });
 
+        const muteConfig =
+            await Mute.findOne({
+                guildId: message.guild.id
+            });
+
         const muteRoleId =
-            guildConfig?.muteRoleId;
+            muteConfig?.muteRoleId;
 
         if (!muteRoleId) {
             return message.channel.send({
                 embeds: [
-                    muteEmbeds.roleMissing(
+                    muteEmbeds.notSetup(
                         message.author
                     )
                 ]
