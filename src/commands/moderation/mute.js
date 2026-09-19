@@ -375,10 +375,13 @@ module.exports = {
         ) {
             return message.channel.send({
                 embeds: [
-                    globalEmbeds.alreadyExists(
-                        message.author,
-                        "mute"
-                    )
+                    new EmbedBuilder()
+                        .setColor(
+                            config.colors.error
+                        )
+                        .setDescription(
+                            `${config.emojis.error} ${message.author}: **${member.user.username}** is already muted.`
+                        )
                 ]
             });
         }
