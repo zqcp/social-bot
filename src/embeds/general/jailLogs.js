@@ -39,7 +39,7 @@ ${member}
 **moderator**
 ${moderator}
 **reason**
-${reason || "n/a (no reason)"}`
+${reason || "n/a"}`
             )
             .setTimestamp()
             .setFooter({
