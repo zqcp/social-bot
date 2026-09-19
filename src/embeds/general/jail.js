@@ -3,11 +3,11 @@ const config = require("../../config");
 
 module.exports = {
 
-    jailed(user, member, reason) {
+    jailed(user, member, duration, reason) {
         return new EmbedBuilder()
             .setColor(config.colors.success)
             .setDescription(
-                `${config.emojis.success} ${user}: **jailed** **${member.username}** for \`${reason || "No reason provided"}\`.`
+                `${config.emojis.success} ${user}: **jailed** **${member.username}**${duration ? ` for \`${duration}\`` : ""}${reason ? ` for \`${reason}\`` : ""}.`
             );
     },
 
