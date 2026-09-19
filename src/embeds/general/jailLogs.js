@@ -1,9 +1,11 @@
+// src/embeds/jailLogs.js
+
 const {
     EmbedBuilder
 } = require("discord.js");
 
 const config =
-    require("../config");
+    require("../../config");
 
 module.exports = {
 
@@ -37,9 +39,13 @@ ${member}
 **moderator**
 ${moderator}
 **reason**
-${reason || "n/a"}`
+${reason || "n/a (no reason)"}`
             )
-            .setTimestamp();
+            .setTimestamp()
+            .setFooter({
+                text:
+                    `user id: ${member.id}`
+            });
 
     },
 
@@ -73,7 +79,11 @@ ${member}
 **moderator**
 ${moderator}`
             )
-            .setTimestamp();
+            .setTimestamp()
+            .setFooter({
+                text:
+                    `user id: ${member.id}`
+            });
 
     }
 
