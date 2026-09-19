@@ -5,7 +5,7 @@ const {
 } = require("discord.js");
 
 const config =
-    require("../sconfig");
+    require("../../config");
 
 module.exports = {
 
