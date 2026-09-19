@@ -294,7 +294,7 @@ module.exports = {
                     new EmbedBuilder()
                         .setColor("#FF0000")
                         .setDescription(
-                            `${message.author}: ${member.user.username} is now unmuted.`
+                            `${message.author}: **${member.user.username}** is now unmuted.`
                         )
                 ]
             });
