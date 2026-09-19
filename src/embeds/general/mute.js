@@ -71,7 +71,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.success)
             .setDescription(
-                `${config.emojis.success} ${user}: **Mute role** has been set to ${role}.`
+                `${config.emojis.success} ${user}: **mute role** has been set to ${role}.`
             );
     },
 
@@ -79,7 +79,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.error)
             .setDescription(
-                `${config.emojis.error} ${user}: **Mute role** is already set to ${role}.`
+                `${config.emojis.error} ${user}: **mute role** is already set to ${role}.`
             );
     },
 
@@ -87,7 +87,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.error)
             .setDescription(
-                `${config.emojis.error} ${user}: **Mute role** hasn't been setup.`
+                `${config.emojis.error} ${user}: **mute role** hasn't been setup.`
             );
     },
 
@@ -95,7 +95,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.success)
             .setDescription(
-                `${config.emojis.success} ${user}: **Mute role** has been removed.`
+                `${config.emojis.success} ${user}: **mute role** has been removed.`
             );
     },
 
