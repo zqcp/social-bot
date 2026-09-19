@@ -17,7 +17,7 @@ const config =
 
 module.exports = {
     name: "unmute",
-    aliases: [],
+    aliases: ["unm", "um"],
     permissions: [
         PermissionFlagsBits.ModerateMembers
     ],
