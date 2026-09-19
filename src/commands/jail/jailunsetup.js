@@ -130,24 +130,42 @@ module.exports = {
             });
         }
 
-        if (
-            Array.isArray(jail.members) &&
-            jail.members.length > 0
-        ) {
-            return message.channel.send({
-                embeds: [
-                    jailEmbeds.unsetupBlocked(
-                        message.author,
-                        jail.members.length
-                    )
-                ]
-            });
-        }
-
         const jailRole =
             message.guild.roles.cache.get(
                 jail.roleId
             );
+
+        const jailedMembers =
+            Array.isArray(jail.members)
+                ? jail.members
+                : [];
+
+        const jailedByRole =
+            jailRole
+                ? message.guild.members.cache.filter(
+                    member =>
+                        member.roles.cache.has(
+                            jailRole.id
+                        )
+                ).size
+                : 0;
+
+        const jailedCount =
+            Math.max(
+                jailedMembers.length,
+                jailedByRole
+            );
+
+        if (jailedCount > 0) {
+            return message.channel.send({
+                embeds: [
+                    jailEmbeds.unsetupBlocked(
+                        message.author,
+                        jailedCount
+                    )
+                ]
+            });
+        }
 
         if (
             jailRole &&
