@@ -4,7 +4,7 @@ const Jail =
     require("../../models/Jail");
 
 const jailLogs =
-    require("../../embeds/jailLogs");
+    require("../../embeds/general/jailLogs");
 
 module.exports = {
 
