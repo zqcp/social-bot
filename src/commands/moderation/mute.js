@@ -6,6 +6,9 @@ const {
 const globalEmbeds =
     require("../../embeds/general/global");
 
+const muteEmbeds =
+    require("../../embeds/general/mute");
+
 const moderationHelp =
     require("../../embeds/help/moderation");
 
@@ -317,9 +320,8 @@ module.exports = {
         if (!muteRoleId) {
             return message.channel.send({
                 embeds: [
-                    globalEmbeds.missing(
-                        message.author,
-                        "mute role"
+                    muteEmbeds.roleMissing(
+                        message.author
                     )
                 ]
             });
