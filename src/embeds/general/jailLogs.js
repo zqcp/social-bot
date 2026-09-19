@@ -1,11 +1,9 @@
-// src/embeds/jailLogs.js
-
 const {
     EmbedBuilder
 } = require("discord.js");
 
 const config =
-    require("../../config");
+    require("../config");
 
 module.exports = {
 
@@ -18,7 +16,7 @@ module.exports = {
 
         return new EmbedBuilder()
             .setColor(
-                config.colors.regular
+                0xFFFFFF
             )
             .setAuthor({
                 name:
@@ -41,20 +39,7 @@ ${moderator}
 **reason**
 ${reason || "n/a"}`
             )
-            .setFooter({
-                text:
-                    `user id: ${member.id} | ${new Date().toLocaleString(
-                        "en-US",
-                        {
-                            month: "numeric",
-                            day: "numeric",
-                            year: "2-digit",
-                            hour: "numeric",
-                            minute: "2-digit",
-                            hour12: true
-                        }
-                    )}`
-            });
+            .setTimestamp();
 
     },
 
@@ -67,7 +52,7 @@ ${reason || "n/a"}`
 
         return new EmbedBuilder()
             .setColor(
-                config.colors.regular
+                0xFFFFFF
             )
             .setAuthor({
                 name:
@@ -88,20 +73,7 @@ ${member}
 **moderator**
 ${moderator}`
             )
-            .setFooter({
-                text:
-                    `user id: ${member.id} | ${new Date().toLocaleString(
-                        "en-US",
-                        {
-                            month: "numeric",
-                            day: "numeric",
-                            year: "2-digit",
-                            hour: "numeric",
-                            minute: "2-digit",
-                            hour12: true
-                        }
-                    )}`
-            });
+            .setTimestamp();
 
     }
 
