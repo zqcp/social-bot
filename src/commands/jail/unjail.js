@@ -127,8 +127,8 @@ module.exports = {
         if (!member) {
             member =
                 message.guild.members.cache.find(
-                    member =>
-                        member.user.username.toLowerCase() ===
+                    cachedMember =>
+                        cachedMember.user.username.toLowerCase() ===
                         target.toLowerCase()
                 );
         }
@@ -232,27 +232,38 @@ module.exports = {
         }
 
         const recordIndex =
-            jail.members.findIndex(
-                record =>
-                    record.userId ===
-                    member.id
+            Array.isArray(jail.members)
+                ? jail.members.findIndex(
+                    record =>
+                        record.userId ===
+                        member.id
+                )
+                : -1;
+
+        const isJailed =
+            recordIndex !== -1 ||
+            member.roles.cache.has(
+                jailRole.id
             );
 
-        if (recordIndex === -1) {
+        if (!isJailed) {
             return message.channel.send({
                 embeds: [
                     jailEmbeds.alreadyUnjailed(
                         message.author,
-                        member
+                        member.user
                     )
                 ]
             });
         }
 
         const record =
-            jail.members[recordIndex];
+            recordIndex !== -1
+                ? jail.members[recordIndex]
+                : null;
 
         const rolesToRestore =
+            record &&
             Array.isArray(record.roles)
                 ? record.roles
                     .map(
@@ -276,27 +287,50 @@ module.exports = {
                     )
                 : [];
 
-        try {
-            await member.roles.set(
-                rolesToRestore,
-                "Unjailed"
-            );
+        const caseNumber =
+            record?.caseNumber || "N/A";
 
-            jail.members.splice(
-                recordIndex,
-                1
-            );
+        try {
+            if (record) {
+                await member.roles.set(
+                    rolesToRestore,
+                    "Unjailed"
+                );
+            } else {
+                await member.roles.remove(
+                    jailRole,
+                    "Unjailed"
+                );
+            }
+
+            if (recordIndex !== -1) {
+                jail.members.splice(
+                    recordIndex,
+                    1
+                );
+            }
 
             await jail.save();
 
-            return message.channel.send({
+            await message.channel.send({
                 embeds: [
                     jailEmbeds.unjailed(
                         message.author,
-                        member
+                        member.user
                     )
                 ]
             });
+
+            client.emit("jail", {
+                action: "unjail",
+                guildId:
+                    message.guild.id,
+                member,
+                moderator:
+                    message.author,
+                caseNumber
+            });
+
         } catch (error) {
             console.error(
                 "[UNJAIL] Failed to unjail member:",
@@ -307,7 +341,7 @@ module.exports = {
                 embeds: [
                     jailEmbeds.unjailFailed(
                         message.author,
-                        member
+                        member.user
                     )
                 ]
             });
