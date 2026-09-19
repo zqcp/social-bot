@@ -257,8 +257,8 @@ module.exports = {
             });
         }
 
-        const durationParts = [];
-        let durationMs = 0;
+        // Remove the member from the arguments.
+        args.shift();
 
         const units = {
             s: 1000,
@@ -288,73 +288,60 @@ module.exports = {
             weeks: 7 * 24 * 60 * 60 * 1000
         };
 
-        while (args.length) {
-            const value =
-                args[0];
+        let duration = null;
+        let durationMs = 0;
 
-            const compact =
-                value.match(
-                    /^(\d+(?:\.\d+)?)(s|sec|secs|second|seconds|m|min|mins|minute|minutes|h|hr|hrs|hour|hours|d|day|days|w|week|weeks)$/i
-                );
+        // Compact duration:
+        // 5s, 5m, 5h, 5d, 5w
+        const compact =
+            args[0]?.match(
+                /^(\d+(?:\.\d+)?)(s|sec|secs|second|seconds|m|min|mins|minute|minutes|h|hr|hrs|hour|hours|d|day|days|w|week|weeks)$/i
+            );
 
-            if (compact) {
-                args.shift();
+        if (compact) {
+            args.shift();
 
-                const amount =
-                    Number(compact[1]);
+            const amount =
+                Number(compact[1]);
 
-                const unit =
-                    compact[2].toLowerCase();
+            const unit =
+                compact[2].toLowerCase();
 
-                durationMs +=
-                    amount * units[unit];
+            durationMs =
+                amount * units[unit];
 
-                durationParts.push(
-                    value
-                );
-
-                continue;
-            }
-
-            if (
-                args.length >= 2 &&
-                /^\d+(?:\.\d+)?$/.test(
-                    args[0]
-                )
-            ) {
-                const amount =
-                    Number(args[0]);
-
-                const unit =
-                    args[1].toLowerCase();
-
-                if (
-                    Object.prototype.hasOwnProperty.call(
-                        units,
-                        unit
-                    )
-                ) {
-                    args.shift();
-                    args.shift();
-
-                    durationMs +=
-                        amount * units[unit];
-
-                    durationParts.push(
-                        `${amount} ${unit}`
-                    );
-
-                    continue;
-                }
-            }
-
-            break;
+            duration =
+                compact[0];
         }
 
-        const duration =
-            durationParts.length
-                ? durationParts.join(" ")
-                : null;
+        // Spaced duration:
+        // 5 seconds, 5 minutes, 5 hours, 5 days, 5 weeks
+        if (
+            !duration &&
+            args.length >= 2 &&
+            /^\d+(?:\.\d+)?$/.test(
+                args[0]
+            ) &&
+            Object.prototype.hasOwnProperty.call(
+                units,
+                args[1].toLowerCase()
+            )
+        ) {
+            const amount =
+                Number(args[0]);
+
+            const unit =
+                args[1].toLowerCase();
+
+            durationMs =
+                amount * units[unit];
+
+            duration =
+                `${args[0]} ${args[1]}`;
+
+            args.shift();
+            args.shift();
+        }
 
         const reason =
             args.join(" ").trim() ||
