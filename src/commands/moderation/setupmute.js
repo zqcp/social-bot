@@ -1,10 +1,12 @@
 const {
-    PermissionFlagsBits,
-    EmbedBuilder
+    PermissionFlagsBits
 } = require("discord.js");
 
 const globalEmbeds =
     require("../../embeds/general/global");
+
+const muteEmbeds =
+    require("../../embeds/general/mute");
 
 const moderationHelp =
     require("../../embeds/help/moderation");
@@ -12,8 +14,8 @@ const moderationHelp =
 const GuildConfig =
     require("../../models/GuildConfig");
 
-const config =
-    require("../../config");
+const Mute =
+    require("../../models/Mute");
 
 module.exports = {
     name: "setup mute",
@@ -112,13 +114,9 @@ module.exports = {
         if (!target) {
             return message.channel.send({
                 embeds: [
-                    new EmbedBuilder()
-                        .setColor(
-                            config.colors.error
-                        )
-                        .setDescription(
-                            `${config.emojis.error} ${message.author}: Missing **mute role**.`
-                        )
+                    muteEmbeds.setupMissing(
+                        message.author
+                    )
                 ]
             });
         }
@@ -188,36 +186,39 @@ module.exports = {
                 guildId: message.guild.id
             });
 
+        const muteConfig =
+            await Mute.findOne({
+                guildId: message.guild.id
+            });
+
         if (
-            guildConfig?.muteRoleId
+            muteConfig?.muteRoleId
         ) {
             const existingRole =
                 message.guild.roles.cache.get(
-                    guildConfig.muteRoleId
+                    muteConfig.muteRoleId
                 );
 
             if (existingRole) {
                 return message.channel.send({
                     embeds: [
-                        new EmbedBuilder()
-                            .setColor(
-                                config.colors.error
-                            )
-                            .setDescription(
-                                `${config.emojis.error} ${message.author}: **mute role** is already set to ${existingRole}.`
-                            )
+                        muteEmbeds.alreadySetup(
+                            message.author,
+                            existingRole
+                        )
                     ]
                 });
             }
         }
 
         try {
-            await GuildConfig.findOneAndUpdate(
+            await Mute.findOneAndUpdate(
                 {
                     guildId: message.guild.id
                 },
                 {
                     $set: {
+                        guildId: message.guild.id,
                         muteRoleId: role.id
                     }
                 },
@@ -230,25 +231,18 @@ module.exports = {
 
             return message.channel.send({
                 embeds: [
-                    new EmbedBuilder()
-                        .setColor(
-                            config.colors.success
-                        )
-                        .setDescription(
-                            `${config.emojis.success} ${message.author}: **mute role** has been set to ${role}.`
-                        )
+                    muteEmbeds.setup(
+                        message.author,
+                        role
+                    )
                 ]
             });
         } catch (error) {
             return message.channel.send({
                 embeds: [
-                    new EmbedBuilder()
-                        .setColor(
-                            config.colors.failed
-                        )
-                        .setDescription(
-                            `${config.emojis.failed} ${message.author}: Failed to **set the mute role**. Please try again.`
-                        )
+                    muteEmbeds.setupFailed(
+                        message.author
+                    )
                 ]
             });
         }
