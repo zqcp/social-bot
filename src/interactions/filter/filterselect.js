@@ -7,11 +7,8 @@ const {
 const config =
     require("../../config");
 
-const globalEmbeds =
-    require("../embeds/general/global");
-
 const filterHelp =
-    require("../embeds/help/filter");
+    require("../../embeds/help/filter");
 
 module.exports = {
 
@@ -24,13 +21,7 @@ module.exports = {
         interaction
     ) {
 
-        // =========================
-        // SELECT CHECK
-        // =========================
-
-        if (
-            !interaction.isStringSelectMenu()
-        ) {
+        if (!interaction.isStringSelectMenu()) {
             return;
         }
 
@@ -41,10 +32,6 @@ module.exports = {
             return;
         }
 
-        // =========================
-        // GUILD CHECK
-        // =========================
-
         if (!interaction.guild) {
             return interaction.reply({
                 content:
@@ -52,10 +39,6 @@ module.exports = {
                 flags: 64
             });
         }
-
-        // =========================
-        // PERMISSION CHECK
-        // =========================
 
         if (
             !interaction.member.permissions.has(
@@ -69,16 +52,8 @@ module.exports = {
             });
         }
 
-        // =========================
-        // GET SUBCOMMAND
-        // =========================
-
         const subcommand =
             interaction.values[0];
-
-        // =========================
-        // GET HELP EMBED
-        // =========================
 
         const embeds = {
             add: filterHelp.add,
@@ -101,23 +76,13 @@ module.exports = {
             });
         }
 
-        // =========================
-        // UPDATE ORIGINAL MESSAGE
-        // =========================
-
         await interaction.update({
             embeds: [
                 embed(interaction.user)
             ]
         });
 
-        // =========================
-        // RESET 60 SECOND TIMER
-        // =========================
-
-        if (
-            !client.filterTimers
-        ) {
+        if (!client.filterTimers) {
             client.filterTimers =
                 new Map();
         }
@@ -128,7 +93,9 @@ module.exports = {
             );
 
         if (existingTimer) {
-            clearTimeout(existingTimer);
+            clearTimeout(
+                existingTimer
+            );
         }
 
         const newTimer =
@@ -145,7 +112,9 @@ module.exports = {
                                 .setPlaceholder(
                                     "Select a subcommand"
                                 )
-                                .setDisabled(true)
+                                .setDisabled(
+                                    true
+                                )
                                 .addOptions(
                                     {
                                         label: "Add",
@@ -206,7 +175,7 @@ module.exports = {
                     } catch (error) {
 
                         console.error(
-                            "Filter Select Timeout Error:",
+                            "[FILTER] Select menu timeout error:",
                             error
                         );
 
