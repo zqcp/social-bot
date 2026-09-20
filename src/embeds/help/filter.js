@@ -32,12 +32,8 @@ ${config.prefix}filter add spam
             .setColor(config.colors.regular)
             .setDescription(
 `Clear all custom words from the server filter.
-\`\`\`
-Syntax:
-${config.prefix}filter clear
-Example:
-${config.prefix}filter clear
-\`\`\``
+\`\`\`Syntax: ${config.prefix}filter clear
+Example: ${config.prefix}filter clear\`\`\``
             );
     },
 
@@ -51,12 +47,8 @@ ${config.prefix}filter clear
             .setColor(config.colors.regular)
             .setDescription(
 `Disable the server word filter.
-\`\`\`
-Syntax:
-${config.prefix}filter disable
-Example:
-${config.prefix}filter disable
-\`\`\``
+\`\`\`Syntax: ${config.prefix}filter disable
+Example: ${config.prefix}filter disable\`\`\``
             );
     },
 
@@ -70,12 +62,8 @@ ${config.prefix}filter disable
             .setColor(config.colors.regular)
             .setDescription(
 `Enable the server word filter.
-\`\`\`
-Syntax:
-${config.prefix}filter enable
-Example:
-${config.prefix}filter enable
-\`\`\``
+\`\`\`Syntax: ${config.prefix}filter enable
+Example: ${config.prefix}filter enable\`\`\``
             );
     },
 
@@ -89,12 +77,8 @@ ${config.prefix}filter enable
             .setColor(config.colors.regular)
             .setDescription(
 `View the words currently configured in the server filter.
-\`\`\`
-Syntax:
-${config.prefix}filter list
-Example:
-${config.prefix}filter list
-\`\`\``
+\`\`\`Syntax: ${config.prefix}filter list
+Example: ${config.prefix}filter list\`\`\``
             );
     },
 
@@ -107,13 +91,9 @@ ${config.prefix}filter list
             })
             .setColor(config.colors.regular)
             .setDescription(
-`Manage the premade word filter.
-\`\`\`
-Syntax:
-${config.prefix}filter premade [enable/disable]
-Example:
-${config.prefix}filter premade enable
-\`\`\``
+`Manage the premade word filter. 
+\`\`\` Syntax: ${config.prefix}filter premade [enable/disable]
+Example: ${config.prefix}filter premade enable\`\`\``
             );
     },
 
@@ -127,12 +107,8 @@ ${config.prefix}filter premade enable
             .setColor(config.colors.regular)
             .setDescription(
 `Remove a word from the server filter.
-\`\`\`
-Syntax:
-${config.prefix}filter remove [word]
-Example:
-${config.prefix}filter remove spam
-\`\`\``
+\`\`\`Syntax: ${config.prefix}filter remove [word]
+Example: ${config.prefix}filter remove spam\`\`\``
             );
     }
 
