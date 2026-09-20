@@ -51,6 +51,14 @@ module.exports = {
             );
     },
 
+    alreadyEnabled(user) {
+        return new EmbedBuilder()
+            .setColor(config.colors.error)
+            .setDescription(
+                `${config.emojis.error} ${user}: Filter is already **enabled**.`
+            );
+    },
+
     disabled(user) {
         return new EmbedBuilder()
             .setColor(config.colors.success)
@@ -59,11 +67,27 @@ module.exports = {
             );
     },
 
+    alreadyDisabled(user) {
+        return new EmbedBuilder()
+            .setColor(config.colors.error)
+            .setDescription(
+                `${config.emojis.error} ${user}: Filter is already **disabled**.`
+            );
+    },
+
     cleared(user) {
         return new EmbedBuilder()
             .setColor(config.colors.success)
             .setDescription(
                 `${config.emojis.success} ${user}: Filter has been **cleared**.`
+            );
+    },
+
+    alreadyCleared(user) {
+        return new EmbedBuilder()
+            .setColor(config.colors.error)
+            .setDescription(
+                `${config.emojis.error} ${user}: Filter is already **cleared**.`
             );
     },
 
