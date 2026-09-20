@@ -13,12 +13,8 @@ module.exports = {
             .setColor(config.colors.regular)
             .setDescription(
 `Add a word to the server filter.
-\`\`\`
-Syntax:
-${config.prefix}filter add [word]
-Example:
-${config.prefix}filter add spam
-\`\`\``
+\`\`\`Syntax: ${config.prefix}filter add [word]
+Example: ${config.prefix}filter add spam\`\`\``
             );
     },
 
@@ -92,7 +88,7 @@ Example: ${config.prefix}filter list\`\`\``
             .setColor(config.colors.regular)
             .setDescription(
 `Manage the premade word filter. 
-\`\`\` Syntax: ${config.prefix}filter premade [enable/disable]
+\`\`\`Syntax: ${config.prefix}filter premade [enable/disable]
 Example: ${config.prefix}filter premade enable\`\`\``
             );
     },
