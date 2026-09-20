@@ -8,6 +8,9 @@ const globalEmbeds =
 const filterEmbeds =
     require("../../embeds/general/filter");
 
+const filterHelp =
+    require("../../embeds/help/filter");
+
 const Filter =
     require("../../models/Filter");
 
@@ -23,6 +26,10 @@ module.exports = {
     name: "filter add",
 
     aliases: [],
+
+    permissions: [
+        PermissionFlagsBits.ManageMessages
+    ],
 
     async execute(
         client,
@@ -70,6 +77,14 @@ module.exports = {
         const botMember =
             message.guild.members.me;
 
+        if (!botMember) {
+            console.error(
+                "Filter Add Error: Bot member could not be found."
+            );
+
+            return;
+        }
+
         const requiredPermissions = [
             PermissionFlagsBits.ViewChannel,
             PermissionFlagsBits.SendMessages,
@@ -97,9 +112,20 @@ module.exports = {
                         )?.[0] || permission
                 );
 
+            if (permissionNames.length === 1) {
+                return message.channel.send({
+                    embeds: [
+                        globalEmbeds.botPermission(
+                            message.author,
+                            permissionNames[0]
+                        )
+                    ]
+                });
+            }
+
             return message.channel.send({
                 embeds: [
-                    globalEmbeds.botPermission(
+                    globalEmbeds.botPermissions(
                         message.author,
                         permissionNames
                     )
@@ -117,9 +143,8 @@ module.exports = {
         if (!word) {
             return message.channel.send({
                 embeds: [
-                    globalEmbeds.missing(
-                        message.author,
-                        "word"
+                    filterHelp.add(
+                        message.author
                     )
                 ]
             });
