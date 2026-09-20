@@ -107,14 +107,13 @@ module.exports = {
         }
 
         // =========================
-        // SEND HELP
+        // UPDATE ORIGINAL MESSAGE
         // =========================
 
-        await interaction.reply({
+        await interaction.update({
             embeds: [
                 embed(interaction.user)
-            ],
-            flags: 64
+            ]
         });
 
         // =========================
