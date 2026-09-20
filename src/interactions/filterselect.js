@@ -1,6 +1,11 @@
 const {
-    PermissionFlagsBits
+    PermissionFlagsBits,
+    ActionRowBuilder,
+    StringSelectMenuBuilder
 } = require("discord.js");
+
+const config =
+    require("../../config");
 
 const globalEmbeds =
     require("../embeds/general/global");
@@ -42,11 +47,8 @@ module.exports = {
 
         if (!interaction.guild) {
             return interaction.reply({
-                embeds: [
-                    globalEmbeds.error(
-                        "This interaction can only be used in a server."
-                    )
-                ],
+                content:
+                    `${config.emojis.error} This interaction can only be used in a server.`,
                 flags: 64
             });
         }
@@ -61,12 +63,8 @@ module.exports = {
             )
         ) {
             return interaction.reply({
-                embeds: [
-                    globalEmbeds.permission(
-                        interaction.user,
-                        "ManageMessages"
-                    )
-                ],
+                content:
+                    `${config.emojis.error} ${interaction.user}: You cannot use this!`,
                 flags: 64
             });
         }
@@ -97,11 +95,8 @@ module.exports = {
 
         if (!embed) {
             return interaction.reply({
-                embeds: [
-                    globalEmbeds.error(
-                        `${interaction.user}: Invalid **filter subcommand**.`
-                    )
-                ],
+                content:
+                    `${config.emojis.error} ${interaction.user}: Invalid **filter subcommand**.`,
                 flags: 64
             });
         }
@@ -121,50 +116,114 @@ module.exports = {
         // =========================
 
         if (
-            client.filterTimers
+            !client.filterTimers
         ) {
+            client.filterTimers =
+                new Map();
+        }
 
-            const timer =
-                client.filterTimers.get(
-                    interaction.message.id
-                );
+        const existingTimer =
+            client.filterTimers.get(
+                interaction.message.id
+            );
 
-            if (timer) {
-                clearTimeout(timer);
-            }
+        if (existingTimer) {
+            clearTimeout(existingTimer);
+        }
 
-            const newTimer =
-                setTimeout(
-                    async () => {
+        const newTimer =
+            setTimeout(
+                async () => {
 
-                        try {
+                    try {
 
-                            await interaction.message.edit({
-                                components: []
-                            });
+                        const disabledMenu =
+                            new StringSelectMenuBuilder()
+                                .setCustomId(
+                                    "filter_subcommand"
+                                )
+                                .setPlaceholder(
+                                    "Select a subcommand"
+                                )
+                                .setDisabled(true)
+                                .addOptions(
+                                    {
+                                        label: "Add",
+                                        description:
+                                            "Add a word to the filter.",
+                                        value: "add"
+                                    },
+                                    {
+                                        label: "Clear",
+                                        description:
+                                            "Clear all custom filter words.",
+                                        value: "clear"
+                                    },
+                                    {
+                                        label: "Disable",
+                                        description:
+                                            "Disable the word filter.",
+                                        value: "disable"
+                                    },
+                                    {
+                                        label: "Enable",
+                                        description:
+                                            "Enable the word filter.",
+                                        value: "enable"
+                                    },
+                                    {
+                                        label: "List",
+                                        description:
+                                            "View the filtered words.",
+                                        value: "list"
+                                    },
+                                    {
+                                        label: "Premade",
+                                        description:
+                                            "Manage the premade word filter.",
+                                        value: "premade"
+                                    },
+                                    {
+                                        label: "Remove",
+                                        description:
+                                            "Remove a word from the filter.",
+                                        value: "remove"
+                                    }
+                                );
 
-                        } catch (error) {
+                        const row =
+                            new ActionRowBuilder()
+                                .addComponents(
+                                    disabledMenu
+                                );
 
-                            console.error(
-                                "Filter Select Timeout Error:",
-                                error
-                            );
+                        await interaction.message.edit({
+                            components: [
+                                row
+                            ]
+                        });
 
-                        }
+                    } catch (error) {
 
-                        client.filterTimers.delete(
-                            interaction.message.id
+                        console.error(
+                            "Filter Select Timeout Error:",
+                            error
                         );
 
-                    },
-                    60000
-                );
+                    }
 
-            client.filterTimers.set(
-                interaction.message.id,
-                newTimer
+                    client.filterTimers.delete(
+                        interaction.message.id
+                    );
+
+                },
+                60000
             );
-        }
+
+        client.filterTimers.set(
+            interaction.message.id,
+            newTimer
+        );
 
     }
 
