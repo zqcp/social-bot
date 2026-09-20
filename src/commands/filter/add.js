@@ -176,6 +176,20 @@ module.exports = {
             }
 
             // =========================
+            // ENABLED CHECK
+            // =========================
+
+            if (!filter.enabled) {
+                return message.channel.send({
+                    embeds: [
+                        filterEmbeds.disabledStatus(
+                            message.author
+                        )
+                    ]
+                });
+            }
+
+            // =========================
             // PREMADE CHECK
             // =========================
 
