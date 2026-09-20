@@ -8,14 +8,36 @@ const globalEmbeds =
 const filterEmbeds =
     require("../../embeds/general/filter");
 
+const filterHelp =
+    require("../../embeds/help/filter");
+
 const Filter =
     require("../../models/Filter");
 
+// =========================
+// COMMAND
+// =========================
+
 module.exports = {
+
     name: "filter clear",
+
     aliases: [],
 
-    async execute(client, message, args) {
+    permissions: [
+        PermissionFlagsBits.ManageMessages
+    ],
+
+    async execute(
+        client,
+        message,
+        args
+    ) {
+
+        // =========================
+        // GUILD CHECK
+        // =========================
+
         if (!message.guild) {
             return message.channel.send({
                 embeds: [
@@ -25,6 +47,10 @@ module.exports = {
                 ]
             });
         }
+
+        // =========================
+        // USER PERMISSION
+        // =========================
 
         if (
             !message.member.permissions.has(
@@ -41,8 +67,20 @@ module.exports = {
             });
         }
 
+        // =========================
+        // BOT PERMISSIONS
+        // =========================
+
         const botMember =
             message.guild.members.me;
+
+        if (!botMember) {
+            console.error(
+                "Filter Clear Error: Bot member could not be found."
+            );
+
+            return;
+        }
 
         const requiredPermissions = [
             PermissionFlagsBits.ViewChannel,
@@ -59,6 +97,7 @@ module.exports = {
             );
 
         if (missingPermissions.length) {
+
             const permissionNames =
                 missingPermissions.map(
                     permission =>
@@ -70,9 +109,20 @@ module.exports = {
                         )?.[0] || permission
                 );
 
+            if (permissionNames.length === 1) {
+                return message.channel.send({
+                    embeds: [
+                        globalEmbeds.botPermission(
+                            message.author,
+                            permissionNames[0]
+                        )
+                    ]
+                });
+            }
+
             return message.channel.send({
                 embeds: [
-                    globalEmbeds.botPermission(
+                    globalEmbeds.botPermissions(
                         message.author,
                         permissionNames
                     )
@@ -80,7 +130,12 @@ module.exports = {
             });
         }
 
+        // =========================
+        // DATABASE
+        // =========================
+
         try {
+
             const filter =
                 await Filter.findOne({
                     guildId:
@@ -90,7 +145,7 @@ module.exports = {
             if (!filter) {
                 return message.channel.send({
                     embeds: [
-                        filterEmbeds.cleared(
+                        filterHelp.clear(
                             message.author
                         )
                     ]
@@ -110,6 +165,7 @@ module.exports = {
             });
 
         } catch (error) {
+
             console.error(
                 "Filter Clear Error:",
                 error
@@ -124,5 +180,7 @@ module.exports = {
                 ]
             });
         }
+
     }
+
 };
