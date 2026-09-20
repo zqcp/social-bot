@@ -20,7 +20,7 @@ module.exports = {
 
     name: "vmsetup",
 
-    aliases: ["voicemaster setup"],
+    aliases: ["voicemaster setup", "vm setup"],
 
     permissions: [
         PermissionFlagsBits.ManageGuild
