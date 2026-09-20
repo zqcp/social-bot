@@ -8,9 +8,6 @@ const globalEmbeds =
 const filterEmbeds =
     require("../../embeds/general/filter");
 
-const filterHelp =
-    require("../../embeds/help/filter");
-
 const Filter =
     require("../../models/Filter");
 
@@ -145,7 +142,7 @@ module.exports = {
             if (!filter) {
                 return message.channel.send({
                     embeds: [
-                        filterHelp.clear(
+                        filterEmbeds.cleared(
                             message.author
                         )
                     ]
