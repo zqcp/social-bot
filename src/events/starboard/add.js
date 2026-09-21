@@ -56,6 +56,10 @@ module.exports = {
 
             if (user.bot) return;
 
+            // =========================
+            // FETCH PARTIAL REACTION
+            // =========================
+
             if (reaction.partial) {
                 await reaction.fetch();
             }
@@ -63,12 +67,25 @@ module.exports = {
             const message =
                 reaction.message;
 
-            if (
-                !message ||
-                !message.guild
-            ) {
+            if (!message) {
                 return;
             }
+
+            // =========================
+            // FETCH PARTIAL MESSAGE
+            // =========================
+
+            if (message.partial) {
+                await message.fetch();
+            }
+
+            if (!message.guild) {
+                return;
+            }
+
+            // =========================
+            // FIND STARBOARDS
+            // =========================
 
             const starboards =
                 await Starboard.find({
@@ -83,6 +100,10 @@ module.exports = {
             for (
                 const starboard of starboards
             ) {
+
+                // =========================
+                // EMOJI CHECK
+                // =========================
 
                 const reactionEmoji =
                     normalizeEmoji(
@@ -108,6 +129,10 @@ module.exports = {
                     continue;
                 }
 
+                // =========================
+                // STARBOARD CHANNEL
+                // =========================
+
                 const channel =
                     message.guild.channels.cache.get(
                         starboard.channelId
@@ -116,6 +141,10 @@ module.exports = {
                 if (!channel) {
                     continue;
                 }
+
+                // =========================
+                // BOT MEMBER
+                // =========================
 
                 const botMember =
                     message.guild.members.me;
@@ -128,6 +157,10 @@ module.exports = {
 
                     continue;
                 }
+
+                // =========================
+                // BOT PERMISSIONS
+                // =========================
 
                 const permissions =
                     channel.permissionsFor(
@@ -156,6 +189,10 @@ module.exports = {
                 if (missingPermissions) {
                     continue;
                 }
+
+                // =========================
+                // REACTION USERS
+                // =========================
 
                 let users;
 
@@ -190,6 +227,10 @@ module.exports = {
                     count = 0;
                 }
 
+                // =========================
+                // THRESHOLD
+                // =========================
+
                 if (
                     count <
                     starboard.threshold
@@ -197,13 +238,9 @@ module.exports = {
                     continue;
                 }
 
-                /*
-                 * Find the existing Starboard post.
-                 *
-                 * The original message URL and configured
-                 * emoji are both checked so multiple
-                 * Starboards can use the same channel.
-                 */
+                // =========================
+                // EXISTING STARBOARD POST
+                // =========================
 
                 let existing = null;
 
@@ -265,12 +302,9 @@ module.exports = {
                     continue;
                 }
 
-                /*
-                 * Build the Starboard embed.
-                 *
-                 * The original message author is used
-                 * as the embed author.
-                 */
+                // =========================
+                // BUILD EMBED
+                // =========================
 
                 const embed =
                     new EmbedBuilder()
@@ -316,9 +350,9 @@ module.exports = {
                             )
                     );
 
-                /*
-                 * Reply information.
-                 */
+                // =========================
+                // REPLY
+                // =========================
 
                 let repliedMessage = null;
 
@@ -334,14 +368,11 @@ module.exports = {
                             .catch(
                                 () => null
                             );
-
                 }
 
-                /*
-                 * GIF format.
-                 *
-                 * GIF/image is placed in the thumbnail.
-                 */
+                // =========================
+                // GIF
+                // =========================
 
                 const isGif =
                     image?.contentType ===
@@ -366,14 +397,6 @@ module.exports = {
                             messageContent
                         );
 
-                    } else if (
-                        repliedMessage
-                    ) {
-
-                        embed.setDescription(
-                            gifText
-                        );
-
                     } else {
 
                         embed.setDescription(
@@ -384,19 +407,14 @@ module.exports = {
 
                 } else if (messageContent) {
 
-                    /*
-                     * Normal message text.
-                     */
-
                     embed.setDescription(
                         messageContent
                     );
-
                 }
 
-                /*
-                 * Reply line.
-                 */
+                // =========================
+                // REPLY LINE
+                // =========================
 
                 if (repliedMessage) {
 
@@ -406,51 +424,37 @@ module.exports = {
                         "Message";
 
                     embed.addFields({
-                        name: "\u200B",
+                        name:
+                            "\u200B",
+
                         value:
                             `<:reply:1551493475940175902> ` +
                             `[${replyText.slice(0, 100)}](${repliedMessage.url})`,
-                        inline: false
-                    });
 
+                        inline:
+                            false
+                    });
                 }
 
-                /*
-                 * Video / clip format.
-                 *
-                 * The video itself is sent above the
-                 * Starboard embed.
-                 */
+                // =========================
+                // SOURCE CHANNEL
+                // =========================
 
-                if (video) {
+                embed.addFields({
+                    name:
+                        "\u200B",
 
-                    embed.addFields({
-                        name: "\u200B",
-                        value:
-                            `**#${message.channel.name}**\n` +
-                            `[Jump to message](${message.url})`,
-                        inline: false
-                    });
+                    value:
+                        `**#${message.channel.name}**\n` +
+                        `[Jump to message](${message.url})`,
 
-                } else {
+                    inline:
+                        false
+                });
 
-                    /*
-                     * Normal source channel information.
-                     */
-
-                    embed.addFields({
-                        name: "\u200B",
-                        value:
-                            `**#${message.channel.name}**\n` +
-                            `[Jump to message](${message.url})`,
-                        inline: false
-                    });
-
-                }
-
-                /*
-                 * Normal image format.
-                 */
+                // =========================
+                // IMAGE
+                // =========================
 
                 if (
                     image &&
@@ -460,8 +464,11 @@ module.exports = {
                     embed.setImage(
                         image.url
                     );
-
                 }
+
+                // =========================
+                // OTHER ATTACHMENTS
+                // =========================
 
                 const otherAttachments =
                     attachments.filter(
@@ -492,31 +499,29 @@ module.exports = {
                                     1024
                                 ),
 
-                        inline: false
+                        inline:
+                            false
                     });
-
                 }
 
-                /*
-                 * Native Discord timestamp.
-                 */
+                // =========================
+                // TIMESTAMP
+                // =========================
 
                 embed.setTimestamp(
                     message.createdTimestamp
                 );
 
-                /*
-                 * Starboard content.
-                 *
-                 * The number is the current reaction count.
-                 */
+                // =========================
+                // STARBOARD CONTENT
+                // =========================
 
                 const content =
                     `${starboard.emoji} **#${count}**`;
 
-                /*
-                 * Existing Starboard post.
-                 */
+                // =========================
+                // UPDATE EXISTING
+                // =========================
 
                 if (existing) {
 
@@ -530,10 +535,9 @@ module.exports = {
                     continue;
                 }
 
-                /*
-                 * Video / clip is sent above
-                 * the Starboard embed.
-                 */
+                // =========================
+                // VIDEO / CLIP
+                // =========================
 
                 if (video) {
 
@@ -544,6 +548,7 @@ module.exports = {
 
                     await channel.send({
                         content,
+
                         embeds: [
                             embed
                         ]
@@ -552,12 +557,13 @@ module.exports = {
                     continue;
                 }
 
-                /*
-                 * Normal Starboard post.
-                 */
+                // =========================
+                // CREATE STARBOARD POST
+                // =========================
 
                 await channel.send({
                     content,
+
                     embeds: [
                         embed
                     ]
