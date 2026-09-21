@@ -17,7 +17,7 @@ const Filter =
 
 module.exports = {
 
-    name: "filter enable",
+    name: "filter disable",
 
     aliases: [],
 
@@ -73,7 +73,7 @@ module.exports = {
 
         if (!botMember) {
             console.error(
-                "Filter Enable Error: Bot member could not be found."
+                "Filter Disable Error: Bot member could not be found."
             );
 
             return;
@@ -145,7 +145,7 @@ module.exports = {
                     await Filter.create({
                         guildId:
                             message.guild.id,
-                        enabled: true,
+                        enabled: false,
                         premade: false,
                         disabledPremade: [],
                         words: []
@@ -153,7 +153,7 @@ module.exports = {
 
                 return message.channel.send({
                     embeds: [
-                        filterEmbeds.enabled(
+                        filterEmbeds.alreadyDisabled(
                             message.author
                         )
                     ]
@@ -161,13 +161,13 @@ module.exports = {
             }
 
             // =========================
-            // ALREADY ENABLED
+            // ALREADY DISABLED
             // =========================
 
-            if (filter.enabled) {
+            if (!filter.enabled) {
                 return message.channel.send({
                     embeds: [
-                        filterEmbeds.alreadyEnabled(
+                        filterEmbeds.alreadyDisabled(
                             message.author
                         )
                     ]
@@ -175,16 +175,16 @@ module.exports = {
             }
 
             // =========================
-            // ENABLE FILTER
+            // DISABLE FILTER
             // =========================
 
-            filter.enabled = true;
+            filter.enabled = false;
 
             await filter.save();
 
             return message.channel.send({
                 embeds: [
-                    filterEmbeds.enabled(
+                    filterEmbeds.disabled(
                         message.author
                     )
                 ]
@@ -193,7 +193,7 @@ module.exports = {
         } catch (error) {
 
             console.error(
-                "Filter Enable Error:",
+                "Filter Disable Error:",
                 error
             );
 
@@ -201,7 +201,7 @@ module.exports = {
                 embeds: [
                     globalEmbeds.actionFailed(
                         message.author,
-                        "enable the filter"
+                        "disable the filter"
                     )
                 ]
             });
