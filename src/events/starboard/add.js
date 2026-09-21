@@ -6,9 +6,6 @@ const {
 const Starboard =
     require("../../models/Starboard");
 
-const timestamp =
-    require("../../utils/timestamp");
-
 function normalizeEmoji(emoji) {
 
     if (!emoji) return null;
@@ -43,18 +40,6 @@ function normalizeEmoji(emoji) {
     }
 
     return null;
-}
-
-function getStarboardNumber(content) {
-
-    if (!content) return null;
-
-    const match =
-        content.match(/\*\*#(\d+)\*\*/);
-
-    if (!match) return null;
-
-    return Number(match[1]);
 }
 
 module.exports = {
@@ -132,9 +117,21 @@ module.exports = {
                     continue;
                 }
 
+                const botMember =
+                    message.guild.members.me;
+
+                if (!botMember) {
+
+                    console.error(
+                        "Starboard error: Bot member could not be found."
+                    );
+
+                    continue;
+                }
+
                 const permissions =
                     channel.permissionsFor(
-                        message.guild.members.me
+                        botMember
                     );
 
                 if (!permissions) {
@@ -200,21 +197,6 @@ module.exports = {
                     continue;
                 }
 
-                const botMember =
-                    message.guild.members.me;
-
-                if (!botMember) {
-
-                    console.error(
-                        "Starboard error: Bot member could not be found."
-                    );
-
-                    continue;
-                }
-
-                const botId =
-                    botMember.id;
-
                 /*
                  * Find the existing Starboard post.
                  *
@@ -244,7 +226,7 @@ module.exports = {
 
                                 if (
                                     starboardMessage.author.id !==
-                                    botId
+                                    botMember.id
                                 ) {
                                     return false;
                                 }
@@ -284,88 +266,11 @@ module.exports = {
                 }
 
                 /*
-                 * Existing Starboard posts keep their
-                 * original entry number.
+                 * Build the Starboard embed.
+                 *
+                 * The original message author is used
+                 * as the embed author.
                  */
-
-                let starboardNumber;
-
-                if (existing) {
-
-                    starboardNumber =
-                        getStarboardNumber(
-                            existing.content
-                        );
-
-                } else {
-
-                    /*
-                     * Find the highest existing Starboard
-                     * entry number and use the next number.
-                     */
-
-                    let highestNumber = 0;
-
-                    try {
-
-                        const messages =
-                            await channel.messages.fetch({
-                                limit: 100
-                            });
-
-                        for (
-                            const starboardMessage
-                            of messages.values()
-                        ) {
-
-                            if (
-                                !starboardMessage.author ||
-                                starboardMessage.author.id !==
-                                botId
-                            ) {
-                                continue;
-                            }
-
-                            const number =
-                                getStarboardNumber(
-                                    starboardMessage.content
-                                );
-
-                            if (
-                                number &&
-                                number >
-                                highestNumber
-                            ) {
-                                highestNumber =
-                                    number;
-                            }
-                        }
-
-                    } catch (error) {
-
-                        console.error(
-                            "Failed to determine Starboard number:",
-                            error
-                        );
-
-                        continue;
-                    }
-
-                    starboardNumber =
-                        highestNumber + 1;
-                }
-
-                /*
-                 * Fallback for older Starboard posts
-                 * that do not contain a number.
-                 */
-
-                if (
-                    !starboardNumber ||
-                    starboardNumber < 1
-                ) {
-                    starboardNumber = 1;
-                }
 
                 const embed =
                     new EmbedBuilder()
@@ -379,6 +284,7 @@ module.exports = {
                             name:
                                 message.author.displayName ||
                                 message.author.username,
+
                             iconURL:
                                 message.author.displayAvatarURL({
                                     extension: "png",
@@ -388,13 +294,6 @@ module.exports = {
 
                 const messageContent =
                     message.content?.trim();
-
-                if (messageContent) {
-
-                    embed.setDescription(
-                        messageContent
-                    );
-                }
 
                 const attachments =
                     [
@@ -409,26 +308,168 @@ module.exports = {
                             )
                     );
 
-                embed.addFields({
-                    name: "\u200B",
-                    value:
-                        `**#${message.channel.name}**\n` +
-                        `[Jump to message](${message.url})`,
-                    inline: false
-                });
+                const video =
+                    attachments.find(
+                        attachment =>
+                            attachment.contentType?.startsWith(
+                                "video/"
+                            )
+                    );
 
-                if (image) {
+                /*
+                 * Reply information.
+                 */
+
+                let repliedMessage = null;
+
+                if (
+                    message.reference?.messageId
+                ) {
+
+                    repliedMessage =
+                        await message.channel.messages
+                            .fetch(
+                                message.reference.messageId
+                            )
+                            .catch(
+                                () => null
+                            );
+
+                }
+
+                /*
+                 * GIF format.
+                 *
+                 * GIF/image is placed in the thumbnail.
+                 */
+
+                const isGif =
+                    image?.contentType ===
+                        "image/gif" ||
+                    image?.name?.toLowerCase().endsWith(
+                        ".gif"
+                    );
+
+                if (isGif) {
+
+                    embed.setThumbnail(
+                        image.url
+                    );
+
+                    const gifText =
+                        image.name ||
+                        "GIF";
+
+                    if (messageContent) {
+
+                        embed.setDescription(
+                            messageContent
+                        );
+
+                    } else if (
+                        repliedMessage
+                    ) {
+
+                        embed.setDescription(
+                            gifText
+                        );
+
+                    } else {
+
+                        embed.setDescription(
+                            gifText
+                        );
+
+                    }
+
+                } else if (messageContent) {
+
+                    /*
+                     * Normal message text.
+                     */
+
+                    embed.setDescription(
+                        messageContent
+                    );
+
+                }
+
+                /*
+                 * Reply line.
+                 */
+
+                if (repliedMessage) {
+
+                    const replyText =
+                        repliedMessage.content?.trim() ||
+                        repliedMessage.attachments.first()?.name ||
+                        "Message";
+
+                    embed.addFields({
+                        name: "\u200B",
+                        value:
+                            `<:reply:1551493475940175902> ` +
+                            `[${replyText.slice(0, 100)}](${repliedMessage.url})`,
+                        inline: false
+                    });
+
+                }
+
+                /*
+                 * Video / clip format.
+                 *
+                 * The video itself is sent above the
+                 * Starboard embed.
+                 */
+
+                if (video) {
+
+                    embed.addFields({
+                        name: "\u200B",
+                        value:
+                            `**#${message.channel.name}**\n` +
+                            `[Jump to message](${message.url})`,
+                        inline: false
+                    });
+
+                } else {
+
+                    /*
+                     * Normal source channel information.
+                     */
+
+                    embed.addFields({
+                        name: "\u200B",
+                        value:
+                            `**#${message.channel.name}**\n` +
+                            `[Jump to message](${message.url})`,
+                        inline: false
+                    });
+
+                }
+
+                /*
+                 * Normal image format.
+                 */
+
+                if (
+                    image &&
+                    !isGif
+                ) {
 
                     embed.setImage(
                         image.url
                     );
+
                 }
 
                 const otherAttachments =
                     attachments.filter(
                         attachment =>
                             attachment.id !==
-                            image?.id
+                            image?.id &&
+                            attachment.id !==
+                            video?.id
                     );
 
                 if (
@@ -438,6 +479,7 @@ module.exports = {
                     embed.addFields({
                         name:
                             "Attachments",
+
                         value:
                             otherAttachments
                                 .map(
@@ -449,26 +491,32 @@ module.exports = {
                                     0,
                                     1024
                                 ),
+
                         inline: false
                     });
+
                 }
 
-                embed.setFooter({
-                    text:
-                        timestamp.full(
-                            message.createdTimestamp
-                        )
-                });
+                /*
+                 * Native Discord timestamp.
+                 */
+
+                embed.setTimestamp(
+                    message.createdTimestamp
+                );
 
                 /*
-                 * #1, #2, #3...
-                 * is the Starboard entry number.
+                 * Starboard content.
                  *
-                 * It is NOT the reaction count.
+                 * The number is the current reaction count.
                  */
 
                 const content =
-                    `${starboard.emoji} **#${starboardNumber}**`;
+                    `${starboard.emoji} **#${count}**`;
+
+                /*
+                 * Existing Starboard post.
+                 */
 
                 if (existing) {
 
@@ -481,6 +529,32 @@ module.exports = {
 
                     continue;
                 }
+
+                /*
+                 * Video / clip is sent above
+                 * the Starboard embed.
+                 */
+
+                if (video) {
+
+                    await channel.send({
+                        content:
+                            video.url
+                    });
+
+                    await channel.send({
+                        content,
+                        embeds: [
+                            embed
+                        ]
+                    });
+
+                    continue;
+                }
+
+                /*
+                 * Normal Starboard post.
+                 */
 
                 await channel.send({
                     content,
