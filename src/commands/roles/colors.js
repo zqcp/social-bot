@@ -8,6 +8,9 @@ const globalEmbeds =
 const roleEmbeds =
     require("../../embeds/general/roles");
 
+const rolesHelp =
+    require("../../embeds/help/roles");
+
 // =========================
 // COLOR HELPERS
 // =========================
@@ -91,92 +94,18 @@ function resolveColor(input) {
 }
 
 // =========================
-// RGB HELPERS
-// =========================
-
-function hexToRgb(hex) {
-
-    const value =
-        hex.replace("#", "");
-
-    return {
-        r: parseInt(
-            value.substring(0, 2),
-            16
-        ),
-        g: parseInt(
-            value.substring(2, 4),
-            16
-        ),
-        b: parseInt(
-            value.substring(4, 6),
-            16
-        )
-    };
-}
-
-function rgbToHex(r, g, b) {
-
-    return (
-        "#" +
-        [r, g, b]
-            .map(
-                value =>
-                    Math.max(
-                        0,
-                        Math.min(
-                            255,
-                            Math.round(value)
-                        )
-                    )
-                        .toString(16)
-                        .padStart(2, "0")
-            )
-            .join("")
-            .toUpperCase()
-    );
-}
-
-// =========================
-// GENERATE GRADIENT SHADE
-// =========================
-
-function generateGradientColor(hex) {
-
-    const {
-        r,
-        g,
-        b
-    } = hexToRgb(hex);
-
-    const brightness =
-        (
-            r * 299 +
-            g * 587 +
-            b * 114
-        ) / 1000;
-
-    const amount =
-        brightness < 128
-            ? 1.35
-            : 0.65;
-
-    return rgbToHex(
-        r * amount,
-        g * amount,
-        b * amount
-    );
-}
-
-// =========================
 // COMMAND
 // =========================
 
 module.exports = {
 
-    name: "role color",
+    name: "role colors",
 
     aliases: [],
+
+    permissions: [
+        PermissionFlagsBits.ManageRoles
+    ],
 
     async execute(
         client,
@@ -225,13 +154,11 @@ module.exports = {
             message.guild.members.me;
 
         if (!botMember) {
-            return message.channel.send({
-                embeds: [
-                    globalEmbeds.error(
-                        "I couldn't find my member information in this server."
-                    )
-                ]
-            });
+            console.error(
+                "Role Colors Error: Bot member could not be found."
+            );
+
+            return;
         }
 
         const requiredPermissions = [
@@ -265,6 +192,17 @@ module.exports = {
                         )?.[0] || permission
                 );
 
+            if (permissionNames.length === 1) {
+                return message.channel.send({
+                    embeds: [
+                        globalEmbeds.botPermission(
+                            message.author,
+                            permissionNames[0]
+                        )
+                    ]
+                });
+            }
+
             return message.channel.send({
                 embeds: [
                     globalEmbeds.botPermissions(
@@ -282,9 +220,8 @@ module.exports = {
         if (!args.length) {
             return message.channel.send({
                 embeds: [
-                    globalEmbeds.missing(
-                        message.author,
-                        "role"
+                    rolesHelp.colors(
+                        message.author
                     )
                 ]
             });
@@ -350,37 +287,55 @@ module.exports = {
         }
 
         // =========================
-        // COLOR
+        // COLORS
         // =========================
 
-        const primaryInput =
-            args[1];
+        const colorInputs =
+            args.slice(1);
 
-        if (!primaryInput) {
+        if (!colorInputs.length) {
             return message.channel.send({
                 embeds: [
-                    globalEmbeds.missing(
-                        message.author,
-                        "color"
+                    rolesHelp.colors(
+                        message.author
                     )
                 ]
             });
         }
 
-        const primaryColor =
-            resolveColor(
-                primaryInput
-            );
-
-        if (!primaryColor) {
+        if (colorInputs.length > 3) {
             return message.channel.send({
                 embeds: [
-                    roleEmbeds.invalidColor(
-                        message.author,
-                        primaryInput
+                    roleEmbeds.tooManyColors(
+                        message.author
                     )
                 ]
             });
+        }
+
+        const colors = [];
+
+        for (
+            const colorInput of colorInputs
+        ) {
+
+            const color =
+                resolveColor(
+                    colorInput
+                );
+
+            if (!color) {
+                return message.channel.send({
+                    embeds: [
+                        roleEmbeds.invalidColor(
+                            message.author,
+                            colorInput
+                        )
+                    ]
+                });
+            }
+
+            colors.push(color);
         }
 
         // =========================
@@ -416,55 +371,42 @@ module.exports = {
         }
 
         // =========================
-        // UPDATE COLOR
+        // UPDATE COLORS
         // =========================
 
         try {
 
-            const hasGradient =
-                role.colors &&
-                role.colors.secondaryColor;
-
-            // =========================
-            // GRADIENT
-            // =========================
-
-            if (hasGradient) {
-
-                const secondaryInput =
-                    args[2];
-
-                let secondaryColor;
-
-                if (secondaryInput) {
-
-                    secondaryColor =
-                        resolveColor(
-                            secondaryInput
-                        );
-
-                    if (!secondaryColor) {
-                        return message.channel.send({
-                            embeds: [
-                                roleEmbeds.invalidColor(
-                                    message.author,
-                                    secondaryInput
-                                )
-                            ]
-                        });
-                    }
-
-                } else {
-
-                    secondaryColor =
-                        generateGradientColor(
-                            primaryColor
-                        );
-                }
+            if (colors.length === 1) {
 
                 await role.setColors({
-                    primaryColor,
-                    secondaryColor
+                    primaryColor:
+                        colors[0],
+                    secondaryColor:
+                        null,
+                    tertiaryColor:
+                        null
+                });
+
+                return message.channel.send({
+                    embeds: [
+                        roleEmbeds.solid(
+                            message.author,
+                            role,
+                            colors[0]
+                        )
+                    ]
+                });
+            }
+
+            if (colors.length === 2) {
+
+                await role.setColors({
+                    primaryColor:
+                        colors[0],
+                    secondaryColor:
+                        colors[1],
+                    tertiaryColor:
+                        null
                 });
 
                 return message.channel.send({
@@ -472,27 +414,28 @@ module.exports = {
                         roleEmbeds.gradient(
                             message.author,
                             role,
-                            primaryColor,
-                            secondaryColor
+                            colors[0],
+                            colors[1]
                         )
                     ]
                 });
             }
 
-            // =========================
-            // SOLID
-            // =========================
-
             await role.setColors({
-                primaryColor
+                primaryColor:
+                    colors[0],
+                secondaryColor:
+                    colors[1],
+                tertiaryColor:
+                    colors[2]
             });
 
             return message.channel.send({
                 embeds: [
-                    roleEmbeds.solid(
+                    roleEmbeds.holographic(
                         message.author,
                         role,
-                        primaryColor
+                        colors.join(", ")
                     )
                 ]
             });
@@ -500,7 +443,7 @@ module.exports = {
         } catch (error) {
 
             console.error(
-                "Role Color Error:",
+                "Role Colors Error:",
                 error
             );
 
@@ -508,7 +451,7 @@ module.exports = {
                 embeds: [
                     globalEmbeds.actionFailed(
                         message.author,
-                        "update the role color"
+                        "update the role colors"
                     )
                 ]
             });
