@@ -8,14 +8,32 @@ const globalEmbeds =
 const starboardEmbeds =
     require("../../embeds/general/starboard");
 
+const starboardHelp =
+    require("../../embeds/help/starboard");
+
 const Starboard =
     require("../../models/Starboard");
 
 module.exports = {
+
     name: "starboard clear",
+
     aliases: [],
 
-    async execute(client, message, args) {
+    permissions: [
+        PermissionFlagsBits.ManageMessages
+    ],
+
+    async execute(
+        client,
+        message,
+        args
+    ) {
+
+        // =========================
+        // GUILD CHECK
+        // =========================
+
         if (!message.guild) {
             return message.channel.send({
                 embeds: [
@@ -25,6 +43,10 @@ module.exports = {
                 ]
             });
         }
+
+        // =========================
+        // USER PERMISSION
+        // =========================
 
         if (
             !message.member.permissions.has(
@@ -41,8 +63,20 @@ module.exports = {
             });
         }
 
+        // =========================
+        // BOT PERMISSIONS
+        // =========================
+
         const botMember =
             message.guild.members.me;
+
+        if (!botMember) {
+            console.error(
+                "Starboard Clear Error: Bot member could not be found."
+            );
+
+            return;
+        }
 
         const requiredPermissions = [
             PermissionFlagsBits.ViewChannel,
@@ -52,15 +86,21 @@ module.exports = {
             PermissionFlagsBits.ReadMessageHistory
         ];
 
+        const permissions =
+            message.channel.permissionsFor(
+                botMember
+            );
+
         const missingPermissions =
             requiredPermissions.filter(
                 permission =>
-                    !message.channel
-                        .permissionsFor(botMember)
-                        ?.has(permission)
+                    !permissions?.has(
+                        permission
+                    )
             );
 
         if (missingPermissions.length) {
+
             const permissionNames =
                 missingPermissions.map(
                     permission =>
@@ -72,9 +112,22 @@ module.exports = {
                         )?.[0] || permission
                 );
 
+            if (
+                permissionNames.length === 1
+            ) {
+                return message.channel.send({
+                    embeds: [
+                        globalEmbeds.botPermission(
+                            message.author,
+                            permissionNames[0]
+                        )
+                    ]
+                });
+            }
+
             return message.channel.send({
                 embeds: [
-                    globalEmbeds.botPermission(
+                    globalEmbeds.botPermissions(
                         message.author,
                         permissionNames
                     )
@@ -82,24 +135,34 @@ module.exports = {
             });
         }
 
+        // =========================
+        // CHANNEL
+        // =========================
+
         const channel =
             message.mentions.channels.first();
 
         if (!channel) {
             return message.channel.send({
                 embeds: [
-                    starboardEmbeds.noChannel(
+                    starboardHelp.clear(
                         message.author
                     )
                 ]
             });
         }
 
+        // =========================
+        // FIND STARBOARD
+        // =========================
+
         try {
+
             const starboard =
                 await Starboard.findOne({
                     guildId:
                         message.guild.id,
+
                     channelId:
                         channel.id
                 });
@@ -114,9 +177,14 @@ module.exports = {
                 });
             }
 
+            // =========================
+            // CLEAR MESSAGES
+            // =========================
+
             let deleted = 0;
 
             while (true) {
+
                 const messages =
                     await channel.messages.fetch({
                         limit: 100
@@ -136,13 +204,21 @@ module.exports = {
                     break;
                 }
 
-                if (deletable.size === 1) {
-                    await deletable.first().delete();
+                if (
+                    deletable.size === 1
+                ) {
+
+                    await deletable
+                        .first()
+                        .delete();
+
                 } else {
+
                     await channel.bulkDelete(
                         deletable,
                         true
                     );
+
                 }
 
                 deleted +=
@@ -153,6 +229,7 @@ module.exports = {
                 ) {
                     break;
                 }
+
             }
 
             return message.channel.send({
@@ -165,6 +242,7 @@ module.exports = {
             });
 
         } catch (error) {
+
             console.error(
                 "Starboard Clear Error:",
                 error
@@ -178,6 +256,9 @@ module.exports = {
                     )
                 ]
             });
+
         }
+
     }
+
 };
