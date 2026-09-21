@@ -96,6 +96,37 @@ module.exports = {
             Number(pageMatch[2]);
 
         // =========================
+        // DELETE
+        // =========================
+
+        if (
+            action === "delete"
+        ) {
+
+            if (
+                client.roleListTimers
+            ) {
+
+                const timer =
+                    client.roleListTimers.get(
+                        interaction.message.id
+                    );
+
+                if (timer) {
+                    clearTimeout(timer);
+                }
+
+                client.roleListTimers.delete(
+                    interaction.message.id
+                );
+            }
+
+            return interaction.message
+                .delete()
+                .catch(() => {});
+        }
+
+        // =========================
         // CHANGE PAGE
         // =========================
 
@@ -123,6 +154,8 @@ module.exports = {
         // =========================
         // GET ROLES
         // =========================
+
+        await interaction.guild.members.fetch();
 
         const roles =
             interaction.guild.roles.cache
@@ -157,6 +190,15 @@ module.exports = {
                 start + rolesPerPage
             );
 
+        const calculatedTotalPages =
+            Math.max(
+                1,
+                Math.ceil(
+                    totalRoles /
+                    rolesPerPage
+                )
+            );
+
         // =========================
         // DESCRIPTION
         // =========================
@@ -177,7 +219,7 @@ module.exports = {
                                     "0"
                                 );
 
-                            return `\`${number}\` ${role} • \`${role.id}\``;
+                            return `\`${number}\` ${role} — \`${role.id}\` — ${role.members.size} member(s)`;
                         }
                     )
                     .join("\n")
@@ -190,12 +232,15 @@ module.exports = {
         const embed =
             EmbedBuilder
                 .from(currentEmbed)
+                .setTitle(
+                    `Roles in ${interaction.guild.name}`
+                )
                 .setDescription(
                     description
                 )
                 .setFooter({
                     text:
-                        `Page ${page}/${totalPages} • (${totalRoles} roles)`
+                        `Page ${page}/${calculatedTotalPages} • ${totalRoles} roles`
                 });
 
         // =========================
@@ -210,7 +255,12 @@ module.exports = {
                         .setCustomId(
                             `role_list:previous:${ownerId}`
                         )
-                        .setLabel("◀")
+                        .setLabel(
+                            "Previous"
+                        )
+                        .setEmoji(
+                            "◀️"
+                        )
                         .setStyle(
                             ButtonStyle.Secondary
                         )
@@ -223,7 +273,7 @@ module.exports = {
                             `role_list:page:${ownerId}`
                         )
                         .setLabel(
-                            `${page}/${totalPages}`
+                            `${page}/${calculatedTotalPages}`
                         )
                         .setStyle(
                             ButtonStyle.Secondary
@@ -234,12 +284,31 @@ module.exports = {
                         .setCustomId(
                             `role_list:next:${ownerId}`
                         )
-                        .setLabel("▶")
+                        .setLabel(
+                            "Next"
+                        )
+                        .setEmoji(
+                            "▶️"
+                        )
                         .setStyle(
                             ButtonStyle.Secondary
                         )
                         .setDisabled(
-                            page >= totalPages
+                            page >= calculatedTotalPages
+                        ),
+
+                    new ButtonBuilder()
+                        .setCustomId(
+                            `role_list:delete:${ownerId}`
+                        )
+                        .setLabel(
+                            "Delete"
+                        )
+                        .setEmoji(
+                            "⏹️"
+                        )
+                        .setStyle(
+                            ButtonStyle.Danger
                         )
 
                 );
@@ -288,33 +357,66 @@ module.exports = {
                                             .setCustomId(
                                                 `role_list:previous:${ownerId}`
                                             )
-                                            .setLabel("‹")
+                                            .setLabel(
+                                                "Previous"
+                                            )
+                                            .setEmoji(
+                                                "◀️"
+                                            )
                                             .setStyle(
                                                 ButtonStyle.Secondary
                                             )
-                                            .setDisabled(true),
+                                            .setDisabled(
+                                                true
+                                            ),
 
                                         new ButtonBuilder()
                                             .setCustomId(
                                                 `role_list:page:${ownerId}`
                                             )
                                             .setLabel(
-                                                `${page}/${totalPages}`
+                                                `${page}/${calculatedTotalPages}`
                                             )
                                             .setStyle(
                                                 ButtonStyle.Secondary
                                             )
-                                            .setDisabled(true),
+                                            .setDisabled(
+                                                true
+                                            ),
 
                                         new ButtonBuilder()
                                             .setCustomId(
                                                 `role_list:next:${ownerId}`
                                             )
-                                            .setLabel("›")
+                                            .setLabel(
+                                                "Next"
+                                            )
+                                            .setEmoji(
+                                                "▶️"
+                                            )
                                             .setStyle(
                                                 ButtonStyle.Secondary
                                             )
-                                            .setDisabled(true)
+                                            .setDisabled(
+                                                true
+                                            ),
+
+                                        new ButtonBuilder()
+                                            .setCustomId(
+                                                `role_list:delete:${ownerId}`
+                                            )
+                                            .setLabel(
+                                                "Delete"
+                                            )
+                                            .setEmoji(
+                                                "⏹️"
+                                            )
+                                            .setStyle(
+                                                ButtonStyle.Danger
+                                            )
+                                            .setDisabled(
+                                                true
+                                            )
 
                                     );
 
