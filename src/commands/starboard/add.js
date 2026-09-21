@@ -8,14 +8,32 @@ const globalEmbeds =
 const starboardEmbeds =
     require("../../embeds/general/starboard");
 
+const starboardHelp =
+    require("../../embeds/help/starboard");
+
 const Starboard =
     require("../../models/Starboard");
 
 module.exports = {
+
     name: "starboard add",
+
     aliases: [],
 
-    async execute(client, message, args) {
+    permissions: [
+        PermissionFlagsBits.ManageMessages
+    ],
+
+    async execute(
+        client,
+        message,
+        args
+    ) {
+
+        // =========================
+        // GUILD CHECK
+        // =========================
+
         if (!message.guild) {
             return message.channel.send({
                 embeds: [
@@ -25,6 +43,10 @@ module.exports = {
                 ]
             });
         }
+
+        // =========================
+        // USER PERMISSION
+        // =========================
 
         if (
             !message.member.permissions.has(
@@ -41,8 +63,20 @@ module.exports = {
             });
         }
 
+        // =========================
+        // BOT PERMISSIONS
+        // =========================
+
         const botMember =
             message.guild.members.me;
+
+        if (!botMember) {
+            console.error(
+                "Starboard Add Error: Bot member could not be found."
+            );
+
+            return;
+        }
 
         const requiredPermissions = [
             PermissionFlagsBits.ViewChannel,
@@ -52,15 +86,21 @@ module.exports = {
             PermissionFlagsBits.AddReactions
         ];
 
+        const permissions =
+            message.channel.permissionsFor(
+                botMember
+            );
+
         const missingPermissions =
             requiredPermissions.filter(
                 permission =>
-                    !message.channel
-                        .permissionsFor(botMember)
-                        ?.has(permission)
+                    !permissions?.has(
+                        permission
+                    )
             );
 
         if (missingPermissions.length) {
+
             const permissionNames =
                 missingPermissions.map(
                     permission =>
@@ -72,9 +112,22 @@ module.exports = {
                         )?.[0] || permission
                 );
 
+            if (
+                permissionNames.length === 1
+            ) {
+                return message.channel.send({
+                    embeds: [
+                        globalEmbeds.botPermission(
+                            message.author,
+                            permissionNames[0]
+                        )
+                    ]
+                });
+            }
+
             return message.channel.send({
                 embeds: [
-                    globalEmbeds.botPermission(
+                    globalEmbeds.botPermissions(
                         message.author,
                         permissionNames
                     )
@@ -82,13 +135,17 @@ module.exports = {
             });
         }
 
+        // =========================
+        // CHANNEL
+        // =========================
+
         const channel =
             message.mentions.channels.first();
 
         if (!channel) {
             return message.channel.send({
                 embeds: [
-                    starboardEmbeds.noChannel(
+                    starboardHelp.add(
                         message.author
                     )
                 ]
@@ -97,18 +154,26 @@ module.exports = {
 
         args.shift();
 
+        // =========================
+        // EMOJI
+        // =========================
+
         const emoji =
             args.shift();
 
         if (!emoji) {
             return message.channel.send({
                 embeds: [
-                    starboardEmbeds.noEmoji(
+                    starboardHelp.add(
                         message.author
                     )
                 ]
             });
         }
+
+        // =========================
+        // COLOR
+        // =========================
 
         const color =
             args.shift();
@@ -116,12 +181,16 @@ module.exports = {
         if (!color) {
             return message.channel.send({
                 embeds: [
-                    starboardEmbeds.noColor(
+                    starboardHelp.add(
                         message.author
                     )
                 ]
             });
         }
+
+        // =========================
+        // THRESHOLD
+        // =========================
 
         const threshold =
             args.shift();
@@ -129,12 +198,16 @@ module.exports = {
         if (!threshold) {
             return message.channel.send({
                 embeds: [
-                    starboardEmbeds.noThreshold(
+                    starboardHelp.add(
                         message.author
                     )
                 ]
             });
         }
+
+        // =========================
+        // SELF REACT
+        // =========================
 
         const selfReact =
             args.shift();
@@ -142,12 +215,16 @@ module.exports = {
         if (!selfReact) {
             return message.channel.send({
                 embeds: [
-                    starboardEmbeds.noSelfReact(
+                    starboardHelp.add(
                         message.author
                     )
                 ]
             });
         }
+
+        // =========================
+        // THRESHOLD
+        // =========================
 
         const reactionThreshold =
             Number(threshold);
@@ -167,6 +244,10 @@ module.exports = {
             });
         }
 
+        // =========================
+        // SELF REACT
+        // =========================
+
         const selfReaction =
             selfReact.toLowerCase();
 
@@ -182,6 +263,10 @@ module.exports = {
                 ]
             });
         }
+
+        // =========================
+        // EMOJI
+        // =========================
 
         const customEmoji =
             emoji.match(
@@ -205,6 +290,10 @@ module.exports = {
             });
         }
 
+        // =========================
+        // COLOR
+        // =========================
+
         let starboardColor =
             color;
 
@@ -212,6 +301,7 @@ module.exports = {
             color.toLowerCase() !==
             "random"
         ) {
+
             if (
                 !/^#?[0-9A-Fa-f]{6}$/.test(
                     color
@@ -232,22 +322,28 @@ module.exports = {
                 starboardColor =
                     `#${color}`;
             }
+
         } else {
-            /*
-             * Keep "random" in the database.
-             * The actual random color will be generated
-             * when the Starboard embed is created.
-             */
-            starboardColor = "random";
+
+            starboardColor =
+                "random";
+
         }
 
+        // =========================
+        // CREATE STARBOARD
+        // =========================
+
         try {
+
             const existing =
                 await Starboard.findOne({
                     guildId:
                         message.guild.id,
+
                     channelId:
                         channel.id,
+
                     emoji
                 });
 
@@ -265,13 +361,18 @@ module.exports = {
             await Starboard.create({
                 guildId:
                     message.guild.id,
+
                 channelId:
                     channel.id,
+
                 emoji,
+
                 color:
                     starboardColor,
+
                 threshold:
                     reactionThreshold,
+
                 selfReact:
                     selfReaction === "yes"
             });
@@ -286,6 +387,7 @@ module.exports = {
             });
 
         } catch (error) {
+
             console.error(
                 "Starboard Add Error:",
                 error
@@ -299,6 +401,9 @@ module.exports = {
                     )
                 ]
             });
+
         }
+
     }
+
 };
