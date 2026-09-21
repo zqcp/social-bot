@@ -1,5 +1,9 @@
-const { EmbedBuilder } = require("discord.js");
-const config = require("../../config");
+const {
+    EmbedBuilder
+} = require("discord.js");
+
+const config =
+    require("../../config");
 
 module.exports = {
 
@@ -19,7 +23,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.error)
             .setDescription(
-                `${config.emojis.error} ${user}: I can't manage \`${role.name}\` because it's above my highest role.`
+                `${config.emojis.error} ${user}: I can't manage ${role} because it's above my highest role.`
             );
     },
 
@@ -27,7 +31,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.error)
             .setDescription(
-                `${config.emojis.error} ${user}: You can't manage \`${role.name}\` because it's above your highest role.`
+                `${config.emojis.error} ${user}: You can't manage ${role} because it's above your highest role.`
             );
     },
 
@@ -35,7 +39,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.failed)
             .setDescription(
-                `${config.emojis.failed} ${user}: **${member.user.username}** already has \`${role.name}\`.`
+                `${config.emojis.failed} ${user}: **${member.user.username}** already has ${role}.`
             );
     },
 
@@ -43,7 +47,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.failed)
             .setDescription(
-                `${config.emojis.failed} ${user}: **${member.user.username}** doesn't have \`${role.name}\`.`
+                `${config.emojis.failed} ${user}: **${member.user.username}** doesn't have ${role}.`
             );
     },
 
@@ -75,7 +79,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.error)
             .setDescription(
-                `${config.emojis.error} ${icon} isn't a valid **role icon**.`
+                `${config.emojis.error} ${user}: ${icon} isn't a valid **role icon**.`
             );
     },
 
@@ -88,7 +92,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.success)
             .setDescription(
-                `${config.emojis.success} ${user}: Created **role** \`${role.name}\`.`
+                `${config.emojis.success} ${user}: Created **role** ${role}.`
             );
     },
 
@@ -109,7 +113,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.success)
             .setDescription(
-                `${config.emojis.success} ${user}: Updated \`${role.name}\` **role color** to \`${color}\`.`
+                `${config.emojis.success} ${user}: Updated ${role} **role color** to \`${color}\`.`
             );
     },
 
@@ -117,7 +121,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.success)
             .setDescription(
-                `${config.emojis.success} ${user}: Updated \`${role.name}\` **gradient colors** to \`${color1}\` and \`${color2}\`.`
+                `${config.emojis.success} ${user}: Updated ${role} **gradient colors** to \`${color1}\` and \`${color2}\`.`
             );
     },
 
@@ -125,7 +129,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.success)
             .setDescription(
-                `${config.emojis.success} ${user}: Updated \`${role.name}\` **holographic style** to \`${style}\`.`
+                `${config.emojis.success} ${user}: Updated ${role} **holographic style** to \`${style}\`.`
             );
     },
 
@@ -133,7 +137,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.success)
             .setDescription(
-                `${config.emojis.success} ${user}: Updated \`${role.name}\` **role icon** to ${icon}.`
+                `${config.emojis.success} ${user}: Updated ${role} **role icon** to ${icon}.`
             );
     },
 
@@ -146,15 +150,17 @@ module.exports = {
 
         const roleName =
             Array.isArray(role)
-                ? role.map(currentRole => currentRole.name).join(", ")
-                : role?.name ||
-                  role?.replace?.(/[<@&>]/g, "") ||
+                ? role.map(
+                    currentRole =>
+                        currentRole.toString()
+                ).join(", ")
+                : role?.toString?.() ||
                   role;
 
         return new EmbedBuilder()
             .setColor(config.colors.role)
             .setDescription(
-                `${config.emojis.add} ${user}: Added \`${roleName}\` to **${member.user.username}**.`
+                `${config.emojis.add} ${user}: Added ${roleName} to **${member.user.username}**.`
             );
     },
 
@@ -162,15 +168,17 @@ module.exports = {
 
         const roleName =
             Array.isArray(role)
-                ? role.map(currentRole => currentRole.name).join(", ")
-                : role?.name ||
-                  role?.replace?.(/[<@&>]/g, "") ||
+                ? role.map(
+                    currentRole =>
+                        currentRole.toString()
+                ).join(", ")
+                : role?.toString?.() ||
                   role;
 
         return new EmbedBuilder()
             .setColor(config.colors.failed)
             .setDescription(
-                `${config.emojis.failed} ${user}: Failed to add \`${roleName}\` to **${member.user.username}**. Please try again.`
+                `${config.emojis.failed} ${user}: Failed to add ${roleName} to **${member.user.username}**. Please try again.`
             );
     },
 
@@ -183,15 +191,17 @@ module.exports = {
 
         const roleName =
             Array.isArray(role)
-                ? role.map(currentRole => currentRole.name).join(", ")
-                : role?.name ||
-                  role?.replace?.(/[<@&>]/g, "") ||
+                ? role.map(
+                    currentRole =>
+                        currentRole.toString()
+                ).join(", ")
+                : role?.toString?.() ||
                   role;
 
         return new EmbedBuilder()
             .setColor(config.colors.role)
             .setDescription(
-                `${config.emojis.remove} ${user}: Removed \`${roleName}\` from **${member.user.username}**.`
+                `${config.emojis.remove} ${user}: Removed ${roleName} from **${member.user.username}**.`
             );
     },
 
@@ -199,15 +209,17 @@ module.exports = {
 
         const roleName =
             Array.isArray(role)
-                ? role.map(currentRole => currentRole.name).join(", ")
-                : role?.name ||
-                  role?.replace?.(/[<@&>]/g, "") ||
+                ? role.map(
+                    currentRole =>
+                        currentRole.toString()
+                ).join(", ")
+                : role?.toString?.() ||
                   role;
 
         return new EmbedBuilder()
             .setColor(config.colors.failed)
             .setDescription(
-                `${config.emojis.failed} ${user}: Failed to remove \`${roleName}\` from **${member.user.username}**. Please try again.`
+                `${config.emojis.failed} ${user}: Failed to remove ${roleName} from **${member.user.username}**. Please try again.`
             );
     },
 
