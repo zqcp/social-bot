@@ -1,12 +1,19 @@
 const {
-    PermissionFlagsBits
+    PermissionFlagsBits,
+    EmbedBuilder
 } = require("discord.js");
+
+const roleEmbeds =
+    require("../../embeds/general/roles");
 
 const globalEmbeds =
     require("../../embeds/general/global");
 
-const roleEmbeds =
-    require("../../embeds/general/roles");
+const rolesHelp =
+    require("../../embeds/help/roles");
+
+const config =
+    require("../../config");
 
 // =========================
 // COMMAND
@@ -17,6 +24,10 @@ module.exports = {
     name: "role remove",
 
     aliases: ["rr"],
+
+    permissions: [
+        PermissionFlagsBits.ManageRoles
+    ],
 
     async execute(
         client,
@@ -65,13 +76,11 @@ module.exports = {
             message.guild.members.me;
 
         if (!botMember) {
-            return message.channel.send({
-                embeds: [
-                    globalEmbeds.error(
-                        "I couldn't find my member information in this server."
-                    )
-                ]
-            });
+            console.error(
+                "Role Remove Error: Bot member could not be found."
+            );
+
+            return;
         }
 
         const requiredPermissions = [
@@ -105,6 +114,17 @@ module.exports = {
                         )?.[0] || permission
                 );
 
+            if (permissionNames.length === 1) {
+                return message.channel.send({
+                    embeds: [
+                        globalEmbeds.botPermission(
+                            message.author,
+                            permissionNames[0]
+                        )
+                    ]
+                });
+            }
+
             return message.channel.send({
                 embeds: [
                     globalEmbeds.botPermissions(
@@ -125,9 +145,8 @@ module.exports = {
         if (!memberValue) {
             return message.channel.send({
                 embeds: [
-                    globalEmbeds.missing(
-                        message.author,
-                        "member"
+                    rolesHelp.remove(
+                        message.author
                     )
                 ]
             });
@@ -187,26 +206,87 @@ module.exports = {
         }
 
         // =========================
-        // ROLES
+        // MEMBER PROTECTION
         // =========================
 
-        const roleValues =
-            args.slice(1);
-
-        if (!roleValues.length) {
+        if (
+            member.id ===
+            message.author.id
+        ) {
             return message.channel.send({
                 embeds: [
-                    globalEmbeds.missing(
-                        message.author,
-                        "role"
+                    globalEmbeds.self(
+                        message.author
                     )
                 ]
             });
         }
 
+        if (
+            member.id ===
+            message.guild.ownerId
+        ) {
+            return message.channel.send({
+                embeds: [
+                    globalEmbeds.owner(
+                        message.author
+                    )
+                ]
+            });
+        }
+
+        // =========================
+        // ROLE INPUT
+        // =========================
+
+        const roleInput =
+            args
+                .slice(1)
+                .join(" ")
+                .trim();
+
+        if (!roleInput) {
+            return message.channel.send({
+                embeds: [
+                    rolesHelp.remove(
+                        message.author
+                    )
+                ]
+            });
+        }
+
+        // =========================
+        // SPLIT ROLES
+        // =========================
+
+        const roleValues =
+            roleInput
+                .split(",")
+                .map(
+                    role =>
+                        role.trim()
+                )
+                .filter(Boolean);
+
+        if (!roleValues.length) {
+            return message.channel.send({
+                embeds: [
+                    rolesHelp.remove(
+                        message.author
+                    )
+                ]
+            });
+        }
+
+        // =========================
+        // FIND ROLES
+        // =========================
+
         const roles = [];
 
-        for (const roleValue of roleValues) {
+        for (
+            const roleValue of roleValues
+        ) {
 
             const roleId =
                 roleValue.replace(
@@ -269,52 +349,31 @@ module.exports = {
                 });
             }
 
+            // =========================
+            // REMOVE DUPLICATES
+            // =========================
+
             if (
-                !roles.some(
+                roles.some(
                     existingRole =>
-                        existingRole.id === role.id
+                        existingRole.id ===
+                        role.id
                 )
             ) {
-                roles.push(role);
+                continue;
             }
 
-        }
+            roles.push(role);
 
-        // =========================
-        // MEMBER PROTECTION
-        // =========================
-
-        if (
-            member.id ===
-            message.author.id
-        ) {
-            return message.channel.send({
-                embeds: [
-                    globalEmbeds.self(
-                        message.author
-                    )
-                ]
-            });
-        }
-
-        if (
-            member.id ===
-            message.guild.ownerId
-        ) {
-            return message.channel.send({
-                embeds: [
-                    globalEmbeds.owner(
-                        message.author
-                    )
-                ]
-            });
         }
 
         // =========================
         // CHECK ROLES
         // =========================
 
-        for (const role of roles) {
+        for (
+            const role of roles
+        ) {
 
             // =========================
             // USER HIERARCHY
@@ -384,13 +443,47 @@ module.exports = {
                 roles
             );
 
+            // =========================
+            // SINGLE ROLE
+            // =========================
+
+            if (
+                roles.length === 1
+            ) {
+
+                return message.channel.send({
+                    embeds: [
+                        roleEmbeds.removeSuccess(
+                            message.author,
+                            roles[0],
+                            member
+                        )
+                    ]
+                });
+
+            }
+
+            // =========================
+            // MULTIPLE ROLES
+            // =========================
+
+            const roleNames =
+                roles
+                    .map(
+                        role =>
+                            role.name
+                    )
+                    .join(", ");
+
             return message.channel.send({
                 embeds: [
-                    roleEmbeds.removeSuccess(
-                        message.author,
-                        roles,
-                        member
-                    )
+                    new EmbedBuilder()
+                        .setColor(
+                            config.colors.role
+                        )
+                        .setDescription(
+                            `${message.author}: Removed **roles** for **${member.user.username}**: **${roleNames}**.`
+                        )
                 ]
             });
 
@@ -401,13 +494,47 @@ module.exports = {
                 error
             );
 
+            // =========================
+            // SINGLE ROLE FAILURE
+            // =========================
+
+            if (
+                roles.length === 1
+            ) {
+
+                const singleFailed =
+                    new EmbedBuilder()
+                        .setColor(
+                            config.colors.failed
+                        )
+                        .setDescription(
+                            `${config.emojis.failed} ${message.author}: Failed to remove **role** **${roles[0].name}** for **${member.user.username}**. Please try again.`
+                        );
+
+                return message.channel.send({
+                    embeds: [
+                        singleFailed
+                    ]
+                });
+
+            }
+
+            // =========================
+            // MULTIPLE ROLE FAILURE
+            // =========================
+
+            const multipleFailed =
+                new EmbedBuilder()
+                    .setColor(
+                        config.colors.failed
+                    )
+                    .setDescription(
+                        `${config.emojis.failed} ${message.author}: Failed to remove **roles** for **${member.user.username}**: **${roles.map(role => role.name).join(", ")}**. Please try again.`
+                    );
+
             return message.channel.send({
                 embeds: [
-                    roleEmbeds.removeFailed(
-                        message.author,
-                        roles,
-                        member
-                    )
+                    multipleFailed
                 ]
             });
 
