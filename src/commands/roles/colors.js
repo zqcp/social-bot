@@ -99,7 +99,7 @@ function resolveColor(input) {
 
 module.exports = {
 
-    name: "role colors",
+    name: "role color",
 
     aliases: [],
 
