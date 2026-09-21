@@ -23,10 +23,37 @@ module.exports = {
 
         if (
             !interaction.isStringSelectMenu() ||
-            interaction.customId !==
-                "starboard_subcommand"
+            !interaction.customId.startsWith(
+                "starboard_subcommand:"
+            )
         ) {
             return;
+        }
+
+        const [
+            ,
+            ownerId
+        ] = interaction.customId.split(":");
+
+        // =========================
+        // OWNER CHECK
+        // =========================
+
+        if (
+            interaction.user.id !== ownerId
+        ) {
+            return interaction.reply({
+                embeds: [
+                    new EmbedBuilder()
+                        .setColor(
+                            config.colors.error
+                        )
+                        .setDescription(
+                            `${config.emojis.error} ${interaction.user}: You cannot use this!`
+                        )
+                ],
+                flags: 64
+            });
         }
 
         const subcommand =
@@ -56,7 +83,7 @@ module.exports = {
         const menu =
             new StringSelectMenuBuilder()
                 .setCustomId(
-                    "starboard_subcommand"
+                    `starboard_subcommand:${ownerId}`
                 )
                 .setPlaceholder(
                     "Select a subcommand"
