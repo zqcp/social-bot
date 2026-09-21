@@ -11,11 +11,30 @@ const filterEmbeds =
 const Filter =
     require("../../models/Filter");
 
+// =========================
+// COMMAND
+// =========================
+
 module.exports = {
+
     name: "filter disable",
+
     aliases: [],
 
-    async execute(client, message, args) {
+    permissions: [
+        PermissionFlagsBits.ManageMessages
+    ],
+
+    async execute(
+        client,
+        message,
+        args
+    ) {
+
+        // =========================
+        // GUILD CHECK
+        // =========================
+
         if (!message.guild) {
             return message.channel.send({
                 embeds: [
@@ -25,6 +44,10 @@ module.exports = {
                 ]
             });
         }
+
+        // =========================
+        // USER PERMISSION
+        // =========================
 
         if (
             !message.member.permissions.has(
@@ -41,8 +64,20 @@ module.exports = {
             });
         }
 
+        // =========================
+        // BOT PERMISSIONS
+        // =========================
+
         const botMember =
             message.guild.members.me;
+
+        if (!botMember) {
+            console.error(
+                "Filter Disable Error: Bot member could not be found."
+            );
+
+            return;
+        }
 
         const requiredPermissions = [
             PermissionFlagsBits.ViewChannel,
@@ -59,6 +94,7 @@ module.exports = {
             );
 
         if (missingPermissions.length) {
+
             const permissionNames =
                 missingPermissions.map(
                     permission =>
@@ -70,9 +106,20 @@ module.exports = {
                         )?.[0] || permission
                 );
 
+            if (permissionNames.length === 1) {
+                return message.channel.send({
+                    embeds: [
+                        globalEmbeds.botPermission(
+                            message.author,
+                            permissionNames[0]
+                        )
+                    ]
+                });
+            }
+
             return message.channel.send({
                 embeds: [
-                    globalEmbeds.botPermission(
+                    globalEmbeds.botPermissions(
                         message.author,
                         permissionNames
                     )
@@ -80,7 +127,12 @@ module.exports = {
             });
         }
 
+        // =========================
+        // DATABASE
+        // =========================
+
         try {
+
             let filter =
                 await Filter.findOne({
                     guildId:
@@ -88,17 +140,47 @@ module.exports = {
                 });
 
             if (!filter) {
+
                 filter =
                     await Filter.create({
                         guildId:
                             message.guild.id,
                         enabled: false,
+                        premade: false,
+                        disabledPremade: [],
                         words: []
                     });
-            } else {
-                filter.enabled = false;
-                await filter.save();
+
+                return message.channel.send({
+                    embeds: [
+                        filterEmbeds.alreadyDisabled(
+                            message.author
+                        )
+                    ]
+                });
             }
+
+            // =========================
+            // ALREADY DISABLED
+            // =========================
+
+            if (!filter.enabled) {
+                return message.channel.send({
+                    embeds: [
+                        filterEmbeds.alreadyDisabled(
+                            message.author
+                        )
+                    ]
+                });
+            }
+
+            // =========================
+            // DISABLE FILTER
+            // =========================
+
+            filter.enabled = false;
+
+            await filter.save();
 
             return message.channel.send({
                 embeds: [
@@ -109,6 +191,7 @@ module.exports = {
             });
 
         } catch (error) {
+
             console.error(
                 "Filter Disable Error:",
                 error
@@ -123,5 +206,7 @@ module.exports = {
                 ]
             });
         }
+
     }
+
 };
