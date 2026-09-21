@@ -126,7 +126,7 @@ module.exports = {
                 )
             );
 
-        let page = 1;
+        const page = 1;
 
         // =========================
         // TIMER STORAGE
@@ -138,269 +138,124 @@ module.exports = {
         }
 
         // =========================
-        // RENDER PAGE
+        // PAGE DATA
         // =========================
 
-        const renderPage = () => {
+        const start =
+            (page - 1) *
+            rolesPerPage;
 
-            const start =
-                (page - 1) *
-                rolesPerPage;
+        const pageRoles =
+            roleArray.slice(
+                start,
+                start + rolesPerPage
+            );
 
-            const pageRoles =
-                roleArray.slice(
-                    start,
-                    start + rolesPerPage
-                );
+        // =========================
+        // DESCRIPTION
+        // =========================
 
-            // =========================
-            // DESCRIPTION
-            // =========================
+        const description =
+            pageRoles.length
+                ? pageRoles
+                    .map(
+                        (role, index) => {
 
-            const description =
-                pageRoles.length
-                    ? pageRoles
-                        .map(
-                            (role, index) => {
+                            const number =
+                                String(
+                                    start +
+                                    index +
+                                    1
+                                ).padStart(
+                                    2,
+                                    "0"
+                                );
 
-                                const number =
-                                    String(
-                                        start +
-                                        index +
-                                        1
-                                    ).padStart(
-                                        2,
-                                        "0"
-                                    );
+                            return `\`${number}\` ${role} — \`${role.id}\` — ${role.members.size} member(s)`;
+                        }
+                    )
+                    .join("\n")
+                : "No roles found.";
 
-                                return `\`${number}\` ${role} — \`${role.id}\` — ${role.members.size} member(s)`;
-                            }
+        // =========================
+        // EMBED
+        // =========================
+
+        const embed =
+            globalEmbeds
+                .regular(
+                    description
+                )
+                .setTitle(
+                    `Roles in ${message.guild.name}`
+                )
+                .setFooter({
+                    text:
+                        `Page ${page}/${totalPages} • ${totalRoles} roles`
+                });
+
+        // =========================
+        // BUTTONS
+        // =========================
+
+        const row =
+            new ActionRowBuilder()
+                .addComponents(
+
+                    new ButtonBuilder()
+                        .setCustomId(
+                            `role_list:previous:${message.author.id}`
                         )
-                        .join("\n")
-                    : "No roles found.";
+                        .setEmoji(
+                            "◀️"
+                        )
+                        .setStyle(
+                            ButtonStyle.Secondary
+                        )
+                        .setDisabled(
+                            page <= 1
+                        ),
 
-            // =========================
-            // EMBED
-            // =========================
+                    new ButtonBuilder()
+                        .setCustomId(
+                            `role_list:next:${message.author.id}`
+                        )
+                        .setEmoji(
+                            "▶️"
+                        )
+                        .setStyle(
+                            ButtonStyle.Secondary
+                        )
+                        .setDisabled(
+                            page >= totalPages
+                        ),
 
-            const embed =
-                globalEmbeds
-                    .regular(
-                        description
-                    )
-                    .setTitle(
-                        `Roles in ${message.guild.name}`
-                    )
-                    .setFooter({
-                        text:
-                            `Page ${page}/${totalPages} • ${totalRoles} roles`
-                    });
+                    new ButtonBuilder()
+                        .setCustomId(
+                            `role_list:delete:${message.author.id}`
+                        )
+                        .setEmoji(
+                            "⏹️"
+                        )
+                        .setStyle(
+                            ButtonStyle.Danger
+                        )
 
-            // =========================
-            // BUTTONS
-            // =========================
-
-            const row =
-                new ActionRowBuilder()
-                    .addComponents(
-
-                        new ButtonBuilder()
-                            .setCustomId(
-                                `role_list:previous:${message.author.id}`
-                            )
-                            .setLabel("Previous")
-                            .setEmoji("◀️")
-                            .setStyle(
-                                ButtonStyle.Secondary
-                            )
-                            .setDisabled(
-                                page <= 1
-                            ),
-
-                        new ButtonBuilder()
-                            .setCustomId(
-                                `role_list:page:${message.author.id}`
-                            )
-                            .setLabel(
-                                `${page}/${totalPages}`
-                            )
-                            .setStyle(
-                                ButtonStyle.Secondary
-                            )
-                            .setDisabled(true),
-
-                        new ButtonBuilder()
-                            .setCustomId(
-                                `role_list:next:${message.author.id}`
-                            )
-                            .setLabel("Next")
-                            .setEmoji("▶️")
-                            .setStyle(
-                                ButtonStyle.Secondary
-                            )
-                            .setDisabled(
-                                page >= totalPages
-                            ),
-
-                        new ButtonBuilder()
-                            .setCustomId(
-                                `role_list:delete:${message.author.id}`
-                            )
-                            .setLabel("Delete")
-                            .setEmoji("⏹️")
-                            .setStyle(
-                                ButtonStyle.Danger
-                            )
-
-                    );
-
-            return {
-                embeds: [
-                    embed
-                ],
-                components: [
-                    row
-                ]
-            };
-        };
+                );
 
         // =========================
         // SEND
         // =========================
 
         const sentMessage =
-            await message.channel.send(
-                renderPage()
-            );
-
-        // =========================
-        // BUTTON COLLECTOR
-        // =========================
-
-        const collector =
-            sentMessage.createMessageComponentCollector({
-                time: 60000
+            await message.channel.send({
+                embeds: [
+                    embed
+                ],
+                components: [
+                    row
+                ]
             });
-
-        // =========================
-        // COLLECT
-        // =========================
-
-        collector.on(
-            "collect",
-            async interaction => {
-
-                // =========================
-                // BUTTON CHECK
-                // =========================
-
-                if (
-                    !interaction.customId.startsWith(
-                        "role_list:"
-                    )
-                ) {
-                    return;
-                }
-
-                const parts =
-                    interaction.customId.split(":");
-
-                const action =
-                    parts[1];
-
-                const ownerId =
-                    parts[2];
-
-                // =========================
-                // USER CHECK
-                // =========================
-
-                if (
-                    interaction.user.id !==
-                    ownerId
-                ) {
-                    return interaction.reply({
-                        content:
-                            "You cannot use this!",
-                        flags: 64
-                    });
-                }
-
-                // =========================
-                // DELETE
-                // =========================
-
-                if (
-                    action ===
-                    "delete"
-                ) {
-
-                    collector.stop(
-                        "deleted"
-                    );
-
-                    const timer =
-                        client.roleListTimers.get(
-                            sentMessage.id
-                        );
-
-                    if (timer) {
-                        clearTimeout(timer);
-
-                        client.roleListTimers.delete(
-                            sentMessage.id
-                        );
-                    }
-
-                    return sentMessage
-                        .delete()
-                        .catch(() => {});
-                }
-
-                // =========================
-                // PREVIOUS
-                // =========================
-
-                if (
-                    action ===
-                        "previous" &&
-                    page > 1
-                ) {
-                    page--;
-                }
-
-                // =========================
-                // NEXT
-                // =========================
-
-                if (
-                    action ===
-                        "next" &&
-                    page < totalPages
-                ) {
-                    page++;
-                }
-
-                // =========================
-                // PAGE BUTTON
-                // =========================
-
-                if (
-                    action ===
-                    "page"
-                ) {
-                    return interaction.deferUpdate();
-                }
-
-                // =========================
-                // UPDATE
-                // =========================
-
-                await interaction.update(
-                    renderPage()
-                );
-            }
-        );
 
         // =========================
         // 60 SECOND TIMEOUT
@@ -420,9 +275,6 @@ module.exports = {
                                         .setCustomId(
                                             `role_list:previous:${message.author.id}`
                                         )
-                                        .setLabel(
-                                            "Previous"
-                                        )
                                         .setEmoji(
                                             "◀️"
                                         )
@@ -435,24 +287,7 @@ module.exports = {
 
                                     new ButtonBuilder()
                                         .setCustomId(
-                                            `role_list:page:${message.author.id}`
-                                        )
-                                        .setLabel(
-                                            `${page}/${totalPages}`
-                                        )
-                                        .setStyle(
-                                            ButtonStyle.Secondary
-                                        )
-                                        .setDisabled(
-                                            true
-                                        ),
-
-                                    new ButtonBuilder()
-                                        .setCustomId(
                                             `role_list:next:${message.author.id}`
-                                        )
-                                        .setLabel(
-                                            "Next"
                                         )
                                         .setEmoji(
                                             "▶️"
@@ -467,9 +302,6 @@ module.exports = {
                                     new ButtonBuilder()
                                         .setCustomId(
                                             `role_list:delete:${message.author.id}`
-                                        )
-                                        .setLabel(
-                                            "Delete"
                                         )
                                         .setEmoji(
                                             "⏹️"
@@ -500,10 +332,6 @@ module.exports = {
 
                     client.roleListTimers.delete(
                         sentMessage.id
-                    );
-
-                    collector.stop(
-                        "timeout"
                     );
 
                 },
