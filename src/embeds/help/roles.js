@@ -94,7 +94,7 @@ Example: ${config.prefix}role delete @Members\`\`\``
     colors(user) {
 
         return new EmbedBuilder()
-            .setTitle("Command: role colors")
+            .setTitle("Command: role color")
             .setAuthor({
                 name: user.username,
                 iconURL: user.displayAvatarURL({ dynamic: true })
