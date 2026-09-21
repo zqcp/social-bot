@@ -12,11 +12,29 @@ const starboardEmbeds =
 const Starboard =
     require("../../models/Starboard");
 
+const config =
+    require("../../config");
+
 module.exports = {
+
     name: "starboard list",
+
     aliases: [],
 
-    async execute(client, message, args) {
+    permissions: [
+        PermissionFlagsBits.ManageMessages
+    ],
+
+    async execute(
+        client,
+        message,
+        args
+    ) {
+
+        // =========================
+        // GUILD CHECK
+        // =========================
+
         if (!message.guild) {
             return message.channel.send({
                 embeds: [
@@ -26,6 +44,10 @@ module.exports = {
                 ]
             });
         }
+
+        // =========================
+        // USER PERMISSION
+        // =========================
 
         if (
             !message.member.permissions.has(
@@ -42,8 +64,20 @@ module.exports = {
             });
         }
 
+        // =========================
+        // BOT PERMISSIONS
+        // =========================
+
         const botMember =
             message.guild.members.me;
+
+        if (!botMember) {
+            console.error(
+                "Starboard List Error: Bot member could not be found."
+            );
+
+            return;
+        }
 
         const requiredPermissions = [
             PermissionFlagsBits.ViewChannel,
@@ -51,15 +85,21 @@ module.exports = {
             PermissionFlagsBits.EmbedLinks
         ];
 
+        const permissions =
+            message.channel.permissionsFor(
+                botMember
+            );
+
         const missingPermissions =
             requiredPermissions.filter(
                 permission =>
-                    !message.channel
-                        .permissionsFor(botMember)
-                        ?.has(permission)
+                    !permissions?.has(
+                        permission
+                    )
             );
 
         if (missingPermissions.length) {
+
             const permissionNames =
                 missingPermissions.map(
                     permission =>
@@ -71,9 +111,22 @@ module.exports = {
                         )?.[0] || permission
                 );
 
+            if (
+                permissionNames.length === 1
+            ) {
+                return message.channel.send({
+                    embeds: [
+                        globalEmbeds.botPermission(
+                            message.author,
+                            permissionNames[0]
+                        )
+                    ]
+                });
+            }
+
             return message.channel.send({
                 embeds: [
-                    globalEmbeds.botPermission(
+                    globalEmbeds.botPermissions(
                         message.author,
                         permissionNames
                     )
@@ -81,7 +134,12 @@ module.exports = {
             });
         }
 
+        // =========================
+        // GET STARBOARDS
+        // =========================
+
         try {
+
             const starboards =
                 await Starboard.find({
                     guildId:
@@ -98,10 +156,14 @@ module.exports = {
                 });
             }
 
+            // =========================
+            // STARBOARD EMBED
+            // =========================
+
             const embed =
                 new EmbedBuilder()
                     .setColor(
-                        require("../../config").colors.regular
+                        config.colors.regular
                     )
                     .setTitle(
                         "Starboards"
@@ -120,7 +182,8 @@ module.exports = {
                             name:
                                 channel
                                     ? channel.toString()
-                                    : `Unknown Channel`,
+                                    : "Unknown Channel",
+
                             value:
                                 [
                                     `Emoji: ${starboard.emoji}`,
@@ -128,6 +191,7 @@ module.exports = {
                                     `Self React: \`${starboard.selfReact ? "yes" : "no"}\``,
                                     `Color: \`${starboard.color}\``
                                 ].join("\n"),
+
                             inline: false
                         };
 
@@ -145,6 +209,7 @@ module.exports = {
             });
 
         } catch (error) {
+
             console.error(
                 "Starboard List Error:",
                 error
@@ -158,6 +223,9 @@ module.exports = {
                     )
                 ]
             });
+
         }
+
     }
+
 };
