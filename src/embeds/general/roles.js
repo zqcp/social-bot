@@ -83,6 +83,30 @@ module.exports = {
             );
     },
 
+    invalidColors(user) {
+        return new EmbedBuilder()
+            .setColor(config.colors.error)
+            .setDescription(
+                `${config.emojis.error} ${user}: Please provide between **1** and **3** valid colors.`
+            );
+    },
+
+    tooManyColors(user) {
+        return new EmbedBuilder()
+            .setColor(config.colors.error)
+            .setDescription(
+                `${config.emojis.error} ${user}: You can only use up to **3** colors.`
+            );
+    },
+
+    colorUnavailable(user) {
+        return new EmbedBuilder()
+            .setColor(config.colors.error)
+            .setDescription(
+                `${config.emojis.error} ${user}: This **role color** isn't available for this role.`
+            );
+    },
+
 
     // =========================
     // CREATE ROLE
