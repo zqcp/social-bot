@@ -1,9 +1,5 @@
-const {
-    EmbedBuilder
-} = require("discord.js");
-
-const config =
-    require("../../config");
+const { EmbedBuilder } = require("discord.js");
+const config = require("../../config");
 
 module.exports = {
 
@@ -17,13 +13,9 @@ module.exports = {
             .setTitle("Command: role add")
             .setAuthor({
                 name: user.username,
-                iconURL: user.displayAvatarURL({
-                    dynamic: true
-                })
+                iconURL: user.displayAvatarURL({ dynamic: true })
             })
-            .setColor(
-                config.colors.regular
-            )
+            .setColor(config.colors.regular)
             .setDescription(
 `Adds a role to a member.
 \`\`\`Syntax: ${config.prefix}role add [member] [role]
@@ -31,7 +23,6 @@ Example: ${config.prefix}role add @user @Member\`\`\``
             );
 
     },
-
 
     // =========================
     // ROLE REMOVE
@@ -43,13 +34,9 @@ Example: ${config.prefix}role add @user @Member\`\`\``
             .setTitle("Command: role remove")
             .setAuthor({
                 name: user.username,
-                iconURL: user.displayAvatarURL({
-                    dynamic: true
-                })
+                iconURL: user.displayAvatarURL({ dynamic: true })
             })
-            .setColor(
-                config.colors.regular
-            )
+            .setColor(config.colors.regular)
             .setDescription(
 `Removes a role from a member.
 \`\`\`Syntax: ${config.prefix}role remove [member] [role]
@@ -57,7 +44,6 @@ Example: ${config.prefix}role remove @user @Member\`\`\``
             );
 
     },
-
 
     // =========================
     // ROLE CREATE
@@ -69,21 +55,16 @@ Example: ${config.prefix}role remove @user @Member\`\`\``
             .setTitle("Command: role create")
             .setAuthor({
                 name: user.username,
-                iconURL: user.displayAvatarURL({
-                    dynamic: true
-                })
+                iconURL: user.displayAvatarURL({ dynamic: true })
             })
-            .setColor(
-                config.colors.regular
-            )
+            .setColor(config.colors.regular)
             .setDescription(
 `Creates a new role.
 \`\`\`Syntax: ${config.prefix}role create [name] [style]
-Example: ${config.prefix}role create Members solid\`\`\``
+Example: ${config.prefix}role create Members\`\`\``
             );
 
     },
-
 
     // =========================
     // ROLE DELETE
@@ -95,13 +76,9 @@ Example: ${config.prefix}role create Members solid\`\`\``
             .setTitle("Command: role delete")
             .setAuthor({
                 name: user.username,
-                iconURL: user.displayAvatarURL({
-                    dynamic: true
-                })
+                iconURL: user.displayAvatarURL({ dynamic: true })
             })
-            .setColor(
-                config.colors.regular
-            )
+            .setColor(config.colors.regular)
             .setDescription(
 `Deletes an existing role.
 \`\`\`Syntax: ${config.prefix}role delete [role]
@@ -109,7 +86,6 @@ Example: ${config.prefix}role delete @Members\`\`\``
             );
 
     },
-
 
     // =========================
     // ROLE COLORS
@@ -121,17 +97,76 @@ Example: ${config.prefix}role delete @Members\`\`\``
             .setTitle("Command: role colors")
             .setAuthor({
                 name: user.username,
-                iconURL: user.displayAvatarURL({
-                    dynamic: true
-                })
+                iconURL: user.displayAvatarURL({ dynamic: true })
             })
-            .setColor(
-                config.colors.regular
-            )
+            .setColor(config.colors.regular)
             .setDescription(
-`Change the colors or style of a role.
-\`\`\`Syntax: ${config.prefix}role colors [role] [style] [color]
-Example: ${config.prefix}role colors @Members solid #A9EB7F\`\`\``
+`Changes the color of a role.
+\`\`\`Syntax: ${config.prefix}role colors [role] [color]
+Example: ${config.prefix}role colors @Members #A9EB7F\`\`\``
+            );
+
+    },
+
+    // =========================
+    // ROLE ICON
+    // =========================
+
+    icon(user) {
+
+        return new EmbedBuilder()
+            .setTitle("Command: role icon")
+            .setAuthor({
+                name: user.username,
+                iconURL: user.displayAvatarURL({ dynamic: true })
+            })
+            .setColor(config.colors.regular)
+            .setDescription(
+`Changes the icon of a role.
+\`\`\`Syntax:${config.prefix}role icon [role] [icon]
+Example: ${config.prefix}role icon @Members <:emoji:123456789>\`\`\``
+            );
+
+    },
+
+    // =========================
+    // ROLE LIST
+    // =========================
+
+    list(user) {
+
+        return new EmbedBuilder()
+            .setTitle("Command: role list")
+            .setAuthor({
+                name: user.username,
+                iconURL: user.displayAvatarURL({ dynamic: true })
+            })
+            .setColor(config.colors.regular)
+            .setDescription(
+`Lists the roles in the server.
+\`\`\`Syntax: ${config.prefix}role list
+Example: ${config.prefix}role list\`\`\``
+            );
+
+    },
+
+    // =========================
+    // ROLE RENAME
+    // =========================
+
+    rename(user) {
+
+        return new EmbedBuilder()
+            .setTitle("Command: role rename")
+            .setAuthor({
+                name: user.username,
+                iconURL: user.displayAvatarURL({ dynamic: true })
+            })
+            .setColor(config.colors.regular)
+            .setDescription(
+`Renames an existing role.
+\`\`\`Syntax: ${config.prefix}role rename [role] [name]
+Example: ${config.prefix}role rename @Members Verified\`\`\``
             );
 
     }
