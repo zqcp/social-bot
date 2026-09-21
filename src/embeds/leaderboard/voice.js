@@ -38,9 +38,10 @@ module.exports = {
         if (!entries?.length) {
 
             embed.addFields({
-                name: "No voice activity recorded yet.",
-                value: "\u200b",
-                inline: true
+                name: "\u200b",
+                value:
+                    "No voice activity recorded yet.",
+                inline: false
             });
 
             return embed;
@@ -56,17 +57,21 @@ module.exports = {
                     const position =
                         index + 1;
 
+
                     const member =
                         guild.members.cache.get(
                             entry.userId
                         );
 
+
                     const username =
                         member?.user?.username ||
                         "Unknown User";
 
+
                     const mention =
                         `<@${entry.userId}>`;
+
 
                     const positionText =
                         position === 1
@@ -77,17 +82,19 @@ module.exports = {
                                     ? "<:3rd:1551552489021505596>"
                                     : `#${position}`;
 
+
                     return {
-                        name:
-                            `${positionText} **${username}**`,
+                        name: "\u200b",
 
                         value:
-                            `${mention}\n` +
+                            `${positionText} ` +
+                            `**${username}** ` +
+                            `(${mention}) — ` +
                             `\`${formatDuration(
                                 entry.totalSeconds
                             )}\``,
 
-                        inline: true
+                        inline: false
                     };
 
                 });
