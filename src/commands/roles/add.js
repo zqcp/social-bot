@@ -8,6 +8,9 @@ const roleEmbeds =
 const globalEmbeds =
     require("../../embeds/general/global");
 
+const rolesHelp =
+    require("../../embeds/help/roles");
+
 // =========================
 // COMMAND
 // =========================
@@ -17,6 +20,10 @@ module.exports = {
     name: "role add",
 
     aliases: ["r", "role"],
+
+    permissions: [
+        PermissionFlagsBits.ManageRoles
+    ],
 
     async execute(
         client,
@@ -65,13 +72,11 @@ module.exports = {
             message.guild.members.me;
 
         if (!botMember) {
-            return message.channel.send({
-                embeds: [
-                    globalEmbeds.error(
-                        "I couldn't find my member information in this server."
-                    )
-                ]
-            });
+            console.error(
+                "Role Add Error: Bot member could not be found."
+            );
+
+            return;
         }
 
         const requiredPermissions = [
@@ -105,6 +110,17 @@ module.exports = {
                         )?.[0] || permission
                 );
 
+            if (permissionNames.length === 1) {
+                return message.channel.send({
+                    embeds: [
+                        globalEmbeds.botPermission(
+                            message.author,
+                            permissionNames[0]
+                        )
+                    ]
+                });
+            }
+
             return message.channel.send({
                 embeds: [
                     globalEmbeds.botPermissions(
@@ -125,9 +141,8 @@ module.exports = {
         if (!memberValue) {
             return message.channel.send({
                 embeds: [
-                    globalEmbeds.missing(
-                        message.author,
-                        "member"
+                    rolesHelp.add(
+                        message.author
                     )
                 ]
             });
@@ -196,9 +211,8 @@ module.exports = {
         if (!roleValues.length) {
             return message.channel.send({
                 embeds: [
-                    globalEmbeds.missing(
-                        message.author,
-                        "role"
+                    rolesHelp.add(
+                        message.author
                     )
                 ]
             });
