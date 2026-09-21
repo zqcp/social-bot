@@ -1,69 +1,17 @@
-const {
-    EmbedBuilder
-} = require("discord.js");
-
-const config =
-    require("../../config");
-
+const { EmbedBuilder } = require("discord.js");
+const config = require("../../config");
 
 module.exports = {
 
-    create(
-        guild,
-        entries,
-        nextWipeAt
-    ) {
-
-        const leaderboard =
-            entries?.length
-                ? entries
-                    .slice(0, 10)
-                    .map(
-                        (entry, index) => {
-
-                            const position =
-                                index + 1;
-
-                            const member =
-                                guild.members.cache.get(
-                                    entry.userId
-                                );
-
-                            const username =
-                                member?.user?.username ||
-                                "Unknown User";
-
-                            const mention =
-                                `<@${entry.userId}>`;
-
-                            const positionEmoji =
-                                position === 1
-                                    ? "<:1st:1551552460374413373>"
-                                    : position === 2
-                                        ? "<:2nd:1551552475771699240>"
-                                        : position === 3
-                                            ? "<:3rd:1551552489021505596>"
-                                            : `#${position}`;
-
-                            return `${positionEmoji} **${username}** (${mention}) — \`${formatDuration(entry.totalSeconds)}\``;
-
-                        }
-                    )
-                    .join("\n\n")
-                : "No voice activity recorded yet.";
-
+    create(guild, entries, nextWipeAt) {
 
         const embed =
             new EmbedBuilder()
                 .setColor(
                     config.colors.regular
                 )
-                .setAuthor({
-                    name:
-                        `<:vc_speaker:1551552443081302066> ${guild.name}'s VC leaderboard`
-                })
-                .setDescription(
-                    leaderboard
+                .setTitle(
+                    `<:vc_speaker:1551552443081302066> ${guild.name}'s VC leaderboard`
                 )
                 .setFooter({
                     text:
@@ -87,6 +35,69 @@ module.exports = {
         }
 
 
+        if (!entries?.length) {
+
+            embed.addFields({
+                name: "No voice activity recorded yet.",
+                value: "\u200b",
+                inline: true
+            });
+
+            return embed;
+
+        }
+
+
+        const fields =
+            entries
+                .slice(0, 10)
+                .map((entry, index) => {
+
+                    const position =
+                        index + 1;
+
+                    const member =
+                        guild.members.cache.get(
+                            entry.userId
+                        );
+
+                    const username =
+                        member?.user?.username ||
+                        "Unknown User";
+
+                    const mention =
+                        `<@${entry.userId}>`;
+
+                    const positionText =
+                        position === 1
+                            ? "<:1st:1551552460374413373>"
+                            : position === 2
+                                ? "<:2nd:1551552475771699240>"
+                                : position === 3
+                                    ? "<:3rd:1551552489021505596>"
+                                    : `#${position}`;
+
+                    return {
+                        name:
+                            `${positionText} **${username}**`,
+
+                        value:
+                            `${mention}\n` +
+                            `\`${formatDuration(
+                                entry.totalSeconds
+                            )}\``,
+
+                        inline: true
+                    };
+
+                });
+
+
+        embed.addFields(
+            fields
+        );
+
+
         return embed;
 
     }
@@ -94,9 +105,7 @@ module.exports = {
 };
 
 
-function formatDuration(
-    seconds
-) {
+function formatDuration(seconds) {
 
     seconds =
         Math.max(
@@ -110,18 +119,16 @@ function formatDuration(
             seconds / 86400
         );
 
+
     const hours =
         Math.floor(
-            (
-                seconds % 86400
-            ) / 3600
+            (seconds % 86400) / 3600
         );
+
 
     const minutes =
         Math.floor(
-            (
-                seconds % 3600
-            ) / 60
+            (seconds % 3600) / 60
         );
 
 
