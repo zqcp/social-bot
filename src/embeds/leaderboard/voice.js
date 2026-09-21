@@ -87,7 +87,7 @@ module.exports = {
                         name: "\u200b",
 
                         value:
-                            `${positionText} ` +
+                            `${positionText}\u00a0` +
                             `**${username}** ` +
                             `(${mention}) — ` +
                             `\`${formatDuration(
