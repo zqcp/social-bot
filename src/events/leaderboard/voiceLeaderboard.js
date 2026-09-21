@@ -1,7 +1,7 @@
-// src/events/voiceLeaderboard.js
+// src/events/leaderboard/voiceLeaderboard.js
 
 const Voice =
-    require("../systems/leaderboard/voice");
+    require("../../systems/leaderboard/voice");
 
 
 module.exports = {
