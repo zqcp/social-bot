@@ -8,14 +8,32 @@ const globalEmbeds =
 const starboardEmbeds =
     require("../../embeds/general/starboard");
 
+const starboardHelp =
+    require("../../embeds/help/starboard");
+
 const Starboard =
     require("../../models/Starboard");
 
 module.exports = {
+
     name: "starboard remove",
+
     aliases: [],
 
-    async execute(client, message, args) {
+    permissions: [
+        PermissionFlagsBits.ManageMessages
+    ],
+
+    async execute(
+        client,
+        message,
+        args
+    ) {
+
+        // =========================
+        // GUILD CHECK
+        // =========================
+
         if (!message.guild) {
             return message.channel.send({
                 embeds: [
@@ -25,6 +43,10 @@ module.exports = {
                 ]
             });
         }
+
+        // =========================
+        // USER PERMISSION
+        // =========================
 
         if (
             !message.member.permissions.has(
@@ -41,8 +63,20 @@ module.exports = {
             });
         }
 
+        // =========================
+        // BOT PERMISSIONS
+        // =========================
+
         const botMember =
             message.guild.members.me;
+
+        if (!botMember) {
+            console.error(
+                "Starboard Remove Error: Bot member could not be found."
+            );
+
+            return;
+        }
 
         const requiredPermissions = [
             PermissionFlagsBits.ViewChannel,
@@ -50,15 +84,21 @@ module.exports = {
             PermissionFlagsBits.EmbedLinks
         ];
 
+        const permissions =
+            message.channel.permissionsFor(
+                botMember
+            );
+
         const missingPermissions =
             requiredPermissions.filter(
                 permission =>
-                    !message.channel
-                        .permissionsFor(botMember)
-                        ?.has(permission)
+                    !permissions?.has(
+                        permission
+                    )
             );
 
         if (missingPermissions.length) {
+
             const permissionNames =
                 missingPermissions.map(
                     permission =>
@@ -70,9 +110,22 @@ module.exports = {
                         )?.[0] || permission
                 );
 
+            if (
+                permissionNames.length === 1
+            ) {
+                return message.channel.send({
+                    embeds: [
+                        globalEmbeds.botPermission(
+                            message.author,
+                            permissionNames[0]
+                        )
+                    ]
+                });
+            }
+
             return message.channel.send({
                 embeds: [
-                    globalEmbeds.botPermission(
+                    globalEmbeds.botPermissions(
                         message.author,
                         permissionNames
                     )
@@ -80,39 +133,54 @@ module.exports = {
             });
         }
 
+        // =========================
+        // CHANNEL CHECK
+        // =========================
+
         const channel =
             message.mentions.channels.first();
 
         if (!channel) {
             return message.channel.send({
                 embeds: [
-                    starboardEmbeds.noChannel(
+                    starboardHelp.remove(
                         message.author
                     )
                 ]
             });
         }
 
+        // =========================
+        // EMOJI CHECK
+        // =========================
+
         const emoji =
-            args.shift();
+            args[0];
 
         if (!emoji) {
             return message.channel.send({
                 embeds: [
-                    starboardEmbeds.noEmoji(
+                    starboardHelp.remove(
                         message.author
                     )
                 ]
             });
         }
 
+        // =========================
+        // REMOVE STARBOARD
+        // =========================
+
         try {
+
             const starboard =
                 await Starboard.findOne({
                     guildId:
                         message.guild.id,
+
                     channelId:
                         channel.id,
+
                     emoji
                 });
 
@@ -141,6 +209,7 @@ module.exports = {
             });
 
         } catch (error) {
+
             console.error(
                 "Starboard Remove Error:",
                 error
@@ -154,6 +223,9 @@ module.exports = {
                     )
                 ]
             });
+
         }
+
     }
+
 };
