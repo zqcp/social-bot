@@ -515,7 +515,7 @@ module.exports = {
                             config.colors.role
                         )
                         .setDescription(
-                            `${config.emojis.add} ${message.author}: Changed **roles** for **${member.user.username}**: **${roleNames}**.`
+                            `${message.author}: Changed **roles** for **${member.user.username}**: **${roleNames}**.`
                         )
                 ]
             });
