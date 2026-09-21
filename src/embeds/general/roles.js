@@ -184,7 +184,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.role)
             .setDescription(
-                `${config.emojis.add} ${user}: Added ${roleName} to **${member.user.username}**.`
+                `${config.emojis.add} ${user}: Added \`${roleName}\` to **${member.user.username}**.`
             );
     },
 
@@ -202,7 +202,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.failed)
             .setDescription(
-                `${config.emojis.failed} ${user}: Failed to add ${roleName} to **${member.user.username}**. Please try again.`
+                `${config.emojis.failed} ${user}: Failed to add \`${roleName}\` to **${member.user.username}**. Please try again.`
             );
     },
 
@@ -225,7 +225,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.role)
             .setDescription(
-                `${config.emojis.remove} ${user}: Removed ${roleName} from **${member.user.username}**.`
+                `${config.emojis.remove} ${user}: Removed \`${roleName}\` from **${member.user.username}**.`
             );
     },
 
@@ -243,7 +243,7 @@ module.exports = {
         return new EmbedBuilder()
             .setColor(config.colors.failed)
             .setDescription(
-                `${config.emojis.failed} ${user}: Failed to remove ${roleName} from **${member.user.username}**. Please try again.`
+                `${config.emojis.failed} ${user}: Failed to remove \`${roleName}\` from **${member.user.username}**. Please try again.`
             );
     },
 
