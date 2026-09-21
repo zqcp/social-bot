@@ -107,7 +107,7 @@ module.exports = {
 
             return message.channel.send({
                 embeds: [
-                    globalEmbeds.botPermissions(
+                    globalEmbeds.botPermission(
                         message.author,
                         permissionNames
                     )
@@ -179,7 +179,7 @@ module.exports = {
         if (!role) {
             return message.channel.send({
                 embeds: [
-                    roleEmbeds.roleNotFound(
+                    roleEmbeds.couldNotFind(
                         message.author,
                         roleValue
                     )
