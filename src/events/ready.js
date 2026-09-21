@@ -1,5 +1,11 @@
+// src/events/ready.js
+
 const config =
     require("../config");
+
+const Scheduler =
+    require("../systems/leaderboard/scheduler");
+
 
 module.exports = {
 
@@ -11,6 +17,7 @@ module.exports = {
         console.log(
             `${client.user.tag} is online`
         );
+
 
         if (
             config.status?.enabled
@@ -37,6 +44,11 @@ module.exports = {
             });
 
         }
+
+
+        Scheduler.start(
+            client
+        );
 
     }
 
