@@ -12,6 +12,9 @@ const globalEmbeds =
 const roleEmbeds =
     require("../../embeds/general/roles");
 
+const rolesHelp =
+    require("../../embeds/help/roles");
+
 // =========================
 // COMMAND
 // =========================
@@ -21,6 +24,10 @@ module.exports = {
     name: "role rename",
 
     aliases: ["rrn"],
+
+    permissions: [
+        PermissionFlagsBits.ManageRoles
+    ],
 
     async execute(
         client,
@@ -69,13 +76,11 @@ module.exports = {
             message.guild.members.me;
 
         if (!botMember) {
-            return message.channel.send({
-                embeds: [
-                    globalEmbeds.error(
-                        "I couldn't find my member information in this server."
-                    )
-                ]
-            });
+            console.error(
+                "Role Rename Error: Bot member could not be found."
+            );
+
+            return;
         }
 
         const requiredPermissions = [
@@ -109,6 +114,17 @@ module.exports = {
                         )?.[0] || permission
                 );
 
+            if (permissionNames.length === 1) {
+                return message.channel.send({
+                    embeds: [
+                        globalEmbeds.botPermission(
+                            message.author,
+                            permissionNames[0]
+                        )
+                    ]
+                });
+            }
+
             return message.channel.send({
                 embeds: [
                     globalEmbeds.botPermissions(
@@ -126,9 +142,8 @@ module.exports = {
         if (!args.length) {
             return message.channel.send({
                 embeds: [
-                    globalEmbeds.missing(
-                        message.author,
-                        "role"
+                    rolesHelp.rename(
+                        message.author
                     )
                 ]
             });
@@ -161,7 +176,11 @@ module.exports = {
                     ""
                 );
 
-            if (/^\d{17,20}$/.test(roleId)) {
+            if (
+                /^\d{17,20}$/.test(
+                    roleId
+                )
+            ) {
 
                 try {
 
@@ -248,9 +267,8 @@ module.exports = {
         if (!newName) {
             return message.channel.send({
                 embeds: [
-                    globalEmbeds.missing(
-                        message.author,
-                        "name"
+                    rolesHelp.rename(
+                        message.author
                     )
                 ]
             });
@@ -337,9 +355,11 @@ module.exports = {
 
             const embed =
                 new EmbedBuilder()
-                    .setColor(config.colors.success)
+                    .setColor(
+                        config.colors.success
+                    )
                     .setDescription(
-                        `${config.emojis.success} ${message.author}: Renamed \`${oldName}\` to \`${role.name}\`.`
+                        `${config.emojis.success} ${message.author}: Renamed **${oldName}** to <@&${role.id}>.`
                     );
 
             return message.channel.send({
@@ -357,9 +377,11 @@ module.exports = {
 
             const embed =
                 new EmbedBuilder()
-                    .setColor(config.colors.failed)
+                    .setColor(
+                        config.colors.failed
+                    )
                     .setDescription(
-                        `${config.emojis.failed} ${message.author}: Failed to rename \`${oldName}\` to \`${newName}\`. Please try again.`
+                        `${config.emojis.failed} ${message.author}: Failed to rename **${oldName}** to **${newName}**. Please try again.`
                     );
 
             return message.channel.send({
