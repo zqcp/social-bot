@@ -33,7 +33,8 @@ module.exports = {
         const [
             ,
             ownerId
-        ] = interaction.customId.split(":");
+        ] =
+            interaction.customId.split(":");
 
         // =========================
         // OWNER CHECK
@@ -55,6 +56,105 @@ module.exports = {
                 flags: 64
             });
         }
+
+        // =========================
+        // TIMER
+        // =========================
+
+        if (!client.starboardTimers) {
+            client.starboardTimers =
+                new Map();
+        }
+
+        const messageId =
+            interaction.message.id;
+
+        const resetTimer = () => {
+
+            const oldTimer =
+                client.starboardTimers.get(
+                    messageId
+                );
+
+            if (oldTimer) {
+                clearTimeout(oldTimer);
+            }
+
+            const timer =
+                setTimeout(
+                    async () => {
+
+                        try {
+
+                            const menu =
+                                new StringSelectMenuBuilder()
+                                    .setCustomId(
+                                        `starboard_subcommand:${ownerId}`
+                                    )
+                                    .setPlaceholder(
+                                        "Select a subcommand"
+                                    )
+                                    .setDisabled(
+                                        true
+                                    )
+                                    .addOptions(
+                                        {
+                                            label: "Add",
+                                            description:
+                                                "Create a Starboard.",
+                                            value: "add"
+                                        },
+                                        {
+                                            label: "Clear",
+                                            description:
+                                                "Clear Starboard entries.",
+                                            value: "clear"
+                                        },
+                                        {
+                                            label: "List",
+                                            description:
+                                                "View configured Starboards.",
+                                            value: "list"
+                                        },
+                                        {
+                                            label: "Remove",
+                                            description:
+                                                "Remove a Starboard.",
+                                            value: "remove"
+                                        }
+                                    );
+
+                            const row =
+                                new ActionRowBuilder()
+                                    .addComponents(
+                                        menu
+                                    );
+
+                            await interaction.message.edit({
+                                components: [
+                                    row
+                                ]
+                            });
+
+                        } catch {}
+
+                        client.starboardTimers.delete(
+                            messageId
+                        );
+
+                    },
+                    60000
+                );
+
+            client.starboardTimers.set(
+                messageId,
+                timer
+            );
+        };
+
+        // =========================
+        // SUBCOMMAND
+        // =========================
 
         const subcommand =
             interaction.values[0];
@@ -93,33 +193,25 @@ module.exports = {
                         label: "Add",
                         description:
                             "Create a Starboard.",
-                        value: "add",
-                        default:
-                            subcommand === "add"
+                        value: "add"
                     },
                     {
                         label: "Clear",
                         description:
                             "Clear Starboard entries.",
-                        value: "clear",
-                        default:
-                            subcommand === "clear"
+                        value: "clear"
                     },
                     {
                         label: "List",
                         description:
                             "View configured Starboards.",
-                        value: "list",
-                        default:
-                            subcommand === "list"
+                        value: "list"
                     },
                     {
                         label: "Remove",
                         description:
                             "Remove a Starboard.",
-                        value: "remove",
-                        default:
-                            subcommand === "remove"
+                        value: "remove"
                     }
                 );
 
@@ -137,6 +229,12 @@ module.exports = {
                 row
             ]
         });
+
+        // =========================
+        // RESET TIMER
+        // =========================
+
+        resetTimer();
 
     }
 
