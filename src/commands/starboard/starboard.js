@@ -101,9 +101,7 @@ module.exports = {
         const missingPermissions =
             requiredPermissions.filter(
                 permission =>
-                    !permissions?.has(
-                        permission
-                    )
+                    !permissions?.has(permission)
             );
 
         if (missingPermissions.length) {
@@ -185,7 +183,7 @@ Example: ${config.prefix}starboard add #fame ⭐ random 5 yes\`\`\``
         const menu =
             new StringSelectMenuBuilder()
                 .setCustomId(
-                    "starboard_subcommand"
+                    `starboard_subcommand:${message.author.id}`
                 )
                 .setPlaceholder(
                     "Select a subcommand"
