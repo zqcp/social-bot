@@ -82,12 +82,6 @@ module.exports = {
         }
 
         // =========================
-        // FETCH MEMBERS
-        // =========================
-
-        await message.guild.members.fetch();
-
-        // =========================
         // GET ROLES
         // =========================
 
