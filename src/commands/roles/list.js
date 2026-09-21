@@ -14,9 +14,9 @@ const globalEmbeds =
 
 module.exports = {
 
-    name: "roles",
+    name: "role list",
 
-    aliases: [ ],
+    aliases: ["roles"],
 
     async execute(
         client,
