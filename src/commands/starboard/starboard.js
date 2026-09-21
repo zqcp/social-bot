@@ -101,7 +101,9 @@ module.exports = {
         const missingPermissions =
             requiredPermissions.filter(
                 permission =>
-                    !permissions?.has(permission)
+                    !permissions?.has(
+                        permission
+                    )
             );
 
         if (missingPermissions.length) {
@@ -180,10 +182,13 @@ Example: ${config.prefix}starboard add #fame ⭐ random 5 yes\`\`\``
         // SUBCOMMAND MENU
         // =========================
 
+        const customId =
+            `starboard_subcommand:${message.author.id}`;
+
         const menu =
             new StringSelectMenuBuilder()
                 .setCustomId(
-                    `starboard_subcommand:${message.author.id}`
+                    customId
                 )
                 .setPlaceholder(
                     "Select a subcommand"
@@ -236,12 +241,20 @@ Example: ${config.prefix}starboard add #fame ⭐ random 5 yes\`\`\``
             args[0]?.toLowerCase();
 
         if (
-            !subcommand ||
-            !validSubcommands.includes(
+            subcommand &&
+            validSubcommands.includes(
                 subcommand
             )
         ) {
-            return message.channel.send({
+            // Menu remains available.
+        }
+
+        // =========================
+        // SEND MENU
+        // =========================
+
+        const sent =
+            await message.channel.send({
                 embeds: [
                     embed
                 ],
@@ -249,16 +262,104 @@ Example: ${config.prefix}starboard add #fame ⭐ random 5 yes\`\`\``
                     row
                 ]
             });
+
+        // =========================
+        // TIMER
+        // =========================
+
+        if (!client.starboardTimers) {
+            client.starboardTimers =
+                new Map();
         }
 
-        return message.channel.send({
-            embeds: [
-                embed
-            ],
-            components: [
-                row
-            ]
-        });
+        const resetTimer = () => {
+
+            const oldTimer =
+                client.starboardTimers.get(
+                    sent.id
+                );
+
+            if (oldTimer) {
+                clearTimeout(
+                    oldTimer
+                );
+            }
+
+            const timer =
+                setTimeout(
+                    async () => {
+
+                        try {
+
+                            const disabledMenu =
+                                new StringSelectMenuBuilder()
+                                    .setCustomId(
+                                        customId
+                                    )
+                                    .setPlaceholder(
+                                        "Select a subcommand"
+                                    )
+                                    .setDisabled(
+                                        true
+                                    )
+                                    .addOptions(
+                                        {
+                                            label: "Add",
+                                            description:
+                                                "Create a Starboard.",
+                                            value: "add"
+                                        },
+                                        {
+                                            label: "Clear",
+                                            description:
+                                                "Clear Starboard entries.",
+                                            value: "clear"
+                                        },
+                                        {
+                                            label: "List",
+                                            description:
+                                                "View configured Starboards.",
+                                            value: "list"
+                                        },
+                                        {
+                                            label: "Remove",
+                                            description:
+                                                "Remove a Starboard.",
+                                            value: "remove"
+                                        }
+                                    );
+
+                            const disabledRow =
+                                new ActionRowBuilder()
+                                    .addComponents(
+                                        disabledMenu
+                                    );
+
+                            await sent.edit({
+                                components: [
+                                    disabledRow
+                                ]
+                            });
+
+                        } catch {}
+
+                        client.starboardTimers.delete(
+                            sent.id
+                        );
+
+                    },
+                    60000
+                );
+
+            client.starboardTimers.set(
+                sent.id,
+                timer
+            );
+        };
+
+        resetTimer();
+
+        return sent;
 
     }
 
