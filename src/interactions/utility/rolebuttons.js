@@ -5,6 +5,9 @@ const {
     ButtonStyle
 } = require("discord.js");
 
+const config =
+    require("../../config");
+
 // =========================
 // ROLE LIST BUTTONS
 // =========================
@@ -60,8 +63,15 @@ module.exports = {
             ownerId
         ) {
             return interaction.reply({
-                content:
-                    "These buttons don't belong to you.",
+                embeds: [
+                    new EmbedBuilder()
+                        .setColor(
+                            config.colors.error
+                        )
+                        .setDescription(
+                            `${config.emojis.error} ${interaction.user}: You cannot use this!`
+                        )
+                ],
                 flags: 64
             });
         }
@@ -104,22 +114,24 @@ module.exports = {
         ) {
 
             if (
-                client.roleListTimers
+                !client.roleListTimers
             ) {
+                client.roleListTimers =
+                    new Map();
+            }
 
-                const timer =
-                    client.roleListTimers.get(
-                        interaction.message.id
-                    );
-
-                if (timer) {
-                    clearTimeout(timer);
-                }
-
-                client.roleListTimers.delete(
+            const timer =
+                client.roleListTimers.get(
                     interaction.message.id
                 );
+
+            if (timer) {
+                clearTimeout(timer);
             }
+
+            client.roleListTimers.delete(
+                interaction.message.id
+            );
 
             return interaction.message
                 .delete()
@@ -180,6 +192,28 @@ module.exports = {
         const totalRoles =
             roleArray.length;
 
+        const calculatedTotalPages =
+            Math.max(
+                1,
+                Math.ceil(
+                    totalRoles /
+                    rolesPerPage
+                )
+            );
+
+        // =========================
+        // KEEP PAGE VALID
+        // =========================
+
+        page =
+            Math.max(
+                1,
+                Math.min(
+                    page,
+                    calculatedTotalPages
+                )
+            );
+
         const start =
             (page - 1) *
             rolesPerPage;
@@ -188,15 +222,6 @@ module.exports = {
             roleArray.slice(
                 start,
                 start + rolesPerPage
-            );
-
-        const calculatedTotalPages =
-            Math.max(
-                1,
-                Math.ceil(
-                    totalRoles /
-                    rolesPerPage
-                )
             );
 
         // =========================
@@ -255,9 +280,6 @@ module.exports = {
                         .setCustomId(
                             `role_list:previous:${ownerId}`
                         )
-                        .setLabel(
-                            "Previous"
-                        )
                         .setEmoji(
                             "◀️"
                         )
@@ -270,22 +292,7 @@ module.exports = {
 
                     new ButtonBuilder()
                         .setCustomId(
-                            `role_list:page:${ownerId}`
-                        )
-                        .setLabel(
-                            `${page}/${calculatedTotalPages}`
-                        )
-                        .setStyle(
-                            ButtonStyle.Secondary
-                        )
-                        .setDisabled(true),
-
-                    new ButtonBuilder()
-                        .setCustomId(
                             `role_list:next:${ownerId}`
-                        )
-                        .setLabel(
-                            "Next"
                         )
                         .setEmoji(
                             "▶️"
@@ -300,9 +307,6 @@ module.exports = {
                     new ButtonBuilder()
                         .setCustomId(
                             `role_list:delete:${ownerId}`
-                        )
-                        .setLabel(
-                            "Delete"
                         )
                         .setEmoji(
                             "⏹️"
@@ -330,124 +334,106 @@ module.exports = {
         // RESET 60 SECOND TIMER
         // =========================
 
-        if (
-            client.roleListTimers
-        ) {
+        if (!client.roleListTimers) {
+            client.roleListTimers =
+                new Map();
+        }
 
-            const timer =
-                client.roleListTimers.get(
-                    interaction.message.id
-                );
+        const messageId =
+            interaction.message.id;
 
-            if (timer) {
-                clearTimeout(timer);
-            }
+        const existingTimer =
+            client.roleListTimers.get(
+                messageId
+            );
 
-            const newTimer =
-                setTimeout(
-                    async () => {
-
-                        try {
-
-                            const disabledRow =
-                                new ActionRowBuilder()
-                                    .addComponents(
-
-                                        new ButtonBuilder()
-                                            .setCustomId(
-                                                `role_list:previous:${ownerId}`
-                                            )
-                                            .setLabel(
-                                                "Previous"
-                                            )
-                                            .setEmoji(
-                                                "◀️"
-                                            )
-                                            .setStyle(
-                                                ButtonStyle.Secondary
-                                            )
-                                            .setDisabled(
-                                                true
-                                            ),
-
-                                        new ButtonBuilder()
-                                            .setCustomId(
-                                                `role_list:page:${ownerId}`
-                                            )
-                                            .setLabel(
-                                                `${page}/${calculatedTotalPages}`
-                                            )
-                                            .setStyle(
-                                                ButtonStyle.Secondary
-                                            )
-                                            .setDisabled(
-                                                true
-                                            ),
-
-                                        new ButtonBuilder()
-                                            .setCustomId(
-                                                `role_list:next:${ownerId}`
-                                            )
-                                            .setLabel(
-                                                "Next"
-                                            )
-                                            .setEmoji(
-                                                "▶️"
-                                            )
-                                            .setStyle(
-                                                ButtonStyle.Secondary
-                                            )
-                                            .setDisabled(
-                                                true
-                                            ),
-
-                                        new ButtonBuilder()
-                                            .setCustomId(
-                                                `role_list:delete:${ownerId}`
-                                            )
-                                            .setLabel(
-                                                "Delete"
-                                            )
-                                            .setEmoji(
-                                                "⏹️"
-                                            )
-                                            .setStyle(
-                                                ButtonStyle.Danger
-                                            )
-                                            .setDisabled(
-                                                true
-                                            )
-
-                                    );
-
-                            await interaction.message.edit({
-                                components: [
-                                    disabledRow
-                                ]
-                            });
-
-                        } catch (error) {
-
-                            console.error(
-                                "Role List Timeout Error:",
-                                error
-                            );
-
-                        }
-
-                        client.roleListTimers.delete(
-                            interaction.message.id
-                        );
-
-                    },
-                    60000
-                );
-
-            client.roleListTimers.set(
-                interaction.message.id,
-                newTimer
+        if (existingTimer) {
+            clearTimeout(
+                existingTimer
             );
         }
+
+        const newTimer =
+            setTimeout(
+                async () => {
+
+                    try {
+
+                        const disabledRow =
+                            new ActionRowBuilder()
+                                .addComponents(
+
+                                    new ButtonBuilder()
+                                        .setCustomId(
+                                            `role_list:previous:${ownerId}`
+                                        )
+                                        .setEmoji(
+                                            "◀️"
+                                        )
+                                        .setStyle(
+                                            ButtonStyle.Secondary
+                                        )
+                                        .setDisabled(
+                                            true
+                                        ),
+
+                                    new ButtonBuilder()
+                                        .setCustomId(
+                                            `role_list:next:${ownerId}`
+                                        )
+                                        .setEmoji(
+                                            "▶️"
+                                        )
+                                        .setStyle(
+                                            ButtonStyle.Secondary
+                                        )
+                                        .setDisabled(
+                                            true
+                                        ),
+
+                                    new ButtonBuilder()
+                                        .setCustomId(
+                                            `role_list:delete:${ownerId}`
+                                        )
+                                        .setEmoji(
+                                            "⏹️"
+                                        )
+                                        .setStyle(
+                                            ButtonStyle.Danger
+                                        )
+                                        .setDisabled(
+                                            true
+                                        )
+
+                                );
+
+                        await interaction.message.edit({
+                            components: [
+                                disabledRow
+                            ]
+                        });
+
+                    } catch (error) {
+
+                        console.error(
+                            "Role List Timeout Error:",
+                            error
+                        );
+
+                    }
+
+                    client.roleListTimers.delete(
+                        messageId
+                    );
+
+                },
+                60000
+            );
+
+        client.roleListTimers.set(
+            messageId,
+            newTimer
+        );
 
     }
 
