@@ -8,6 +8,9 @@ const globalEmbeds =
 const roleEmbeds =
     require("../../embeds/general/roles");
 
+const rolesHelp =
+    require("../../embeds/help/roles");
+
 // =========================
 // COMMAND
 // =========================
@@ -17,6 +20,10 @@ module.exports = {
     name: "role delete",
 
     aliases: ["rd"],
+
+    permissions: [
+        PermissionFlagsBits.ManageRoles
+    ],
 
     async execute(
         client,
@@ -65,13 +72,11 @@ module.exports = {
             message.guild.members.me;
 
         if (!botMember) {
-            return message.channel.send({
-                embeds: [
-                    globalEmbeds.error(
-                        "I couldn't find my member information in this server."
-                    )
-                ]
-            });
+            console.error(
+                "Role Delete Error: Bot member could not be found."
+            );
+
+            return;
         }
 
         const requiredPermissions = [
@@ -105,9 +110,20 @@ module.exports = {
                         )?.[0] || permission
                 );
 
+            if (permissionNames.length === 1) {
+                return message.channel.send({
+                    embeds: [
+                        globalEmbeds.botPermission(
+                            message.author,
+                            permissionNames[0]
+                        )
+                    ]
+                });
+            }
+
             return message.channel.send({
                 embeds: [
-                    globalEmbeds.botPermission(
+                    globalEmbeds.botPermissions(
                         message.author,
                         permissionNames
                     )
@@ -125,9 +141,8 @@ module.exports = {
         if (!roleValue) {
             return message.channel.send({
                 embeds: [
-                    globalEmbeds.missing(
-                        message.author,
-                        "role"
+                    rolesHelp.delete(
+                        message.author
                     )
                 ]
             });
@@ -144,7 +159,11 @@ module.exports = {
                     ""
                 );
 
-            if (/^\d{17,20}$/.test(roleId)) {
+            if (
+                /^\d{17,20}$/.test(
+                    roleId
+                )
+            ) {
 
                 try {
 
@@ -170,6 +189,7 @@ module.exports = {
                     );
 
             }
+
         }
 
         // =========================
@@ -179,7 +199,7 @@ module.exports = {
         if (!role) {
             return message.channel.send({
                 embeds: [
-                    roleEmbeds.couldNotFind(
+                    roleEmbeds.roleNotFound(
                         message.author,
                         roleValue
                     )
