@@ -8,6 +8,9 @@ const globalEmbeds =
 const roleEmbeds =
     require("../../embeds/general/roles");
 
+const rolesHelp =
+    require("../../embeds/help/roles");
+
 // =========================
 // COMMAND
 // =========================
@@ -17,6 +20,10 @@ module.exports = {
     name: "role icon",
 
     aliases: [],
+
+    permissions: [
+        PermissionFlagsBits.ManageRoles
+    ],
 
     async execute(
         client,
@@ -65,13 +72,11 @@ module.exports = {
             message.guild.members.me;
 
         if (!botMember) {
-            return message.channel.send({
-                embeds: [
-                    globalEmbeds.error(
-                        "I couldn't find my member information in this server."
-                    )
-                ]
-            });
+            console.error(
+                "Role Icon Error: Bot member could not be found."
+            );
+
+            return;
         }
 
         const requiredPermissions = [
@@ -105,6 +110,17 @@ module.exports = {
                         )?.[0] || permission
                 );
 
+            if (permissionNames.length === 1) {
+                return message.channel.send({
+                    embeds: [
+                        globalEmbeds.botPermission(
+                            message.author,
+                            permissionNames[0]
+                        )
+                    ]
+                });
+            }
+
             return message.channel.send({
                 embeds: [
                     globalEmbeds.botPermissions(
@@ -119,19 +135,18 @@ module.exports = {
         // ROLE
         // =========================
 
-        if (!args.length) {
+        const roleInput =
+            args[0];
+
+        if (!roleInput) {
             return message.channel.send({
                 embeds: [
-                    globalEmbeds.missing(
-                        message.author,
-                        "role"
+                    rolesHelp.icon(
+                        message.author
                     )
                 ]
             });
         }
-
-        const roleInput =
-            args[0];
 
         const roleId =
             roleInput.replace(
@@ -189,9 +204,8 @@ module.exports = {
         if (!iconInput) {
             return message.channel.send({
                 embeds: [
-                    globalEmbeds.missing(
-                        message.author,
-                        "emoji"
+                    rolesHelp.icon(
+                        message.author
                     )
                 ]
             });
@@ -210,19 +224,9 @@ module.exports = {
             );
 
         if (customEmoji) {
-
             icon =
                 customEmoji[2];
-
         }
-
-        // =========================
-        // REGULAR EMOJI
-        // =========================
-
-        // Unicode emojis are passed directly
-        // to Discord. Custom server emojis are
-        // converted to their emoji ID above.
 
         // =========================
         // ROLE HIERARCHY
