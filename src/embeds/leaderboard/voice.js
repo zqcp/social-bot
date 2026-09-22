@@ -14,7 +14,7 @@ module.exports = {
                     `<:vc_speaker:1551552443081302066> ${guild.name}'s VC leaderboard`
                 )
                 .setDescription(
-                    `-# Resets \`in ${timeUntil(nextWipeAt)}\``
+                    `-# Resets \`in ${timeUntil(nextWipeAt)}\`\n`
                 )
                 .setFooter({
                     text:
@@ -83,7 +83,7 @@ module.exports = {
                                 ? "<:2nd:1551552475771699240>"
                                 : position === 3
                                     ? "<:3rd:1551552489021505596>"
-                                    : String(position).padStart(2, "0");
+                                    : `\`${String(position).padStart(2, "0")}\``;
 
 
                     return (
@@ -99,7 +99,7 @@ module.exports = {
         embed.addFields({
             name: "\u200b",
             value:
-                leaderboard,
+                `\n${leaderboard}`,
             inline: false
         });
 
