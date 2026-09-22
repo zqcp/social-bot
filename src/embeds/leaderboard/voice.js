@@ -14,7 +14,7 @@ module.exports = {
                     `<:vc_speaker:1551552443081302066> ${guild.name}'s VC leaderboard`
                 )
                 .setDescription(
-                    `-# Resets |in ${timeUntil(nextWipeAt)}|`
+                    `-# Resets \`in ${timeUntil(nextWipeAt)}\``
                 )
                 .setFooter({
                     text:
@@ -52,7 +52,7 @@ module.exports = {
         }
 
 
-        const fields =
+        const leaderboard =
             entries
                 .slice(0, 10)
                 .map((entry, index) => {
@@ -86,23 +86,22 @@ module.exports = {
                                     : String(position).padStart(2, "0");
 
 
-                    return {
-                        name: "\u200b",
+                    return (
+                        `${positionText} **${username}** (${mention}) — \`${formatDuration(
+                            entry.totalSeconds
+                        )}\``
+                    );
 
-                        value:
-                            `${positionText} **${username}** (${mention}) — \`${formatDuration(
-                                entry.totalSeconds
-                            )}\`\n\u200b`,
-
-                        inline: false
-                    };
-
-                });
+                })
+                .join("\n\n");
 
 
-        embed.addFields(
-            fields
-        );
+        embed.addFields({
+            name: "\u200b",
+            value:
+                leaderboard,
+            inline: false
+        });
 
 
         return embed;
@@ -176,7 +175,9 @@ function formatDuration(seconds) {
 function timeUntil(target) {
 
     if (!target) {
+
         return "unknown";
+
     }
 
 
@@ -186,7 +187,9 @@ function timeUntil(target) {
 
 
     if (difference <= 0) {
+
         return "now";
+
     }
 
 
