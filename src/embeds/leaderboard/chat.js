@@ -14,62 +14,20 @@ module.exports = {
         nextWipeAt
     ) {
 
-        const leaderboard =
-            entries?.length
-                ? entries
-                    .slice(0, 10)
-                    .map(
-                        (entry, index) => {
-
-                            const position =
-                                index + 1;
-
-                            const medal =
-                                position === 1
-                                    ? "🥇"
-                                    : position === 2
-                                        ? "🥈"
-                                        : position === 3
-                                            ? "🥉"
-                                            : `${position}.`;
-
-                            return `${medal} <@${entry.userId}> — **${Number(entry.messages || 0).toLocaleString()}**`;
-
-                        }
-                    )
-                    .join("\n")
-                : "No messages recorded yet.";
-
-
-        const day =
-            new Intl.DateTimeFormat(
-                "en-US",
-                {
-                    weekday: "long"
-                }
-            ).format(
-                new Date()
-            );
-
-
         const embed =
             new EmbedBuilder()
                 .setColor(
                     config.colors.regular
                 )
                 .setTitle(
-                    "💬 Chat Leaderboard"
+                    `<:text_icon:1551882289116618814> ${guild.name}'s Chat leaderboard`
                 )
-                .setAuthor({
-                    name:
-                        guild.name
-                })
                 .setDescription(
-                    leaderboard
+                    `-# Resets \`in ${timeUntil(nextWipeAt)}\`\n`
                 )
                 .setFooter({
                     text:
-                        `Updates every min • ${day} • Next wipe: in ${timeUntil(nextWipeAt)}`
+                        "updates every 1 min"
                 });
 
 
@@ -89,6 +47,81 @@ module.exports = {
         }
 
 
+        if (!entries?.length) {
+
+            embed.addFields({
+                name: "\u200b",
+                value:
+                    "No messages recorded yet.",
+                inline: false
+            });
+
+            return embed;
+
+        }
+
+
+        const leaderboard =
+            entries
+                .slice(0, 10)
+                .map(
+                    (entry, index) => {
+
+                        const position =
+                            index + 1;
+
+
+                        const member =
+                            guild.members.cache.get(
+                                entry.userId
+                            );
+
+
+                        const username =
+                            member?.user?.username ||
+                            "Unknown User";
+
+
+                        const mention =
+                            `<@${entry.userId}>`;
+
+
+                        const positionText =
+                            position === 1
+                                ? "<:1st:1551552460374413373>"
+                                : position === 2
+                                    ? "<:2nd:1551552475771699240>"
+                                    : position === 3
+                                        ? "<:3rd:1551552489021505596>"
+                                        : `\`${String(
+                                            position
+                                        ).padStart(
+                                            2,
+                                            "0"
+                                        )}\``;
+
+
+                        return (
+                            `${positionText} **${username}** (${mention}) — \`${Number(
+                                entry.messages || 0
+                            ).toLocaleString()} msgs\``
+                        );
+
+                    }
+                )
+                .join(
+                    "\n\n"
+                );
+
+
+        embed.addFields({
+            name: "\u200b",
+            value:
+                `\n${leaderboard}`,
+            inline: false
+        });
+
+
         return embed;
 
     }
@@ -99,6 +132,13 @@ module.exports = {
 function timeUntil(
     target
 ) {
+
+    if (!target) {
+
+        return "unknown";
+
+    }
+
 
     const difference =
         new Date(target).getTime() -
@@ -114,49 +154,70 @@ function timeUntil(
     }
 
 
+    const totalMinutes =
+        Math.floor(
+            difference / 60000
+        );
+
+
     const days =
         Math.floor(
-            difference / 86400000
+            totalMinutes / 1440
         );
 
 
     const hours =
         Math.floor(
             (
-                difference % 86400000
-            ) / 3600000
+                totalMinutes % 1440
+            ) / 60
         );
 
 
     const minutes =
-        Math.floor(
-            (
-                difference % 3600000
-            ) / 60000
-        );
+        totalMinutes % 60;
+
+
+    const parts = [];
 
 
     if (
         days > 0
     ) {
 
-        return `${days}d ${hours}h`;
+        parts.push(
+            `${days}d`
+        );
 
     }
 
 
     if (
-        hours > 0
+        hours > 0 ||
+        days > 0
     ) {
 
-        return `${hours}h ${minutes}m`;
+        parts.push(
+            `${hours}h`
+        );
 
     }
 
 
-    return `${Math.max(
-        minutes,
-        1
-    )}m`;
+    if (
+        minutes > 0 ||
+        parts.length === 0
+    ) {
+
+        parts.push(
+            `${minutes}m`
+        );
+
+    }
+
+
+    return parts.join(
+        " "
+    );
 
 }
