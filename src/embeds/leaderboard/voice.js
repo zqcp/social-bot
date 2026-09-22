@@ -13,6 +13,9 @@ module.exports = {
                 .setTitle(
                     `<:vc_speaker:1551552443081302066> ${guild.name}'s VC leaderboard`
                 )
+                .setDescription(
+                    `-# Resets |in ${timeUntil(nextWipeAt)}|`
+                )
                 .setFooter({
                     text:
                         "updates every 1 min"
@@ -80,19 +83,16 @@ module.exports = {
                                 ? "<:2nd:1551552475771699240>"
                                 : position === 3
                                     ? "<:3rd:1551552489021505596>"
-                                    : `#${position}`;
+                                    : String(position).padStart(2, "0");
 
 
                     return {
                         name: "\u200b",
 
                         value:
-                            `${positionText}\u00a0` +
-                            `**${username}** ` +
-                            `(${mention}) — ` +
-                            `\`${formatDuration(
+                            `${positionText} **${username}** (${mention}) — \`${formatDuration(
                                 entry.totalSeconds
-                            )}\``,
+                            )}\`\n\u200b`,
 
                         inline: false
                     };
@@ -166,6 +166,86 @@ function formatDuration(seconds) {
     parts.push(
         `${minutes}m`
     );
+
+
+    return parts.join(" ");
+
+}
+
+
+function timeUntil(target) {
+
+    if (!target) {
+        return "unknown";
+    }
+
+
+    const difference =
+        new Date(target).getTime() -
+        Date.now();
+
+
+    if (difference <= 0) {
+        return "now";
+    }
+
+
+    const totalMinutes =
+        Math.floor(
+            difference / 60000
+        );
+
+
+    const days =
+        Math.floor(
+            totalMinutes / 1440
+        );
+
+
+    const hours =
+        Math.floor(
+            (totalMinutes % 1440) / 60
+        );
+
+
+    const minutes =
+        totalMinutes % 60;
+
+
+    const parts = [];
+
+
+    if (days > 0) {
+
+        parts.push(
+            `${days}d`
+        );
+
+    }
+
+
+    if (
+        hours > 0 ||
+        days > 0
+    ) {
+
+        parts.push(
+            `${hours}h`
+        );
+
+    }
+
+
+    if (
+        minutes > 0 ||
+        parts.length === 0
+    ) {
+
+        parts.push(
+            `${minutes}m`
+        );
+
+    }
 
 
     return parts.join(" ");
