@@ -194,7 +194,7 @@ function triggered(
                     `${user}\n` +
                     `\`${user.id}\``,
 
-                inline: true
+                inline: false
             },
             {
                 name:
@@ -203,7 +203,7 @@ function triggered(
                 value:
                     "`channel`",
 
-                inline: true
+                inline: false
             },
             {
                 name:
@@ -212,7 +212,7 @@ function triggered(
                 value:
                     channelMention,
 
-                inline: true
+                inline: false
             },
             {
                 name:
@@ -221,7 +221,7 @@ function triggered(
                 value:
                     channelId,
 
-                inline: true
+                inline: false
             },
             {
                 name:
@@ -230,7 +230,7 @@ function triggered(
                 value:
                     `\`${actions} actions\``,
 
-                inline: true
+                inline: false
             },
             {
                 name:
@@ -239,7 +239,7 @@ function triggered(
                 value:
                     `\`${threshold} actions\``,
 
-                inline: true
+                inline: false
             },
             {
                 name:
@@ -248,7 +248,7 @@ function triggered(
                 value:
                     `\`${punishment}\``,
 
-                inline: true
+                inline: false
             },
             {
                 name:
@@ -257,7 +257,7 @@ function triggered(
                 value:
                     result,
 
-                inline: true
+                inline: false
             },
             {
                 name:
