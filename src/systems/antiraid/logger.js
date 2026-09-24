@@ -1,5 +1,6 @@
 const {
-    EmbedBuilder
+    EmbedBuilder,
+    PermissionFlagsBits
 } = require("discord.js");
 
 const config =
@@ -73,19 +74,37 @@ class AntiRaidLogger {
         const bot =
             this.guild.members.me;
 
+        if (!bot) {
+
+            console.error(
+                `[ANTIRAID] Bot member unavailable in ${this.guild.id}.`
+            );
+
+            return false;
+
+        }
+
+        const requiredPermissions = [
+            PermissionFlagsBits.ViewChannel,
+            PermissionFlagsBits.SendMessages,
+            PermissionFlagsBits.EmbedLinks
+        ];
+
+        const missingPermissions =
+            requiredPermissions.filter(
+                permission =>
+                    !channel
+                        .permissionsFor(bot)
+                        .has(permission)
+            );
+
         if (
-            bot &&
-            !channel
-                .permissionsFor(bot)
-                .has([
-                    "ViewChannel",
-                    "SendMessages",
-                    "EmbedLinks"
-                ])
+            missingPermissions.length
         ) {
 
             console.error(
-                `[ANTIRAID] Missing log permissions in ${this.guild.id}.`
+                `[ANTIRAID] Missing log channel permissions in ${this.guild.id}:`,
+                missingPermissions
             );
 
             return false;
@@ -97,11 +116,14 @@ class AntiRaidLogger {
                 embed
             ]
         }).catch(
-            error =>
+            error => {
+
                 console.error(
                     `[ANTIRAID LOG] ${this.guild.id}`,
                     error
-                )
+                );
+
+            }
         );
 
         return true;
