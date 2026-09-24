@@ -15,14 +15,14 @@ function event(
 ) {
 
     let description =
-        `> AntiNuke detected a channel **${action}** event performed by ${user}.`;
+        `AntiNuke detected a channel **${action}** event performed by ${user}.`;
 
     if (
         action === "created"
     ) {
 
         description =
-            `> AntiNuke detected a new channel being **created** by ${user}.`;
+            `AntiNuke detected a new channel being **created** by ${user}.`;
 
     }
 
@@ -31,7 +31,7 @@ function event(
     ) {
 
         description =
-            `> AntiNuke detected a channel **update** performed by ${user}.`;
+            `AntiNuke detected a channel **update** performed by ${user}.`;
 
     }
 
@@ -40,15 +40,13 @@ function event(
     ) {
 
         description =
-            `> AntiNuke detected a channel being **deleted** by ${user}.`;
+            `AntiNuke detected a channel being **deleted** by ${user}.`;
 
     }
 
     return new EmbedBuilder()
         .setColor(
-            action === "deleted"
-                ? config.colors.failed
-                : config.colors.regular
+            "#FFFFFF"
         )
         .setAuthor({
             name:
@@ -71,8 +69,8 @@ function event(
                     "**Triggered by**",
 
                 value:
-                    `> ${user}\n` +
-                    `> \`${user.id}\``,
+                    `${user}\n` +
+                    `\`${user.id}\``,
 
                 inline: true
             },
@@ -81,7 +79,7 @@ function event(
                     "**Module**",
 
                 value:
-                    "> `channel`",
+                    "`channel`",
 
                 inline: true
             },
@@ -90,7 +88,7 @@ function event(
                     "**Action**",
 
                 value:
-                    `> \`${action}\``,
+                    `\`${action}\``,
 
                 inline: true
             },
@@ -99,7 +97,7 @@ function event(
                     "**Channel**",
 
                 value:
-                    `> ${channel}`,
+                    `${channel}`,
 
                 inline: true
             },
@@ -108,7 +106,7 @@ function event(
                     "**Channel ID**",
 
                 value:
-                    `> \`${channel.id}\``,
+                    `\`${channel.id}\``,
 
                 inline: true
             },
@@ -121,10 +119,10 @@ function event(
                         ? changes
                             .map(
                                 change =>
-                                    `> • ${change}`
+                                    `• ${change}`
                             )
                             .join("\n")
-                        : "> None",
+                        : "None",
 
                 inline: false
             },
@@ -133,7 +131,7 @@ function event(
                     "**Result**",
 
                 value:
-                    `> ${result}`,
+                    result,
 
                 inline: false
             }
@@ -157,10 +155,10 @@ function triggered(
             ? detectedActions
                 .map(
                     action =>
-                        `> • ${action}`
+                        `• ${action}`
                 )
                 .join("\n")
-            : "> None";
+            : "None";
 
     return new EmbedBuilder()
         .setColor(
@@ -170,7 +168,7 @@ function triggered(
             "AntiNuke Triggered"
         )
         .setDescription(
-            `> AntiNuke detected destructive activity from ${user} and activated the \`channel\` protection.\n>`
+            `AntiNuke detected destructive activity from ${user} and activated the \`channel\` protection.`
         )
         .addFields(
             {
@@ -178,8 +176,8 @@ function triggered(
                     "**Triggered by**",
 
                 value:
-                    `> ${user}\n` +
-                    `> \`${user.id}\``,
+                    `${user}\n` +
+                    `\`${user.id}\``,
 
                 inline: false
             },
@@ -188,7 +186,7 @@ function triggered(
                     "**Module**",
 
                 value:
-                    "> `channel`",
+                    "`channel`",
 
                 inline: false
             },
@@ -197,7 +195,7 @@ function triggered(
                     "**Activity**",
 
                 value:
-                    `> \`${actions} actions\``,
+                    `\`${actions} actions\``,
 
                 inline: false
             },
@@ -206,7 +204,7 @@ function triggered(
                     "**Threshold**",
 
                 value:
-                    `> \`${threshold} actions\``,
+                    `\`${threshold} actions\``,
 
                 inline: false
             },
@@ -224,7 +222,7 @@ function triggered(
                     "**Punishment**",
 
                 value:
-                    `> \`${punishment}\``,
+                    `\`${punishment}\``,
 
                 inline: false
             },
@@ -233,7 +231,7 @@ function triggered(
                     "**Result**",
 
                 value:
-                    `> ${result}`,
+                    result,
 
                 inline: false
             }
@@ -261,39 +259,39 @@ function recovery(
                             "string"
                         ) {
 
-                            return `> • ${channel}`;
+                            return `• ${channel}`;
 
                         }
 
                         return (
-                            `> • ${channel.name || "Unknown channel"} ` +
+                            `• ${channel.name || "Unknown channel"} ` +
                             `(\`${channel.id}\`)`
                         );
 
                     }
                 )
                 .join("\n")
-            : "> None";
+            : "None";
 
     const actionList =
         recoveredActions.length
             ? recoveredActions
                 .map(
                     action =>
-                        `> • ${action}`
+                        `• ${action}`
                 )
                 .join("\n")
-            : "> None";
+            : "None";
 
     return new EmbedBuilder()
         .setColor(
-            config.colors.success
+            "#FFFFFF"
         )
         .setTitle(
             "AntiNuke Recovery"
         )
         .setDescription(
-            `> AntiNuke successfully recovered the affected channels after the \`channel\` protection was triggered.`
+            `AntiNuke successfully recovered the affected channels after the \`channel\` protection was triggered.`
         )
         .addFields(
             {
@@ -301,8 +299,8 @@ function recovery(
                     "**Triggered by**",
 
                 value:
-                    `> ${user}\n` +
-                    `> \`${user.id}\``,
+                    `${user}\n` +
+                    `\`${user.id}\``,
 
                 inline: true
             },
@@ -311,7 +309,7 @@ function recovery(
                     "**Module**",
 
                 value:
-                    "> `channel`",
+                    "`channel`",
 
                 inline: true
             },
@@ -338,7 +336,7 @@ function recovery(
                     "**Result**",
 
                 value:
-                    `> ${result}`,
+                    result,
 
                 inline: false
             }
