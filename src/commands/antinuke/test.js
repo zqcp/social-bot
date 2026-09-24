@@ -1,278 +1,373 @@
 const {
-    PermissionFlagsBits
+    EmbedBuilder
 } = require("discord.js");
 
-const globalEmbeds =
-    require("../../embeds/general/global");
-
-const antiNukeGeneral =
-    require("../../embeds/antinuke/general");
-
-const channelLogs =
-    require("../../systems/antinuke/logs/channel");
+const config =
+    require("../../../config");
 
 
-module.exports = {
+function event(
+    user,
+    action,
+    channel,
+    changes = [],
+    result = "Channel event detected."
+) {
 
-    name:
-        "antinuke test",
+    let description =
+        `Detected a channel **${action}** event performed by ${user}.`;
 
-    aliases: [],
-
-    permissions: [
-        PermissionFlagsBits.Administrator
-    ],
-
-    async execute(
-        client,
-        message
+    if (
+        action === "created"
     ) {
 
-        if (
-            !message.guild
-        ) {
-            return;
-        }
-
-
-        // =========================
-        // USER PERMISSIONS
-        // =========================
-
-        if (
-            !message.member.permissions.has(
-                PermissionFlagsBits.Administrator
-            )
-        ) {
-
-            return message.channel.send({
-                embeds: [
-                    globalEmbeds.permission(
-                        message.author,
-                        "Administrator"
-                    )
-                ]
-            });
-
-        }
-
-
-        // =========================
-        // BOT PERMISSIONS
-        // =========================
-
-        const botMember =
-            message.guild.members.me;
-
-        if (!botMember) {
-
-            console.error(
-                `[ANTINUKE TEST] Bot member missing in ${message.guild.id}.`
-            );
-
-            return;
-
-        }
-
-        const requiredPermissions = [
-            PermissionFlagsBits.ViewChannel,
-            PermissionFlagsBits.SendMessages,
-            PermissionFlagsBits.EmbedLinks
-        ];
-
-        const missingPermissions =
-            requiredPermissions.filter(
-                permission =>
-                    !message.channel
-                        .permissionsFor(
-                            botMember
-                        )
-                        .has(
-                            permission
-                        )
-            );
-
-        if (
-            missingPermissions.length
-        ) {
-
-            return message.channel.send({
-                embeds: [
-                    globalEmbeds.botPermissions(
-                        message.author,
-                        missingPermissions
-                    )
-                ]
-            });
-
-        }
-
-
-        // =========================
-        // ANTINUKE ADMIN
-        // =========================
-
-        const AntiNuke =
-            require("../../models/AntiNuke");
-
-        const antiNuke =
-            await AntiNuke.findOne({
-                guildId:
-                    message.guild.id
-            }).catch(
-                error => {
-
-                    console.error(
-                        "[ANTINUKE TEST]",
-                        error
-                    );
-
-                    return null;
-
-                }
-            );
-
-        const isOwner =
-            message.guild.ownerId ===
-            message.author.id;
-
-        const isAntiNukeAdmin =
-            antiNuke?.admins?.includes(
-                message.author.id
-            );
-
-        if (
-            !isOwner &&
-            !isAntiNukeAdmin
-        ) {
-
-            return message.channel.send({
-                embeds: [
-                    antiNukeGeneral.owner(
-                        message.author
-                    )
-                ]
-            });
-
-        }
-
-
-        // =========================
-        // CHANNEL LOG TEST
-        // =========================
-
-        const channel =
-            message.channel;
-
-        const user =
-            message.author;
-
-
-        // =========================
-        // CREATED
-        // =========================
-
-        const created =
-            channelLogs.event(
-                user,
-                "created",
-                channel,
-                [
-                    `${channel.name} — created`
-                ],
-                "Test event only. No channel was created."
-            );
-
-
-        // =========================
-        // UPDATED
-        // =========================
-
-        const updated =
-            channelLogs.event(
-                user,
-                "updated",
-                channel,
-                [
-                    "Name changed",
-                    "Topic changed",
-                    "Permission overwrite changed"
-                ],
-                "Test event only. No channel was updated."
-            );
-
-
-        // =========================
-        // DELETED
-        // =========================
-
-        const deleted =
-            channelLogs.event(
-                user,
-                "deleted",
-                channel,
-                [
-                    `${channel.name} — deleted`,
-                    "Permission overwrites detected"
-                ],
-                "Test event only. No channel was deleted."
-            );
-
-
-        // =========================
-        // TRIGGERED
-        // =========================
-
-        const triggered =
-            channelLogs.triggered(
-                user,
-                8,
-                5,
-                [
-                    `${channel} — deleted`,
-                    "#rules — deleted",
-                    "#media — deleted",
-                    "#staff — deleted",
-                    "#general — deleted"
-                ],
-                "ban",
-                "Successfully applied"
-            );
-
-
-        // =========================
-        // RECOVERY
-        // =========================
-
-        const recovery =
-            channelLogs.recovery(
-                user,
-                [
-                    channel
-                ],
-                [
-                    `${channel.name} — recreated`,
-                    "Permission overwrites restored",
-                    "Channel settings restored"
-                ],
-                "Successfully recovered"
-            );
-
-
-        // =========================
-        // SEND LOG EMBEDS
-        // =========================
-
-        return message.channel.send({
-            embeds: [
-                created,
-                updated,
-                deleted,
-                triggered,
-                recovery
-            ]
-        });
+        description =
+            `Detected a new channel being **created** by ${user}.`;
 
     }
 
+    if (
+        action === "updated"
+    ) {
+
+        description =
+            `Detected a channel **update** performed by ${user}.`;
+
+    }
+
+    if (
+        action === "deleted"
+    ) {
+
+        description =
+            `Detected a channel being **deleted** by ${user}.`;
+
+    }
+
+    return new EmbedBuilder()
+        .setColor(
+            "#FFFFFF"
+        )
+        .setAuthor({
+            name:
+                user.username,
+
+            iconURL:
+                user.displayAvatarURL({
+                    dynamic: true
+                })
+        })
+        .setTitle(
+            "AntiNuke Channel Event"
+        )
+        .setDescription(
+            description
+        )
+        .addFields(
+            {
+                name:
+                    "**Triggered by**",
+
+                value:
+                    `${user}\n` +
+                    `\`${user.id}\``,
+
+                inline: true
+            },
+            {
+                name:
+                    "**Module**",
+
+                value:
+                    "`channel`",
+
+                inline: true
+            },
+            {
+                name:
+                    "**Action**",
+
+                value:
+                    `\`${action}\``,
+
+                inline: true
+            },
+            {
+                name:
+                    "**Channel**",
+
+                value:
+                    `${channel}`,
+
+                inline: true
+            },
+            {
+                name:
+                    "**Channel ID**",
+
+                value:
+                    `\`${channel.id}\``,
+
+                inline: true
+            },
+            {
+                name:
+                    "**Changes**",
+
+                value:
+                    changes.length
+                        ? changes
+                            .map(
+                                change =>
+                                    `• ${change}`
+                            )
+                            .join("\n")
+                        : "None",
+
+                inline: false
+            },
+            {
+                name:
+                    "**Result**",
+
+                value:
+                    result,
+
+                inline: false
+            }
+        )
+        .setTimestamp();
+
+}
+
+
+function triggered(
+    user,
+    actions,
+    threshold,
+    detectedActions = [],
+    punishment,
+    result
+) {
+
+    const actionList =
+        detectedActions.length
+            ? detectedActions
+                .map(
+                    action =>
+                        `• ${action}`
+                )
+                .join("\n")
+            : "None";
+
+    return new EmbedBuilder()
+        .setColor(
+            "#FFFFFF"
+        )
+        .setTitle(
+            "AntiNuke Triggered"
+        )
+        .setDescription(
+            "Destructive channel activity detected."
+        )
+        .addFields(
+            {
+                name:
+                    "**Triggered by**",
+
+                value:
+                    `${user}\n` +
+                    `\`${user.id}\``,
+
+                inline: true
+            },
+            {
+                name:
+                    "**Module**",
+
+                value:
+                    "`channel`",
+
+                inline: true
+            },
+            {
+                name:
+                    "**Channel**",
+
+                value:
+                    detectedActions.length
+                        ? detectedActions[0]
+                        : "Unknown",
+
+                inline: true
+            },
+            {
+                name:
+                    "**Channel ID**",
+
+                value:
+                    `\`${user.id}\``,
+
+                inline: true
+            },
+            {
+                name:
+                    "**Activity**",
+
+                value:
+                    `\`${actions} actions\``,
+
+                inline: true
+            },
+            {
+                name:
+                    "**Threshold**",
+
+                value:
+                    `\`${threshold} actions\``,
+
+                inline: true
+            },
+            {
+                name:
+                    "**Punishment**",
+
+                value:
+                    `\`${punishment}\``,
+
+                inline: true
+            },
+            {
+                name:
+                    "**Result**",
+
+                value:
+                    result,
+
+                inline: true
+            },
+            {
+                name:
+                    "**Detected actions**",
+
+                value:
+                    actionList,
+
+                inline: false
+            }
+        )
+        .setTimestamp();
+
+}
+
+
+function recovery(
+    user,
+    channels = [],
+    recoveredActions = [],
+    result = "Channel recovery completed."
+) {
+
+    const channelList =
+        channels.length
+            ? channels
+                .map(
+                    channel => {
+
+                        if (
+                            typeof channel ===
+                            "string"
+                        ) {
+
+                            return `• ${channel}`;
+
+                        }
+
+                        return (
+                            `• ${channel.name || "Unknown channel"} ` +
+                            `(\`${channel.id}\`)`
+                        );
+
+                    }
+                )
+                .join("\n")
+            : "None";
+
+    const actionList =
+        recoveredActions.length
+            ? recoveredActions
+                .map(
+                    action =>
+                        `• ${action}`
+                )
+                .join("\n")
+            : "None";
+
+    return new EmbedBuilder()
+        .setColor(
+            "#FFFFFF"
+        )
+        .setTitle(
+            "AntiNuke Recovery"
+        )
+        .setDescription(
+            `successfully recovered the affected channels after the \`channel\` protection was triggered.`
+        )
+        .addFields(
+            {
+                name:
+                    "**Triggered by**",
+
+                value:
+                    `${user}\n` +
+                    `\`${user.id}\``,
+
+                inline: true
+            },
+            {
+                name:
+                    "**Module**",
+
+                value:
+                    "`channel`",
+
+                inline: true
+            },
+            {
+                name:
+                    "**Recovered channels**",
+
+                value:
+                    channelList,
+
+                inline: false
+            },
+            {
+                name:
+                    "**Recovered actions**",
+
+                value:
+                    actionList,
+
+                inline: false
+            },
+            {
+                name:
+                    "**Result**",
+
+                value:
+                    result,
+
+                inline: false
+            }
+        )
+        .setTimestamp();
+
+}
+
+
+module.exports = {
+    event,
+    triggered,
+    recovery
 };
