@@ -1,5 +1,6 @@
 const {
-    PermissionFlagsBits
+    PermissionFlagsBits,
+    EmbedBuilder
 } = require("discord.js");
 
 const globalEmbeds =
@@ -34,6 +35,11 @@ module.exports = {
             return;
         }
 
+
+        // =========================
+        // USER PERMISSIONS
+        // =========================
+
         if (
             !message.member.permissions.has(
                 PermissionFlagsBits.Administrator
@@ -50,6 +56,11 @@ module.exports = {
             });
 
         }
+
+
+        // =========================
+        // BOT PERMISSIONS
+        // =========================
 
         const botMember =
             message.guild.members.me;
@@ -97,6 +108,11 @@ module.exports = {
 
         }
 
+
+        // =========================
+        // ANTINUKE ADMIN
+        // =========================
+
         const AntiNuke =
             require("../../models/AntiNuke");
 
@@ -141,11 +157,21 @@ module.exports = {
 
         }
 
+
+        // =========================
+        // TEST VALUES
+        // =========================
+
         const channel =
             message.channel;
 
         const user =
             message.author;
+
+
+        // =========================
+        // CREATED
+        // =========================
 
         const created =
             channelLogs.event(
@@ -157,6 +183,11 @@ module.exports = {
                 ],
                 "Test event only. No channel was created."
             );
+
+
+        // =========================
+        // UPDATED
+        // =========================
 
         const updated =
             channelLogs.event(
@@ -171,6 +202,11 @@ module.exports = {
                 "Test event only. No channel was updated."
             );
 
+
+        // =========================
+        // DELETED
+        // =========================
+
         const deleted =
             channelLogs.event(
                 user,
@@ -183,22 +219,128 @@ module.exports = {
                 "Test event only. No channel was deleted."
             );
 
+
+        // =========================
+        // TRIGGERED
+        // =========================
+
+        const detectedActions = [
+            `${channel.name} — deleted`,
+            "#rules — deleted",
+            "#media — deleted",
+            "#staff — deleted",
+            "#general — deleted"
+        ];
+
+        const actionList =
+            detectedActions
+                .map(
+                    action =>
+                        `• ${action}`
+                )
+                .join("\n");
+
         const triggered =
-            channelLogs.triggered(
-                user,
-                8,
-                5,
-                [
-                    `${channel.name} — deleted`,
-                    "#rules — deleted",
-                    "#media — deleted",
-                    "#staff — deleted",
-                    "#general — deleted"
-                ],
-                "ban",
-                "Successfully applied",
-                channel
-            );
+            new EmbedBuilder()
+                .setColor(
+                    "#FFFFFF"
+                )
+                .setTitle(
+                    "AntiNuke Triggered"
+                )
+                .setDescription(
+                    `AntiNuke detected destructive activity from ${user} and activated the \`channel\` protection.`
+                )
+                .addFields(
+                    {
+                        name:
+                            "**Triggered by**",
+
+                        value:
+                            `${user}\n` +
+                            `\`${user.id}\``,
+
+                        inline: true
+                    },
+                    {
+                        name:
+                            "**Module**",
+
+                        value:
+                            "`channel`",
+
+                        inline: true
+                    },
+                    {
+                        name:
+                            "**Channel**",
+
+                        value:
+                            `<#${channel.id}>`,
+
+                        inline: true
+                    },
+                    {
+                        name:
+                            "**Channel ID**",
+
+                        value:
+                            `\`${channel.id}\``,
+
+                        inline: true
+                    },
+                    {
+                        name:
+                            "**Activity**",
+
+                        value:
+                            "`8 actions`",
+
+                        inline: true
+                    },
+                    {
+                        name:
+                            "**Threshold**",
+
+                        value:
+                            "`5 actions`",
+
+                        inline: true
+                    },
+                    {
+                        name:
+                            "**Punishment**",
+
+                        value:
+                            "`ban`",
+
+                        inline: true
+                    },
+                    {
+                        name:
+                            "**Result**",
+
+                        value:
+                            "Successfully applied",
+
+                        inline: true
+                    },
+                    {
+                        name:
+                            "**Detected actions**",
+
+                        value:
+                            actionList,
+
+                        inline: false
+                    }
+                )
+                .setTimestamp();
+
+
+        // =========================
+        // RECOVERY
+        // =========================
 
         const recovery =
             channelLogs.recovery(
@@ -213,6 +355,11 @@ module.exports = {
                 ],
                 "Successfully recovered"
             );
+
+
+        // =========================
+        // SEND LOG EMBEDS
+        // =========================
 
         return message.channel.send({
             embeds: [
