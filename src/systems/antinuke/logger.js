@@ -171,7 +171,8 @@ async function send(
                     data.threshold,
                     data.detectedActions || [],
                     data.punishment,
-                    data.result
+                    data.result,
+                    data.target
                 );
 
             break;
