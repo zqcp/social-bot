@@ -158,24 +158,118 @@ module.exports = {
 
 
         // =========================
-        // TEST CHANNEL EVENT
+        // CHANNEL LOG TEST
         // =========================
 
-        const embed =
+        const channel =
+            message.channel;
+
+        const user =
+            message.author;
+
+
+        // =========================
+        // CREATED
+        // =========================
+
+        const created =
             channelLogs.event(
-                message.author,
-                "deleted",
-                message.channel,
+                user,
+                "created",
+                channel,
                 [
-                    `${message.channel.name} — deleted`,
+                    `${channel.name} — created`
+                ],
+                "Test event only. No channel was created."
+            );
+
+
+        // =========================
+        // UPDATED
+        // =========================
+
+        const updated =
+            channelLogs.event(
+                user,
+                "updated",
+                channel,
+                [
+                    "Name changed",
+                    "Topic changed",
+                    "Permission overwrite changed"
+                ],
+                "Test event only. No channel was updated."
+            );
+
+
+        // =========================
+        // DELETED
+        // =========================
+
+        const deleted =
+            channelLogs.event(
+                user,
+                "deleted",
+                channel,
+                [
+                    `${channel.name} — deleted`,
                     "Permission overwrites detected"
                 ],
                 "Test event only. No channel was deleted."
             );
 
+
+        // =========================
+        // TRIGGERED
+        // =========================
+
+        const triggered =
+            channelLogs.triggered(
+                user,
+                8,
+                5,
+                [
+                    `${channel} — deleted`,
+                    "#rules — deleted",
+                    "#media — deleted",
+                    "#staff — deleted",
+                    "#general — deleted"
+                ],
+                "ban",
+                "Successfully applied"
+            );
+
+
+        // =========================
+        // RECOVERY
+        // =========================
+
+        const recovery =
+            channelLogs.recovery(
+                user,
+                [
+                    channel
+                ],
+                [
+                    `${channel.name} — recreated`,
+                    "Permission overwrites restored",
+                    "Channel settings restored"
+                ],
+                "Successfully recovered"
+            );
+
+
+        // =========================
+        // SEND LOG EMBEDS
+        // =========================
+
         return message.channel.send({
             embeds: [
-                embed
+                created,
+                updated,
+                deleted,
+                triggered,
+                recovery
             ]
         });
 
