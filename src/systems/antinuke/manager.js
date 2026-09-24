@@ -81,7 +81,8 @@ async function handle(
     guild,
     module,
     member,
-    target
+    target,
+    event = {}
 ) {
 
     if (
@@ -146,9 +147,43 @@ async function handle(
 
     await logger.send(
         guild,
-        punished
-            ? `${member}: AntiNuke triggered **${module}** protection. Punishment: **${result.punishment}**.`
-            : `${member}: AntiNuke detected **${module}** activity but failed to apply **${result.punishment}**.`
+        {
+            module,
+            user:
+                member.user,
+
+            actions:
+                result.userActions ||
+                result.actions ||
+                0,
+
+            threshold:
+                result.threshold,
+
+            punishment:
+                result.punishment,
+
+            result:
+                punished
+                    ? "Punishment applied successfully."
+                    : "Failed to apply punishment.",
+
+            action:
+                event.action ||
+                module,
+
+            detectedActions:
+                event.actions ||
+                [],
+
+            target:
+                event.target ||
+                target,
+
+            auditEntry:
+                event.auditEntry ||
+                null
+        }
     );
 
     return {
