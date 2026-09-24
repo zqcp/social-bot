@@ -73,6 +73,14 @@ module.exports = {
             .setDescription(
                 `${config.emojis.failed} ${user}: Failed to **${action}**. Please try again.`
             );
+    },
+
+    owner(user) {
+        return new EmbedBuilder()
+            .setColor(config.colors.error)
+            .setDescription(
+                `${config.emojis.error} ${user}: You cannot use this command. Only the **server owner** can manage AntiRaid.`
+            );
     }
 
 };
