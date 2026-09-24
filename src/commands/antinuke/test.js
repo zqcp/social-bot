@@ -9,7 +9,7 @@ const antiNukeGeneral =
     require("../../embeds/antinuke/general");
 
 const channelLogs =
-    require("../../embeds/antinuke/logs/channel");
+    require("../../../systems/antinuke/logs/channel");
 
 
 module.exports = {
