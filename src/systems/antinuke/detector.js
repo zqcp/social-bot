@@ -60,9 +60,7 @@ function check(
 
     }
 
-    if (
-        !user
-    ) {
+    if (!user) {
 
         return {
             allowed: true
@@ -100,19 +98,21 @@ function check(
 
     }
 
-    const actions =
-        state.addAction(
-            antiNuke.guildId,
-            module,
-            user.id
-        );
+    const window =
+        antiNuke.protection?.duration ||
+        60 * 1000;
+
+    state.addAction(
+        antiNuke.guildId,
+        module,
+        user.id
+    );
 
     const active =
         state.cleanup(
             antiNuke.guildId,
             module,
-            antiNuke.protection?.duration ||
-                60 * 1000
+            window
         );
 
     const userActions =
@@ -141,7 +141,7 @@ function check(
             moduleConfig.punishment,
 
         actions:
-            actions.length,
+            active.length,
 
         userActions:
             userActions.length
