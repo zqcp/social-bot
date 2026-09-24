@@ -199,18 +199,24 @@ function triggered(
                 "\u200b",
 
             value:
-`**Triggered by**\u2003\u2003**Module**\u2003\u2003**Channel**
-${user}\u2003\u2003\u2003\u2003\`channel\`\u2003\u2003\u2003${channelMention}
+`**Triggered by**\u2003\u2003**Module**
+${user}\u2003\u2003\u2003\u2003\`channel\`
 
-**Channel ID**\u2003\u2003**Activity**\u2003\u2003**Threshold**
-${channelId}\u2003\u2003\u2003\u2003\`${actions} actions\`\u2003\u2003\`${threshold} actions\`
+**Channel**
+${channelMention}
+
+**Channel ID**
+${channelId}
+
+**Activity**\u2003\u2003**Threshold**
+\`${actions} actions\`\u2003\u2003\`${threshold} actions\`
 
 **Punishment**\u2003\u2003**Result**
-\`${punishment}\`\u2003\u2003\u2003${result}
+\`${punishment}\`\u2003\u2003${result}
 
 **Detected actions**
 ${actionList}`
-        })
+        )
         .setTimestamp();
 
 }
@@ -277,62 +283,22 @@ function recovery(
         .setDescription(
             "Successfully recovered the affected channels."
         )
-        .addFields(
-            {
-                name:
-                    "**Triggered by**",
+        .addFields({
+            name:
+                "\u200b",
 
-                value:
-                    `${user}\n` +
-                    `\`${user.id}\``,
+            value:
+`**Triggered by**\u2003\u2003**Module**
+${user}\u2003\u2003\u2003\u2003\`channel\`
 
-                inline: true
-            },
-            {
-                name:
-                    "**Module**",
+**Recovered channels**
+${channelList}
 
-                value:
-                    "`channel`",
+**Recovered actions**
+${actionList}
 
-                inline: true
-            },
-            {
-                name:
-                    "\u200b",
-
-                value:
-                    "\u200b",
-
-                inline: true
-            },
-            {
-                name:
-                    "**Recovered channels**",
-
-                value:
-                    channelList,
-
-                inline: false
-            },
-            {
-                name:
-                    "**Recovered actions**",
-
-                value:
-                    actionList,
-
-                inline: false
-            },
-            {
-                name:
-                    "**Result**",
-
-                value:
-                    result,
-
-                inline: false
-            }
+**Result**
+${result}`
         )
         .setTimestamp();
 
