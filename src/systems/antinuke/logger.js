@@ -1,22 +1,22 @@
 const {
-    EmbedBuilder,
     PermissionFlagsBits
 } = require("discord.js");
 
-const config =
-    require("../../config");
+const AntiNuke =
+    require("../../models/AntiNuke");
+
+const logs =
+    require("../../embeds/antinuke/logs");
+
 
 async function send(
     guild,
-    description
+    data
 ) {
 
     if (!guild) {
         return;
     }
-
-    const AntiNuke =
-        require("../../models/AntiNuke");
 
     const antiNuke =
         await AntiNuke.findOne({
@@ -121,15 +121,153 @@ async function send(
 
     }
 
-    const embed =
-        new EmbedBuilder()
-            .setColor(
-                config.colors.failed
-            )
-            .setDescription(
-                description
-            )
-            .setTimestamp();
+    if (
+        !data?.module ||
+        !data.user
+    ) {
+        return;
+    }
+
+    let embed = null;
+
+    switch (
+        data.module
+    ) {
+
+        case "ban":
+
+            embed =
+                logs.ban(
+                    data.user,
+                    data.actions,
+                    data.threshold,
+                    data.bannedMembers || [],
+                    data.punishment,
+                    data.result
+                );
+
+            break;
+
+        case "kick":
+
+            embed =
+                logs.kick(
+                    data.user,
+                    data.actions,
+                    data.threshold,
+                    data.kickedMembers || [],
+                    data.punishment,
+                    data.result
+                );
+
+            break;
+
+        case "channel":
+
+            embed =
+                logs.channel(
+                    data.user,
+                    data.actions,
+                    data.threshold,
+                    data.detectedActions || [],
+                    data.punishment,
+                    data.result
+                );
+
+            break;
+
+        case "role":
+
+            embed =
+                logs.role(
+                    data.user,
+                    data.actions,
+                    data.threshold,
+                    data.detectedActions || [],
+                    data.punishment,
+                    data.result
+                );
+
+            break;
+
+        case "emoji":
+
+            embed =
+                logs.emoji(
+                    data.user,
+                    data.actions,
+                    data.threshold,
+                    data.detectedActions || [],
+                    data.punishment,
+                    data.result
+                );
+
+            break;
+
+        case "botadd":
+
+            embed =
+                logs.botadd(
+                    data.user,
+                    data.actions,
+                    data.threshold,
+                    data.addedBots || [],
+                    data.punishment,
+                    data.result
+                );
+
+            break;
+
+        case "webhook":
+
+            embed =
+                logs.webhook(
+                    data.user,
+                    data.actions,
+                    data.threshold,
+                    data.detectedActions || [],
+                    data.punishment,
+                    data.result
+                );
+
+            break;
+
+        case "vanity":
+
+            embed =
+                logs.vanity(
+                    data.user,
+                    data.actions,
+                    data.threshold,
+                    data.detectedChanges || [],
+                    data.punishment,
+                    data.result
+                );
+
+            break;
+
+        case "permissions":
+
+            embed =
+                logs.permissions(
+                    data.user,
+                    data.actions,
+                    data.threshold,
+                    data.detectedChanges || [],
+                    data.punishment,
+                    data.result
+                );
+
+            break;
+
+        default:
+            return;
+
+    }
+
+    if (!embed) {
+        return;
+    }
 
     await channel.send({
         embeds: [
@@ -147,6 +285,7 @@ async function send(
     );
 
 }
+
 
 module.exports = {
     send
