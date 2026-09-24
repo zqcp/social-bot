@@ -216,7 +216,7 @@ ${channelId}
 
 **Detected actions**
 ${actionList}`
-        )
+        })
         .setTimestamp();
 
 }
@@ -299,7 +299,7 @@ ${actionList}
 
 **Result**
 ${result}`
-        )
+        })
         .setTimestamp();
 
 }
