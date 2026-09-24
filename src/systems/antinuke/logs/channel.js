@@ -15,14 +15,14 @@ function event(
 ) {
 
     let description =
-        `AntiNuke detected a channel **${action}** event performed by ${user}.`;
+        `Detected a channel **${action}** event performed by ${user}.`;
 
     if (
         action === "created"
     ) {
 
         description =
-            `AntiNuke detected a new channel being **created** by ${user}.`;
+            `Detected a new channel being **created** by ${user}.`;
 
     }
 
@@ -31,7 +31,7 @@ function event(
     ) {
 
         description =
-            `AntiNuke detected a channel **update** performed by ${user}.`;
+            `Detected a channel **update** performed by ${user}.`;
 
     }
 
@@ -40,7 +40,7 @@ function event(
     ) {
 
         description =
-            `AntiNuke detected a channel being **deleted** by ${user}.`;
+            `Detected a channel being **deleted** by ${user}.`;
 
     }
 
@@ -168,7 +168,7 @@ function triggered(
             "AntiNuke Triggered"
         )
         .setDescription(
-            `AntiNuke detected destructive activity from ${user} and activated the \`channel\` protection.`
+            "Destructive channel activity detected."
         )
         .addFields(
             {
@@ -179,7 +179,7 @@ function triggered(
                     `${user}\n` +
                     `\`${user.id}\``,
 
-                inline: false
+                inline: true
             },
             {
                 name:
@@ -188,7 +188,27 @@ function triggered(
                 value:
                     "`channel`",
 
-                inline: false
+                inline: true
+            },
+            {
+                name:
+                    "**Channel**",
+
+                value:
+                    detectedActions.length
+                        ? detectedActions[0]
+                        : "Unknown",
+
+                inline: true
+            },
+            {
+                name:
+                    "**Channel ID**",
+
+                value:
+                    `\`${user.id}\``,
+
+                inline: true
             },
             {
                 name:
@@ -197,7 +217,7 @@ function triggered(
                 value:
                     `\`${actions} actions\``,
 
-                inline: false
+                inline: true
             },
             {
                 name:
@@ -206,16 +226,7 @@ function triggered(
                 value:
                     `\`${threshold} actions\``,
 
-                inline: false
-            },
-            {
-                name:
-                    "**Detected actions**",
-
-                value:
-                    actionList,
-
-                inline: false
+                inline: true
             },
             {
                 name:
@@ -224,7 +235,7 @@ function triggered(
                 value:
                     `\`${punishment}\``,
 
-                inline: false
+                inline: true
             },
             {
                 name:
@@ -232,6 +243,15 @@ function triggered(
 
                 value:
                     result,
+
+                inline: true
+            },
+            {
+                name:
+                    "**Detected actions**",
+
+                value:
+                    actionList,
 
                 inline: false
             }
@@ -291,7 +311,7 @@ function recovery(
             "AntiNuke Recovery"
         )
         .setDescription(
-            `AntiNuke successfully recovered the affected channels after the \`channel\` protection was triggered.`
+            `successfully recovered the affected channels after the \`channel\` protection was triggered.`
         )
         .addFields(
             {
