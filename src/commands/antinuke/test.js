@@ -236,7 +236,8 @@ module.exports = {
                     "#general — deleted"
                 ],
                 "ban",
-                "Successfully applied"
+                "Successfully applied",
+                channel
             );
 
 
