@@ -147,29 +147,30 @@ function triggered(
     user,
     actions,
     threshold,
-    detectedActions,
+    detectedActions = [],
     punishment,
     result
 ) {
 
+    const actionList =
+        detectedActions.length
+            ? detectedActions
+                .map(
+                    action =>
+                        `> • ${action}`
+                )
+                .join("\n")
+            : "> None";
+
     return new EmbedBuilder()
         .setColor(
-            config.colors.failed
+            "#FFFFFF"
         )
-        .setAuthor({
-            name:
-                user.username,
-
-            iconURL:
-                user.displayAvatarURL({
-                    dynamic: true
-                })
-        })
         .setTitle(
             "AntiNuke Triggered"
         )
         .setDescription(
-            `> AntiNuke detected destructive activity from ${user} and activated the \`channel\` protection.`
+            `> AntiNuke detected destructive activity from ${user} and activated the \`channel\` protection.\n>`
         )
         .addFields(
             {
@@ -180,7 +181,7 @@ function triggered(
                     `> ${user}\n` +
                     `> \`${user.id}\``,
 
-                inline: true
+                inline: false
             },
             {
                 name:
@@ -189,16 +190,16 @@ function triggered(
                 value:
                     "> `channel`",
 
-                inline: true
+                inline: false
             },
             {
                 name:
                     "**Activity**",
 
                 value:
-                    `> \`${actions} channel actions\``,
+                    `> \`${actions} actions\``,
 
-                inline: true
+                inline: false
             },
             {
                 name:
@@ -207,21 +208,14 @@ function triggered(
                 value:
                     `> \`${threshold} actions\``,
 
-                inline: true
+                inline: false
             },
             {
                 name:
                     "**Detected actions**",
 
                 value:
-                    detectedActions.length
-                        ? detectedActions
-                            .map(
-                                action =>
-                                    `> • ${action}`
-                            )
-                            .join("\n")
-                        : "> None",
+                    actionList,
 
                 inline: false
             },
@@ -232,7 +226,7 @@ function triggered(
                 value:
                     `> \`${punishment}\``,
 
-                inline: true
+                inline: false
             },
             {
                 name:
@@ -241,7 +235,7 @@ function triggered(
                 value:
                     `> ${result}`,
 
-                inline: true
+                inline: false
             }
         )
         .setTimestamp();
