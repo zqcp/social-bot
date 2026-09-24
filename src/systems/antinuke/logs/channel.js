@@ -147,7 +147,8 @@ function triggered(
     threshold,
     detectedActions = [],
     punishment,
-    result
+    result,
+    channel
 ) {
 
     const actionList =
@@ -195,8 +196,8 @@ function triggered(
                     "**Channel**",
 
                 value:
-                    detectedActions.length
-                        ? detectedActions[0]
+                    channel
+                        ? `${channel}`
                         : "Unknown",
 
                 inline: true
@@ -206,7 +207,9 @@ function triggered(
                     "**Channel ID**",
 
                 value:
-                    `\`${user.id}\``,
+                    channel
+                        ? `\`${channel.id}\``
+                        : "Unknown",
 
                 inline: true
             },
@@ -311,7 +314,7 @@ function recovery(
             "AntiNuke Recovery"
         )
         .setDescription(
-            `successfully recovered the affected channels after the \`channel\` protection was triggered.`
+            `Successfully recovered the affected channels.`
         )
         .addFields(
             {
