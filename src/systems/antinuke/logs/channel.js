@@ -97,7 +97,9 @@ function event(
                     "**Channel**",
 
                 value:
-                    `${channel}`,
+                    channel
+                        ? `<#${channel.id}>`
+                        : "Unknown",
 
                 inline: true
             },
@@ -106,7 +108,9 @@ function event(
                     "**Channel ID**",
 
                 value:
-                    `\`${channel.id}\``,
+                    channel
+                        ? `\`${channel.id}\``
+                        : "Unknown",
 
                 inline: true
             },
@@ -151,6 +155,16 @@ function triggered(
     channel
 ) {
 
+    const channelMention =
+        channel
+            ? `<#${channel.id}>`
+            : "Unknown";
+
+    const channelId =
+        channel
+            ? `\`${channel.id}\``
+            : "Unknown";
+
     const actionList =
         detectedActions.length
             ? detectedActions
@@ -169,7 +183,7 @@ function triggered(
             "AntiNuke Triggered"
         )
         .setDescription(
-            "Destructive channel activity detected."
+            `AntiNuke detected destructive activity from ${user} and activated the \`channel\` protection.`
         )
         .addFields(
             {
@@ -196,9 +210,7 @@ function triggered(
                     "**Channel**",
 
                 value:
-                    channel
-                        ? `${channel}`
-                        : "Unknown",
+                    channelMention,
 
                 inline: true
             },
@@ -207,9 +219,7 @@ function triggered(
                     "**Channel ID**",
 
                 value:
-                    channel
-                        ? `\`${channel.id}\``
-                        : "Unknown",
+                    channelId,
 
                 inline: true
             },
@@ -314,7 +324,7 @@ function recovery(
             "AntiNuke Recovery"
         )
         .setDescription(
-            `Successfully recovered the affected channels.`
+            "Successfully recovered the affected channels."
         )
         .addFields(
             {
