@@ -179,13 +179,23 @@ function triggered(
         .setColor(
             "#FFFFFF"
         )
+        .setAuthor({
+            name:
+                user.username,
+
+            iconURL:
+                user.displayAvatarURL({
+                    dynamic: true
+                })
+        })
         .setTitle(
             "AntiNuke Triggered"
         )
         .setDescription(
-            `AntiNuke detected destructive activity from ${user} and activated the \`channel\` protection.`
+            `Detected destructive channel activity from ${user}.`
         )
         .addFields(
+            // ROW 1
             {
                 name:
                     "**Triggered by**",
@@ -194,7 +204,7 @@ function triggered(
                     `${user}\n` +
                     `\`${user.id}\``,
 
-                inline: false
+                inline: true
             },
             {
                 name:
@@ -203,7 +213,7 @@ function triggered(
                 value:
                     "`channel`",
 
-                inline: false
+                inline: true
             },
             {
                 name:
@@ -212,8 +222,10 @@ function triggered(
                 value:
                     channelMention,
 
-                inline: false
+                inline: true
             },
+
+            // ROW 2
             {
                 name:
                     "**Channel ID**",
@@ -221,7 +233,7 @@ function triggered(
                 value:
                     channelId,
 
-                inline: false
+                inline: true
             },
             {
                 name:
@@ -230,7 +242,7 @@ function triggered(
                 value:
                     `\`${actions} actions\``,
 
-                inline: false
+                inline: true
             },
             {
                 name:
@@ -239,8 +251,10 @@ function triggered(
                 value:
                     `\`${threshold} actions\``,
 
-                inline: false
+                inline: true
             },
+
+            // ROW 3
             {
                 name:
                     "**Punishment**",
@@ -248,7 +262,7 @@ function triggered(
                 value:
                     `\`${punishment}\``,
 
-                inline: false
+                inline: true
             },
             {
                 name:
@@ -257,8 +271,19 @@ function triggered(
                 value:
                     result,
 
-                inline: false
+                inline: true
             },
+            {
+                name:
+                    "\u200b",
+
+                value:
+                    "\u200b",
+
+                inline: true
+            },
+
+            // DETECTED ACTIONS
             {
                 name:
                     "**Detected actions**",
@@ -320,6 +345,15 @@ function recovery(
         .setColor(
             "#FFFFFF"
         )
+        .setAuthor({
+            name:
+                user.username,
+
+            iconURL:
+                user.displayAvatarURL({
+                    dynamic: true
+                })
+        })
         .setTitle(
             "AntiNuke Recovery"
         )
@@ -343,6 +377,15 @@ function recovery(
 
                 value:
                     "`channel`",
+
+                inline: true
+            },
+            {
+                name:
+                    "\u200b",
+
+                value:
+                    "\u200b",
 
                 inline: true
             },
