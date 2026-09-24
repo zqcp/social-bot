@@ -194,106 +194,23 @@ function triggered(
         .setDescription(
             `Detected destructive channel activity from ${user}.`
         )
-        .addFields(
-            // ROW 1
-            {
-                name:
-                    "**Triggered by**",
+        .addFields({
+            name:
+                "\u200b",
 
-                value:
-                    `${user}\n` +
-                    `\`${user.id}\``,
+            value:
+`**Triggered by**\u2003\u2003**Module**\u2003\u2003**Channel**
+${user}\u2003\u2003\u2003\u2003\`channel\`\u2003\u2003\u2003${channelMention}
 
-                inline: true
-            },
-            {
-                name:
-                    "**Module**",
+**Channel ID**\u2003\u2003**Activity**\u2003\u2003**Threshold**
+${channelId}\u2003\u2003\u2003\u2003\`${actions} actions\`\u2003\u2003\`${threshold} actions\`
 
-                value:
-                    "`channel`",
+**Punishment**\u2003\u2003**Result**
+\`${punishment}\`\u2003\u2003\u2003${result}
 
-                inline: true
-            },
-            {
-                name:
-                    "**Channel**",
-
-                value:
-                    channelMention,
-
-                inline: true
-            },
-
-            // ROW 2
-            {
-                name:
-                    "**Channel ID**",
-
-                value:
-                    channelId,
-
-                inline: true
-            },
-            {
-                name:
-                    "**Activity**",
-
-                value:
-                    `\`${actions} actions\``,
-
-                inline: true
-            },
-            {
-                name:
-                    "**Threshold**",
-
-                value:
-                    `\`${threshold} actions\``,
-
-                inline: true
-            },
-
-            // ROW 3
-            {
-                name:
-                    "**Punishment**",
-
-                value:
-                    `\`${punishment}\``,
-
-                inline: true
-            },
-            {
-                name:
-                    "**Result**",
-
-                value:
-                    result,
-
-                inline: true
-            },
-            {
-                name:
-                    "\u200b",
-
-                value:
-                    "\u200b",
-
-                inline: true
-            },
-
-            // DETECTED ACTIONS
-            {
-                name:
-                    "**Detected actions**",
-
-                value:
-                    actionList,
-
-                inline: false
-            }
-        )
+**Detected actions**
+${actionList}`
+        })
         .setTimestamp();
 
 }
