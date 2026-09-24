@@ -34,11 +34,6 @@ module.exports = {
             return;
         }
 
-
-        // =========================
-        // USER PERMISSIONS
-        // =========================
-
         if (
             !message.member.permissions.has(
                 PermissionFlagsBits.Administrator
@@ -55,11 +50,6 @@ module.exports = {
             });
 
         }
-
-
-        // =========================
-        // BOT PERMISSIONS
-        // =========================
 
         const botMember =
             message.guild.members.me;
@@ -107,11 +97,6 @@ module.exports = {
 
         }
 
-
-        // =========================
-        // ANTINUKE ADMIN
-        // =========================
-
         const AntiNuke =
             require("../../models/AntiNuke");
 
@@ -156,21 +141,11 @@ module.exports = {
 
         }
 
-
-        // =========================
-        // CHANNEL LOG TEST
-        // =========================
-
         const channel =
             message.channel;
 
         const user =
             message.author;
-
-
-        // =========================
-        // CREATED
-        // =========================
 
         const created =
             channelLogs.event(
@@ -182,11 +157,6 @@ module.exports = {
                 ],
                 "Test event only. No channel was created."
             );
-
-
-        // =========================
-        // UPDATED
-        // =========================
 
         const updated =
             channelLogs.event(
@@ -201,11 +171,6 @@ module.exports = {
                 "Test event only. No channel was updated."
             );
 
-
-        // =========================
-        // DELETED
-        // =========================
-
         const deleted =
             channelLogs.event(
                 user,
@@ -218,18 +183,13 @@ module.exports = {
                 "Test event only. No channel was deleted."
             );
 
-
-        // =========================
-        // TRIGGERED
-        // =========================
-
         const triggered =
             channelLogs.triggered(
                 user,
                 8,
                 5,
                 [
-                    `${channel} — deleted`,
+                    `${channel.name} — deleted`,
                     "#rules — deleted",
                     "#media — deleted",
                     "#staff — deleted",
@@ -239,11 +199,6 @@ module.exports = {
                 "Successfully applied",
                 channel
             );
-
-
-        // =========================
-        // RECOVERY
-        // =========================
 
         const recovery =
             channelLogs.recovery(
@@ -258,11 +213,6 @@ module.exports = {
                 ],
                 "Successfully recovered"
             );
-
-
-        // =========================
-        // SEND LOG EMBEDS
-        // =========================
 
         return message.channel.send({
             embeds: [
