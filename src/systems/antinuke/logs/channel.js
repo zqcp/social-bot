@@ -44,6 +44,26 @@ function event(
 
     }
 
+    const channelMention =
+        channel
+            ? `<#${channel.id}>`
+            : "Unknown";
+
+    const channelId =
+        channel
+            ? `\`${channel.id}\``
+            : "Unknown";
+
+    const changeList =
+        changes.length
+            ? changes
+                .map(
+                    change =>
+                        `• ${change}`
+                )
+                .join("\n")
+            : "None";
+
     return new EmbedBuilder()
         .setColor(
             "#FFFFFF"
@@ -66,78 +86,43 @@ function event(
         .addFields(
             {
                 name:
-                    "**Triggered by**",
+                    "\u200b",
 
                 value:
-                    `${user}\n` +
-                    `\`${user.id}\``,
-
-                inline: true
+`**Triggered by**\u2003\u2003**Module**\u2003\u2003**Action**
+${user}\u2003\u2003\u2003\u2003\`channel\`\u2003\u2003\`${action}\``
             },
             {
                 name:
-                    "**Module**",
+                    "\u200b",
 
                 value:
-                    "`channel`",
-
-                inline: true
+`**Channel**
+${channelMention}`
             },
             {
                 name:
-                    "**Action**",
+                    "\u200b",
 
                 value:
-                    `\`${action}\``,
-
-                inline: true
+`**Channel ID**
+${channelId}`
             },
             {
                 name:
-                    "**Channel**",
+                    "\u200b",
 
                 value:
-                    channel
-                        ? `<#${channel.id}>`
-                        : "Unknown",
-
-                inline: true
+`**Changes**
+${changeList}`
             },
             {
                 name:
-                    "**Channel ID**",
+                    "\u200b",
 
                 value:
-                    channel
-                        ? `\`${channel.id}\``
-                        : "Unknown",
-
-                inline: true
-            },
-            {
-                name:
-                    "**Changes**",
-
-                value:
-                    changes.length
-                        ? changes
-                            .map(
-                                change =>
-                                    `• ${change}`
-                            )
-                            .join("\n")
-                        : "None",
-
-                inline: false
-            },
-            {
-                name:
-                    "**Result**",
-
-                value:
-                    result,
-
-                inline: false
+`**Result**
+${result}`
             }
         )
         .setTimestamp();
@@ -194,29 +179,56 @@ function triggered(
         .setDescription(
             `Detected destructive channel activity from ${user}.`
         )
-        .addFields({
-            name:
-                "\u200b",
+        .addFields(
+            {
+                name:
+                    "\u200b",
 
-            value:
+                value:
 `**Triggered by**\u2003\u2003**Module**
-${user}\u2003\u2003\u2003\u2003\`channel\`
+${user}\u2003\u2003\u2003\u2003\`channel\``
+            },
+            {
+                name:
+                    "\u200b",
 
-**Channel**
-${channelMention}
+                value:
+`**Channel**
+${channelMention}`
+            },
+            {
+                name:
+                    "\u200b",
 
-**Channel ID**
-${channelId}
+                value:
+`**Channel ID**
+${channelId}`
+            },
+            {
+                name:
+                    "\u200b",
 
-**Activity**\u2003\u2003**Threshold**
-\`${actions} actions\`\u2003\u2003\`${threshold} actions\`
+                value:
+`**Activity**\u2003\u2003**Threshold**
+\`${actions} actions\`\u2003\u2003\`${threshold} actions\``
+            },
+            {
+                name:
+                    "\u200b",
 
-**Punishment**\u2003\u2003**Result**
-\`${punishment}\`\u2003\u2003${result}
+                value:
+`**Punishment**\u2003\u2003**Result**
+\`${punishment}\`\u2003\u2003${result}`
+            },
+            {
+                name:
+                    "\u200b",
 
-**Detected actions**
+                value:
+`**Detected actions**
 ${actionList}`
-        })
+            }
+        )
         .setTimestamp();
 
 }
@@ -283,23 +295,40 @@ function recovery(
         .setDescription(
             "Successfully recovered the affected channels."
         )
-        .addFields({
-            name:
-                "\u200b",
+        .addFields(
+            {
+                name:
+                    "\u200b",
 
-            value:
+                value:
 `**Triggered by**\u2003\u2003**Module**
-${user}\u2003\u2003\u2003\u2003\`channel\`
+${user}\u2003\u2003\u2003\u2003\`channel\``
+            },
+            {
+                name:
+                    "\u200b",
 
-**Recovered channels**
-${channelList}
+                value:
+`**Recovered channels**
+${channelList}`
+            },
+            {
+                name:
+                    "\u200b",
 
-**Recovered actions**
-${actionList}
+                value:
+`**Recovered actions**
+${actionList}`
+            },
+            {
+                name:
+                    "\u200b",
 
-**Result**
+                value:
+`**Result**
 ${result}`
-        })
+            }
+        )
         .setTimestamp();
 
 }
