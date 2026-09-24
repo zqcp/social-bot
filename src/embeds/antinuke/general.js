@@ -51,6 +51,22 @@ module.exports = {
             );
     },
 
+    status(user, status) {
+        return new EmbedBuilder()
+            .setColor(config.colors.regular)
+            .setDescription(
+                `${user}: AntiRaid is currently **${status}**.`
+            );
+    },
+
+    reset(user) {
+        return new EmbedBuilder()
+            .setColor(config.colors.success)
+            .setDescription(
+                `${config.emojis.success} ${user}: AntiRaid configuration has been **reset**.`
+            );
+    },
+
     failed(user, action) {
         return new EmbedBuilder()
             .setColor(config.colors.failed)
