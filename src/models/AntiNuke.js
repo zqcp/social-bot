@@ -1,5 +1,27 @@
 const mongoose = require("mongoose");
 
+const ModuleSchema = new mongoose.Schema(
+    {
+        enabled: {
+            type: Boolean,
+            default: false
+        },
+
+        threshold: {
+            type: Number,
+            default: 3
+        },
+
+        punishment: {
+            type: String,
+            default: "strip"
+        }
+    },
+    {
+        _id: false
+    }
+);
+
 const AntiNukeSchema = new mongoose.Schema(
     {
         guildId: {
@@ -14,16 +36,12 @@ const AntiNukeSchema = new mongoose.Schema(
         },
 
         admins: {
-            type: [
-                String
-            ],
+            type: [String],
             default: []
         },
 
         whitelist: {
-            type: [
-                String
-            ],
+            type: [String],
             default: []
         },
 
@@ -34,156 +52,54 @@ const AntiNukeSchema = new mongoose.Schema(
 
         modules: {
             ban: {
-                enabled: {
-                    type: Boolean,
-                    default: false
-                },
-
-                threshold: {
-                    type: Number,
-                    default: 3
-                },
-
-                punishment: {
-                    type: String,
-                    default: "ban"
-                }
+                type: ModuleSchema,
+                default: () => ({})
             },
 
             kick: {
-                enabled: {
-                    type: Boolean,
-                    default: false
-                },
-
-                threshold: {
-                    type: Number,
-                    default: 3
-                },
-
-                punishment: {
-                    type: String,
-                    default: "kick"
-                }
+                type: ModuleSchema,
+                default: () => ({})
             },
 
             channel: {
-                enabled: {
-                    type: Boolean,
-                    default: false
-                },
-
-                threshold: {
-                    type: Number,
-                    default: 3
-                },
-
-                punishment: {
-                    type: String,
-                    default: "strip"
-                }
+                type: ModuleSchema,
+                default: () => ({})
             },
 
             role: {
-                enabled: {
-                    type: Boolean,
-                    default: false
-                },
-
-                threshold: {
-                    type: Number,
-                    default: 3
-                },
-
-                punishment: {
-                    type: String,
-                    default: "strip"
-                }
+                type: ModuleSchema,
+                default: () => ({})
             },
 
             emoji: {
-                enabled: {
-                    type: Boolean,
-                    default: false
-                },
-
-                threshold: {
-                    type: Number,
-                    default: 3
-                },
-
-                punishment: {
-                    type: String,
-                    default: "strip"
-                }
+                type: ModuleSchema,
+                default: () => ({})
             },
 
             botadd: {
-                enabled: {
-                    type: Boolean,
-                    default: false
-                },
-
-                threshold: {
-                    type: Number,
-                    default: 1
-                },
-
-                punishment: {
-                    type: String,
-                    default: "ban"
-                }
+                type: ModuleSchema,
+                default: () => ({
+                    threshold: 1,
+                    punishment: "ban"
+                })
             },
 
             webhook: {
-                enabled: {
-                    type: Boolean,
-                    default: false
-                },
-
-                threshold: {
-                    type: Number,
-                    default: 3
-                },
-
-                punishment: {
-                    type: String,
-                    default: "strip"
-                }
+                type: ModuleSchema,
+                default: () => ({})
             },
 
             vanity: {
-                enabled: {
-                    type: Boolean,
-                    default: false
-                },
-
-                threshold: {
-                    type: Number,
-                    default: 1
-                },
-
-                punishment: {
-                    type: String,
-                    default: "ban"
-                }
+                type: ModuleSchema,
+                default: () => ({
+                    threshold: 1,
+                    punishment: "ban"
+                })
             },
 
             permissions: {
-                enabled: {
-                    type: Boolean,
-                    default: false
-                },
-
-                threshold: {
-                    type: Number,
-                    default: 3
-                },
-
-                punishment: {
-                    type: String,
-                    default: "strip"
-                }
+                type: ModuleSchema,
+                default: () => ({})
             }
         },
 
