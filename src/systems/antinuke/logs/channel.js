@@ -6,6 +6,19 @@ const config =
     require("../../../config");
 
 
+function row(
+    left,
+    right
+) {
+
+    return (
+        `${String(left).padEnd(24)}` +
+        `${right}`
+    );
+
+}
+
+
 function event(
     user,
     action,
@@ -89,8 +102,8 @@ function event(
                     "\u200b",
 
                 value:
-`**Triggered by**\u2003\u2003**Module**\u2003\u2003**Action**
-${user}\u2003\u2003\u2003\u2003\`channel\`\u2003\u2003\`${action}\``
+`**Triggered by**                 **Module**                 **Action**
+${row(user, "`channel`")}${row("", `\`${action}\``)}`
             },
             {
                 name:
@@ -185,40 +198,32 @@ function triggered(
                     "\u200b",
 
                 value:
-`**Triggered by**\u2003\u2003**Module**
-${user}\u2003\u2003\u2003\u2003\`channel\``
+`**Triggered by**                 **Module**
+${row(user, "`channel`")}`
             },
             {
                 name:
                     "\u200b",
 
                 value:
-`**Channel**
-${channelMention}`
+`**Channel**                      **Channel ID**
+${row(channelMention, channelId)}`
             },
             {
                 name:
                     "\u200b",
 
                 value:
-`**Channel ID**
-${channelId}`
+`**Activity**                     **Threshold**
+${row(`${actions} actions`, `${threshold} actions`)}`
             },
             {
                 name:
                     "\u200b",
 
                 value:
-`**Activity**\u2003\u2003**Threshold**
-\`${actions} actions\`\u2003\u2003\`${threshold} actions\``
-            },
-            {
-                name:
-                    "\u200b",
-
-                value:
-`**Punishment**\u2003\u2003**Result**
-\`${punishment}\`\u2003\u2003${result}`
+`**Punishment**                   **Result**
+${row(`\`${punishment}\``, result)}`
             },
             {
                 name:
@@ -301,8 +306,8 @@ function recovery(
                     "\u200b",
 
                 value:
-`**Triggered by**\u2003\u2003**Module**
-${user}\u2003\u2003\u2003\u2003\`channel\``
+`**Triggered by**                 **Module**
+${row(user, "`channel`")}`
             },
             {
                 name:
