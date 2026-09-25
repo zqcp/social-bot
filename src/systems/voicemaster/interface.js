@@ -66,7 +66,7 @@ async function update(
                 "Use the controls below to manage your voice channel with ease."
             )
             .addFields({
-                name: "\u200b",
+                name: "Buttons",
                 value:
 `<:vc_lock:1543240964779278439> **Lock** the voice channel
 <:vc_unlock:1543240922941235290> **Unlock** the voice channel
