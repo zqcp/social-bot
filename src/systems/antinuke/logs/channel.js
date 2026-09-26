@@ -65,7 +65,7 @@ function userSection(
 
 function listSection(
     title,
-    items
+    items = []
 ) {
 
     const content =
@@ -138,16 +138,13 @@ function event(
     }
 
     const information =
-        new TextDisplayBuilder()
-            .setContent(
 `**Triggered by:** ${user}
 \`${user.id}\`
 
 **Module:** \`channel\`
 **Action:** \`${action}\`
 **Channel:** ${channel}
-**Channel ID:** \`${channel.id}\``
-            );
+**Channel ID:** \`${channel.id}\``;
 
     const changesSection =
         listSection(
@@ -220,15 +217,7 @@ function triggered(
     channel
 ) {
 
-    const activity =
-        `${actions} actions`;
-
-    const thresholdText =
-        `${threshold} actions`;
-
     const information =
-        new TextDisplayBuilder()
-            .setContent(
 `**Triggered by:** ${user}
 \`${user.id}\`
 
@@ -236,11 +225,10 @@ function triggered(
 **Channel:** ${channel || "Unknown"}
 **Channel ID:** \`${channel?.id || "N/A"}\`
 
-**Activity:** \`${activity}\`
-**Threshold:** \`${thresholdText}\`
+**Activity:** \`${actions} actions\`
+**Threshold:** \`${threshold} actions\`
 **Punishment:** \`${punishment || "N/A"}\`
-**Result:** ${result || "N/A"}`
-            );
+**Result:** ${result || "N/A"}`;
 
     const detectedSection =
         listSection(
@@ -309,19 +297,11 @@ function recovery(
                 )
             : [];
 
-    const actionList =
-        recoveredActions.length
-            ? recoveredActions
-            : [];
-
     const information =
-        new TextDisplayBuilder()
-            .setContent(
 `**Triggered by:** ${user}
 \`${user.id}\`
 
-**Module:** \`channel\``
-            );
+**Module:** \`channel\``;
 
     const recoveredChannels =
         listSection(
@@ -332,7 +312,7 @@ function recovery(
     const recoveredActionsSection =
         listSection(
             "Recovered actions:",
-            actionList
+            recoveredActions
         );
 
     const resultSection =
