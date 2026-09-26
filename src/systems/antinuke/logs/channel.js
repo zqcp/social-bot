@@ -99,7 +99,7 @@ function event(
         "Channel Event";
 
     let description =
-        `> AntiNuke detected a channel **${action}** event performed by ${user}.`;
+        `> detected a channel **${action}** event performed by ${user}.`;
 
     if (
         action === "created"
@@ -109,7 +109,7 @@ function event(
             "Channel Created";
 
         description =
-            `> AntiNuke detected a new channel being **created** by ${user}.`;
+            `> detected a new channel being **created** by ${user}.`;
 
     }
 
@@ -121,7 +121,7 @@ function event(
             "Channel Updated";
 
         description =
-            `> AntiNuke detected a channel **update** performed by ${user}.`;
+            `> detected a channel **update** performed by ${user}.`;
 
     }
 
@@ -133,14 +133,13 @@ function event(
             "Channel Deleted";
 
         description =
-            `> AntiNuke detected a channel being **deleted** by ${user}.`;
+            `> detected a channel being **deleted** by ${user}.`;
 
     }
 
     const information =
-`**Triggered by:** ${user}
+`**Author:** ${user}
 \`${user.id}\`
-
 **Module:** \`channel\`
 **Action:** \`${action}\`
 **Channel:** ${channel}
