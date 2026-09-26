@@ -81,7 +81,6 @@ function listSection(
     return new TextDisplayBuilder()
         .setContent(
 `**${title}**
-
 \`\`\`
 ${content}
 \`\`\``
@@ -333,7 +332,7 @@ function recovery(
             new TextDisplayBuilder()
                 .setContent(
                     "## AntiNuke Recovery\n" +
-                    "> AntiNuke successfully recovered the affected channels after the `channel` protection was triggered."
+                    "> successfully recovered the affected channels."
                 )
         )
         .addSeparatorComponents(
