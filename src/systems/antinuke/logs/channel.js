@@ -73,14 +73,18 @@ function listSection(
             ? items
                 .map(
                     item =>
-                        `> • ${item}`
+                        `• ${item}`
                 )
                 .join("\n")
-            : "> None";
+            : "None";
 
     return new TextDisplayBuilder()
         .setContent(
-            `**${title}**\n\n${content}`
+`**${title}**
+
+\`\`\`
+${content}
+\`\`\``
         );
 
 }
@@ -99,7 +103,7 @@ function event(
         "Channel Event";
 
     let description =
-        `> detected a channel **${action}** event performed by ${user}.`;
+        `> AntiNuke detected a channel **${action}** event performed by ${user}.`;
 
     if (
         action === "created"
@@ -109,7 +113,7 @@ function event(
             "Channel Created";
 
         description =
-            `> detected a new channel being **created** by ${user}.`;
+            `> AntiNuke detected a new channel being **created** by ${user}.`;
 
     }
 
@@ -121,7 +125,7 @@ function event(
             "Channel Updated";
 
         description =
-            `> detected a channel **update** performed by ${user}.`;
+            `> AntiNuke detected a channel **update** performed by ${user}.`;
 
     }
 
@@ -133,13 +137,14 @@ function event(
             "Channel Deleted";
 
         description =
-            `> detected a channel being **deleted** by ${user}.`;
+            `> AntiNuke detected a channel being **deleted** by ${user}.`;
 
     }
 
     const information =
-`**Author:** ${user}
+`**Triggered by:** ${user}
 \`${user.id}\`
+
 **Module:** \`channel\`
 **Action:** \`${action}\`
 **Channel:** ${channel}
