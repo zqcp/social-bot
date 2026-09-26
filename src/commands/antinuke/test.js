@@ -1,4 +1,5 @@
 const {
+    PermissionFlagsBits,
     MessageFlags
 } = require("discord.js");
 
@@ -12,6 +13,10 @@ module.exports = {
         "antinuke test",
 
     aliases: [],
+
+    permissions: [
+        PermissionFlagsBits.Administrator
+    ],
 
     async execute(
         client,
@@ -131,22 +136,51 @@ module.exports = {
 
 
         // =========================
-        // SEND COMPONENTS V2
+        // SEND EACH LOG SEPARATELY
         // =========================
 
-        return message.channel.send({
-
+        await message.channel.send({
             components: [
-                created,
-                updated,
-                deleted,
-                triggered,
-                recovery
+                created
             ],
-
             flags:
                 MessageFlags.IsComponentsV2
+        });
 
+
+        await message.channel.send({
+            components: [
+                updated
+            ],
+            flags:
+                MessageFlags.IsComponentsV2
+        });
+
+
+        await message.channel.send({
+            components: [
+                deleted
+            ],
+            flags:
+                MessageFlags.IsComponentsV2
+        });
+
+
+        await message.channel.send({
+            components: [
+                triggered
+            ],
+            flags:
+                MessageFlags.IsComponentsV2
+        });
+
+
+        return message.channel.send({
+            components: [
+                recovery
+            ],
+            flags:
+                MessageFlags.IsComponentsV2
         });
 
     }
