@@ -1,20 +1,87 @@
 const {
-    EmbedBuilder
+    ContainerBuilder,
+    SectionBuilder,
+    SeparatorBuilder,
+    SeparatorSpacingSize,
+    TextDisplayBuilder,
+    ThumbnailBuilder
 } = require("discord.js");
 
 const config =
     require("../../../config");
 
 
-function row(
-    left,
-    right
+function separator() {
+
+    return new SeparatorBuilder()
+        .setDivider(true)
+        .setSpacing(
+            SeparatorSpacingSize.Small
+        );
+
+}
+
+
+function userSection(
+    user,
+    content
 ) {
 
-    return (
-        `${String(left).padEnd(24)}` +
-        `${right}`
-    );
+    const text =
+        new TextDisplayBuilder()
+            .setContent(
+                content
+            );
+
+    const section =
+        new SectionBuilder()
+            .addTextDisplayComponents(
+                text
+            );
+
+    if (
+        user
+    ) {
+
+        const avatar =
+            user.displayAvatarURL({
+                dynamic: true,
+                size: 256
+            });
+
+        section.setThumbnailAccessory(
+            new ThumbnailBuilder()
+                .setURL(
+                    avatar
+                )
+        );
+
+    }
+
+    return section;
+
+}
+
+
+function listSection(
+    title,
+    items
+) {
+
+    const content =
+        items.length
+            ? items
+                .map(
+                    item =>
+                        `> • ${item}`
+                )
+                .join("\n")
+            : "> None";
+
+    return new TextDisplayBuilder()
+        .setContent(
+            `**${title}**\n\n${content}`
+        );
 
 }
 
@@ -24,18 +91,25 @@ function event(
     action,
     channel,
     changes = [],
-    result = "Channel event detected."
+    result = "Channel event detected.",
+    eventId = null
 ) {
 
+    let title =
+        "Channel Event";
+
     let description =
-        `Detected a channel **${action}** event performed by ${user}.`;
+        `> AntiNuke detected a channel **${action}** event performed by ${user}.`;
 
     if (
         action === "created"
     ) {
 
+        title =
+            "Channel Created";
+
         description =
-            `Detected a new channel being **created** by ${user}.`;
+            `> AntiNuke detected a new channel being **created** by ${user}.`;
 
     }
 
@@ -43,8 +117,11 @@ function event(
         action === "updated"
     ) {
 
+        title =
+            "Channel Updated";
+
         description =
-            `Detected a channel **update** performed by ${user}.`;
+            `> AntiNuke detected a channel **update** performed by ${user}.`;
 
     }
 
@@ -52,93 +129,83 @@ function event(
         action === "deleted"
     ) {
 
+        title =
+            "Channel Deleted";
+
         description =
-            `Detected a channel being **deleted** by ${user}.`;
+            `> AntiNuke detected a channel being **deleted** by ${user}.`;
 
     }
 
-    const channelMention =
-        channel
-            ? `<#${channel.id}>`
-            : "Unknown";
+    const information =
+        new TextDisplayBuilder()
+            .setContent(
+`**Triggered by:** ${user}
+\`${user.id}\`
 
-    const channelId =
-        channel
-            ? `\`${channel.id}\``
-            : "Unknown";
+**Module:** \`channel\`
+**Action:** \`${action}\`
+**Channel:** ${channel}
+**Channel ID:** \`${channel.id}\``
+            );
 
-    const changeList =
-        changes.length
-            ? changes
-                .map(
-                    change =>
-                        `• ${change}`
+    const changesSection =
+        listSection(
+            "Changes:",
+            changes
+        );
+
+    const resultSection =
+        new TextDisplayBuilder()
+            .setContent(
+                `**Result:** ${result}`
+            );
+
+    const eventSection =
+        new TextDisplayBuilder()
+            .setContent(
+                `**Event ID:** \`${eventId || "N/A"}\``
+            );
+
+    return new ContainerBuilder()
+        .setAccentColor(
+            action === "deleted"
+                ? config.colors.failed
+                : config.colors.regular
+        )
+        .addTextDisplayComponents(
+            new TextDisplayBuilder()
+                .setContent(
+                    `## ${title}\n${description}`
                 )
-                .join("\n")
-            : "None";
-
-    return new EmbedBuilder()
-        .setColor(
-            "#FFFFFF"
         )
-        .setAuthor({
-            name:
-                user.username,
-
-            iconURL:
-                user.displayAvatarURL({
-                    dynamic: true
-                })
-        })
-        .setTitle(
-            "AntiNuke Channel Event"
+        .addSeparatorComponents(
+            separator()
         )
-        .setDescription(
-            description
+        .addSectionComponents(
+            userSection(
+                user,
+                information
+            )
         )
-        .addFields(
-            {
-                name:
-                    "\u200b",
-
-                value:
-`**Triggered by**                 **Module**                 **Action**
-${row(user, "`channel`")}${row("", `\`${action}\``)}`
-            },
-            {
-                name:
-                    "\u200b",
-
-                value:
-`**Channel**
-${channelMention}`
-            },
-            {
-                name:
-                    "\u200b",
-
-                value:
-`**Channel ID**
-${channelId}`
-            },
-            {
-                name:
-                    "\u200b",
-
-                value:
-`**Changes**
-${changeList}`
-            },
-            {
-                name:
-                    "\u200b",
-
-                value:
-`**Result**
-${result}`
-            }
+        .addSeparatorComponents(
+            separator()
         )
-        .setTimestamp();
+        .addTextDisplayComponents(
+            changesSection
+        )
+        .addSeparatorComponents(
+            separator()
+        )
+        .addTextDisplayComponents(
+            resultSection
+        )
+        .addSeparatorComponents(
+            separator()
+        )
+        .addTextDisplayComponents(
+            eventSection
+        );
 
 }
 
@@ -153,88 +220,60 @@ function triggered(
     channel
 ) {
 
-    const channelMention =
-        channel
-            ? `<#${channel.id}>`
-            : "Unknown";
+    const activity =
+        `${actions} actions`;
 
-    const channelId =
-        channel
-            ? `\`${channel.id}\``
-            : "Unknown";
+    const thresholdText =
+        `${threshold} actions`;
 
-    const actionList =
-        detectedActions.length
-            ? detectedActions
-                .map(
-                    action =>
-                        `• ${action}`
-                )
-                .join("\n")
-            : "None";
+    const information =
+        new TextDisplayBuilder()
+            .setContent(
+`**Triggered by:** ${user}
+\`${user.id}\`
 
-    return new EmbedBuilder()
-        .setColor(
+**Module:** \`channel\`
+**Channel:** ${channel || "Unknown"}
+**Channel ID:** \`${channel?.id || "N/A"}\`
+
+**Activity:** \`${activity}\`
+**Threshold:** \`${thresholdText}\`
+**Punishment:** \`${punishment || "N/A"}\`
+**Result:** ${result || "N/A"}`
+            );
+
+    const detectedSection =
+        listSection(
+            "Detected actions:",
+            detectedActions
+        );
+
+    return new ContainerBuilder()
+        .setAccentColor(
             "#FFFFFF"
         )
-        .setAuthor({
-            name:
-                user.username,
-
-            iconURL:
-                user.displayAvatarURL({
-                    dynamic: true
-                })
-        })
-        .setTitle(
-            "AntiNuke Triggered"
+        .addTextDisplayComponents(
+            new TextDisplayBuilder()
+                .setContent(
+                    "## AntiNuke Triggered\n" +
+                    `> AntiNuke detected destructive activity from ${user} and activated the \`channel\` protection.`
+                )
         )
-        .setDescription(
-            `Detected destructive channel activity from ${user}.`
+        .addSeparatorComponents(
+            separator()
         )
-        .addFields(
-            {
-                name:
-                    "\u200b",
-
-                value:
-`**Triggered by**                 **Module**
-${row(user, "`channel`")}`
-            },
-            {
-                name:
-                    "\u200b",
-
-                value:
-`**Channel**                      **Channel ID**
-${row(channelMention, channelId)}`
-            },
-            {
-                name:
-                    "\u200b",
-
-                value:
-`**Activity**                     **Threshold**
-${row(`${actions} actions`, `${threshold} actions`)}`
-            },
-            {
-                name:
-                    "\u200b",
-
-                value:
-`**Punishment**                   **Result**
-${row(`\`${punishment}\``, result)}`
-            },
-            {
-                name:
-                    "\u200b",
-
-                value:
-`**Detected actions**
-${actionList}`
-            }
+        .addSectionComponents(
+            userSection(
+                user,
+                information
+            )
         )
-        .setTimestamp();
+        .addSeparatorComponents(
+            separator()
+        )
+        .addTextDisplayComponents(
+            detectedSection
+        );
 
 }
 
@@ -257,84 +296,89 @@ function recovery(
                             "string"
                         ) {
 
-                            return `• ${channel}`;
+                            return channel;
 
                         }
 
                         return (
-                            `• ${channel.name || "Unknown channel"} ` +
+                            `${channel.name || "Unknown channel"} ` +
                             `(\`${channel.id}\`)`
                         );
 
                     }
                 )
-                .join("\n")
-            : "None";
+            : [];
 
     const actionList =
         recoveredActions.length
             ? recoveredActions
-                .map(
-                    action =>
-                        `• ${action}`
+            : [];
+
+    const information =
+        new TextDisplayBuilder()
+            .setContent(
+`**Triggered by:** ${user}
+\`${user.id}\`
+
+**Module:** \`channel\``
+            );
+
+    const recoveredChannels =
+        listSection(
+            "Recovered channels:",
+            channelList
+        );
+
+    const recoveredActionsSection =
+        listSection(
+            "Recovered actions:",
+            actionList
+        );
+
+    const resultSection =
+        new TextDisplayBuilder()
+            .setContent(
+                `**Result:** ${result}`
+            );
+
+    return new ContainerBuilder()
+        .setAccentColor(
+            config.colors.success
+        )
+        .addTextDisplayComponents(
+            new TextDisplayBuilder()
+                .setContent(
+                    "## AntiNuke Recovery\n" +
+                    "> AntiNuke successfully recovered the affected channels after the `channel` protection was triggered."
                 )
-                .join("\n")
-            : "None";
-
-    return new EmbedBuilder()
-        .setColor(
-            "#FFFFFF"
         )
-        .setAuthor({
-            name:
-                user.username,
-
-            iconURL:
-                user.displayAvatarURL({
-                    dynamic: true
-                })
-        })
-        .setTitle(
-            "AntiNuke Recovery"
+        .addSeparatorComponents(
+            separator()
         )
-        .setDescription(
-            "Successfully recovered the affected channels."
+        .addSectionComponents(
+            userSection(
+                user,
+                information
+            )
         )
-        .addFields(
-            {
-                name:
-                    "\u200b",
-
-                value:
-`**Triggered by**                 **Module**
-${row(user, "`channel`")}`
-            },
-            {
-                name:
-                    "\u200b",
-
-                value:
-`**Recovered channels**
-${channelList}`
-            },
-            {
-                name:
-                    "\u200b",
-
-                value:
-`**Recovered actions**
-${actionList}`
-            },
-            {
-                name:
-                    "\u200b",
-
-                value:
-`**Result**
-${result}`
-            }
+        .addSeparatorComponents(
+            separator()
         )
-        .setTimestamp();
+        .addTextDisplayComponents(
+            recoveredChannels
+        )
+        .addSeparatorComponents(
+            separator()
+        )
+        .addTextDisplayComponents(
+            recoveredActionsSection
+        )
+        .addSeparatorComponents(
+            separator()
+        )
+        .addTextDisplayComponents(
+            resultSection
+        );
 
 }
 
