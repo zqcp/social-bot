@@ -112,7 +112,7 @@ function event(
             "Channel Created";
 
         description =
-            `> AntiNuke detected a new channel being **created** by ${user}.`;
+            `> detected a new channel being **created** by ${user}.`;
 
     }
 
@@ -141,7 +141,7 @@ function event(
     }
 
     const information =
-`**Triggered by:** ${user}
+`**Member:** ${user}
 \`${user.id}\`
 
 **Module:** \`channel\`
@@ -221,7 +221,7 @@ function triggered(
 ) {
 
     const information =
-`**Triggered by:** ${user}
+`**Member:** ${user}
 \`${user.id}\`
 
 **Module:** \`channel\`
@@ -301,7 +301,7 @@ function recovery(
             : [];
 
     const information =
-`**Triggered by:** ${user}
+`**Member:** ${user}
 \`${user.id}\`
 
 **Module:** \`channel\``;
