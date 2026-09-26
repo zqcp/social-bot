@@ -71,18 +71,39 @@ async function update(
 
 
     const header =
+        new TextDisplayBuilder()
+            .setContent(
+                "## VoiceMaster Interface\nUse the controls below to manage your voice channel with ease."
+            );
+
+
+    const buttons =
+        new TextDisplayBuilder()
+            .setContent(
+`**Buttons**
+<:vc_lock:1543240964779278439> **Lock** the voice channel
+<:vc_unlock:1543240922941235290> **Unlock** the voice channel
+<:vc_hide:1543241001705930843> **Hide** the voice channel
+<:vc_reveal:1543241065438519306> **Reveal** the voice channel
+<:vc_disconnect:1543241366321238026> **Disconnect** a member
+<:vc_start:1543241403511996457> **Start** an activity
+<:vc_info:1543241450685202452> **View** channel information
+<:vc_increase:1543241492884365403> **Increase** the user limit
+<:vc_decrease:1543241527780835389> **Decrease** the user limit
+<:vc_claim:1543241117779099709> **Claim** the voice channel`
+            );
+
+
+    const buttonSection =
         new SectionBuilder()
             .addTextDisplayComponents(
-                new TextDisplayBuilder()
-                    .setContent(
-                        "## VoiceMaster Interface\nUse the controls below to manage your voice channel with ease."
-                    )
+                buttons
             );
 
 
     if (icon) {
 
-        header.setThumbnailAccessory(
+        buttonSection.setThumbnailAccessory(
             new ThumbnailBuilder()
                 .setURL(
                     icon
@@ -102,24 +123,6 @@ async function update(
             );
 
 
-    const buttons =
-        new TextDisplayBuilder()
-            .setContent(
-`**Buttons**
-
-<:vc_lock:1543240964779278439> **Lock** the voice channel
-<:vc_unlock:1543240922941235290> **Unlock** the voice channel
-<:vc_hide:1543241006905966713> **Hide** the voice channel
-<:vc_reveal:1543241065438519306> **Reveal** the voice channel
-<:vc_disconnect:1543241366321238026> **Disconnect** a member
-<:vc_start:1543241403511996457> **Start** an activity
-<:vc_info:1543241450685202452> **View** channel information
-<:vc_increase:1543241492884365403> **Increase** the user limit
-<:vc_decrease:1543241527780835389> **Decrease** the user limit
-<:vc_claim:1543241117779099709> **Claim** the voice channel`
-            );
-
-
     const components =
         Buttons.create();
 
@@ -129,14 +132,14 @@ async function update(
             .setAccentColor(
                 config.colors.regular
             )
-            .addSectionComponents(
+            .addTextDisplayComponents(
                 header
             )
             .addSeparatorComponents(
                 separator
             )
-            .addTextDisplayComponents(
-                buttons
+            .addSectionComponents(
+                buttonSection
             )
             .addSeparatorComponents(
                 separator
