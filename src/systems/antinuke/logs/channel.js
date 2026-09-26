@@ -238,7 +238,7 @@ function triggered(
 
     return new ContainerBuilder()
         .setAccentColor(
-            "#FFFFFF"
+            0xFFFFFF
         )
         .addTextDisplayComponents(
             new TextDisplayBuilder()
