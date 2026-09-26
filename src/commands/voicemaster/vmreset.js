@@ -12,7 +12,7 @@ const VoiceChannel =
     require("../../models/VoiceChannel");
 
 const globalEmbeds =
-    require("../../embeds/global");
+    require("../../embeds/general/global");
 
 const config =
     require("../../config");
