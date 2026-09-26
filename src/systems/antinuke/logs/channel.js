@@ -102,7 +102,7 @@ function event(
         "Channel Event";
 
     let description =
-        `> AntiNuke detected a channel **${action}** event performed by ${user}.`;
+        `> detected a channel **${action}** event performed by ${user}.`;
 
     if (
         action === "created"
@@ -124,7 +124,7 @@ function event(
             "Channel Updated";
 
         description =
-            `> AntiNuke detected a channel **update** performed by ${user}.`;
+            `> detected a channel **update** performed by ${user}.`;
 
     }
 
@@ -136,7 +136,7 @@ function event(
             "Channel Deleted";
 
         description =
-            `> AntiNuke detected a channel being **deleted** by ${user}.`;
+            `> detected a channel being **deleted** by ${user}.`;
 
     }
 
@@ -247,7 +247,7 @@ function triggered(
             new TextDisplayBuilder()
                 .setContent(
                     "## AntiNuke Triggered\n" +
-                    `> AntiNuke detected destructive activity from ${user} and activated the \`channel\` protection.`
+                    `> detected destructive activity from ${user}.`
                 )
         )
         .addSeparatorComponents(
