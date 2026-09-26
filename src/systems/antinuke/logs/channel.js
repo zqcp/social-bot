@@ -246,7 +246,7 @@ function triggered(
         .addTextDisplayComponents(
             new TextDisplayBuilder()
                 .setContent(
-                    "## AntiNuke Triggered\n" +
+                    "## AntiNuke Alert\n" +
                     `> detected destructive activity from ${user}.`
                 )
         )
@@ -331,7 +331,7 @@ function recovery(
         .addTextDisplayComponents(
             new TextDisplayBuilder()
                 .setContent(
-                    "## AntiNuke Recovery\n" +
+                    "## AntiNuke Restored\n" +
                     "> successfully recovered the affected channels."
                 )
         )
