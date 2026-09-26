@@ -1,12 +1,6 @@
 const {
-    PermissionFlagsBits
+    MessageFlags
 } = require("discord.js");
-
-const globalEmbeds =
-    require("../../embeds/general/global");
-
-const antiNukeGeneral =
-    require("../../embeds/antinuke/general");
 
 const channelLogs =
     require("../../systems/antinuke/logs/channel");
@@ -18,10 +12,6 @@ module.exports = {
         "antinuke test",
 
     aliases: [],
-
-    permissions: [
-        PermissionFlagsBits.Administrator
-    ],
 
     async execute(
         client,
@@ -35,132 +25,6 @@ module.exports = {
         }
 
 
-        // =========================
-        // USER PERMISSIONS
-        // =========================
-
-        if (
-            !message.member.permissions.has(
-                PermissionFlagsBits.Administrator
-            )
-        ) {
-
-            return message.channel.send({
-                embeds: [
-                    globalEmbeds.permission(
-                        message.author,
-                        "Administrator"
-                    )
-                ]
-            });
-
-        }
-
-
-        // =========================
-        // BOT PERMISSIONS
-        // =========================
-
-        const botMember =
-            message.guild.members.me;
-
-        if (!botMember) {
-
-            console.error(
-                `[ANTINUKE TEST] Bot member missing in ${message.guild.id}.`
-            );
-
-            return;
-
-        }
-
-        const requiredPermissions = [
-            PermissionFlagsBits.ViewChannel,
-            PermissionFlagsBits.SendMessages,
-            PermissionFlagsBits.EmbedLinks
-        ];
-
-        const missingPermissions =
-            requiredPermissions.filter(
-                permission =>
-                    !message.channel
-                        .permissionsFor(
-                            botMember
-                        )
-                        .has(
-                            permission
-                        )
-            );
-
-        if (
-            missingPermissions.length
-        ) {
-
-            return message.channel.send({
-                embeds: [
-                    globalEmbeds.botPermissions(
-                        message.author,
-                        missingPermissions
-                    )
-                ]
-            });
-
-        }
-
-
-        // =========================
-        // ANTINUKE ADMIN
-        // =========================
-
-        const AntiNuke =
-            require("../../models/AntiNuke");
-
-        const antiNuke =
-            await AntiNuke.findOne({
-                guildId:
-                    message.guild.id
-            }).catch(
-                error => {
-
-                    console.error(
-                        "[ANTINUKE TEST]",
-                        error
-                    );
-
-                    return null;
-
-                }
-            );
-
-        const isOwner =
-            message.guild.ownerId ===
-            message.author.id;
-
-        const isAntiNukeAdmin =
-            antiNuke?.admins?.includes(
-                message.author.id
-            );
-
-        if (
-            !isOwner &&
-            !isAntiNukeAdmin
-        ) {
-
-            return message.channel.send({
-                embeds: [
-                    antiNukeGeneral.owner(
-                        message.author
-                    )
-                ]
-            });
-
-        }
-
-
-        // =========================
-        // TEST VALUES
-        // =========================
-
         const channel =
             message.channel;
 
@@ -169,7 +33,7 @@ module.exports = {
 
 
         // =========================
-        // CREATED
+        // CHANNEL CREATED
         // =========================
 
         const created =
@@ -178,14 +42,16 @@ module.exports = {
                 "created",
                 channel,
                 [
-                    `${channel.name} — created`
+                    `${channel.name} — created`,
+                    "Permissions configured"
                 ],
-                "Test event only. No channel was created."
+                "Channel event detected.",
+                "TEST-CREATED"
             );
 
 
         // =========================
-        // UPDATED
+        // CHANNEL UPDATED
         // =========================
 
         const updated =
@@ -198,12 +64,13 @@ module.exports = {
                     "Topic changed",
                     "Permission overwrite changed"
                 ],
-                "Test event only. No channel was updated."
+                "Channel event detected.",
+                "TEST-UPDATED"
             );
 
 
         // =========================
-        // DELETED
+        // CHANNEL DELETED
         // =========================
 
         const deleted =
@@ -213,30 +80,29 @@ module.exports = {
                 channel,
                 [
                     `${channel.name} — deleted`,
-                    "Permission overwrites detected"
+                    "Permission overwrites removed"
                 ],
-                "Test event only. No channel was deleted."
+                "Channel event detected.",
+                "TEST-DELETED"
             );
 
 
         // =========================
-        // TRIGGERED
+        // ANTINUKE TRIGGERED
         // =========================
-
-        const detectedActions = [
-            `${channel.name} — deleted`,
-            "#rules — deleted",
-            "#media — deleted",
-            "#staff — deleted",
-            "#general — deleted"
-        ];
 
         const triggered =
             channelLogs.triggered(
                 user,
                 8,
                 5,
-                detectedActions,
+                [
+                    `${channel.name} — deleted`,
+                    "#rules — deleted",
+                    "#media — deleted",
+                    "#staff — deleted",
+                    "#general — deleted"
+                ],
                 "ban",
                 "Successfully applied.",
                 channel
@@ -244,36 +110,43 @@ module.exports = {
 
 
         // =========================
-        // RECOVERY
+        // ANTINUKE RECOVERY
         // =========================
 
         const recovery =
             channelLogs.recovery(
                 user,
                 [
-                    channel
+                    channel,
+                    "#rules",
+                    "#media"
                 ],
                 [
-                    `${channel.name} — recreated`,
+                    "Channel recreated",
                     "Permission overwrites restored",
                     "Channel settings restored"
                 ],
-                "Successfully recovered"
+                "Channel recovery completed."
             );
 
 
         // =========================
-        // SEND LOG EMBEDS
+        // SEND COMPONENTS V2
         // =========================
 
         return message.channel.send({
-            embeds: [
+
+            components: [
                 created,
                 updated,
                 deleted,
                 triggered,
                 recovery
-            ]
+            ],
+
+            flags:
+                MessageFlags.IsComponentsV2
+
         });
 
     }
