@@ -169,9 +169,7 @@ function event(
 
     return new ContainerBuilder()
         .setAccentColor(
-            action === "deleted"
-                ? config.colors.failed
-                : config.colors.regular
+            config.colors.regular
         )
         .addTextDisplayComponents(
             new TextDisplayBuilder()
@@ -241,7 +239,7 @@ function triggered(
 
     return new ContainerBuilder()
         .setAccentColor(
-            0xFFFFFF
+            config.colors.regular
         )
         .addTextDisplayComponents(
             new TextDisplayBuilder()
@@ -326,12 +324,12 @@ function recovery(
 
     return new ContainerBuilder()
         .setAccentColor(
-            config.colors.success
+            config.colors.regular
         )
         .addTextDisplayComponents(
             new TextDisplayBuilder()
                 .setContent(
-                    "## AntiNuke Restored\n" +
+                    "## Restored\n" +
                     "> successfully recovered the affected channels."
                 )
         )
