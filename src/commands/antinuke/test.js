@@ -1,10 +1,12 @@
+{"variant":"document","id":"ui4vlb","subject":"src/commands/antinuke/test.js"}
+```js
 const {
     PermissionFlagsBits,
     MessageFlags
 } = require("discord.js");
 
-const roleLogs =
-    require("../../systems/antinuke/logs/role");
+const vanityLogs =
+    require("../../systems/antinuke/logs/vanity");
 
 
 module.exports = {
@@ -33,71 +35,19 @@ module.exports = {
         const user =
             message.author;
 
-        const roles =
-            message.guild.roles.cache
-                .filter(
-                    role =>
-                        role.id !==
-                        message.guild.id
-                )
-                .first(3);
-
-        const roleList =
-            [...roles];
-
-
-        const firstRole =
-            roleList[0] ||
-            null;
-
-        const secondRole =
-            roleList[1] ||
-            firstRole;
-
-        const thirdRole =
-            roleList[2] ||
-            secondRole;
-
 
         // =========================
-        // ROLE CREATED / UPDATED
+        // VANITY EVENT
         // =========================
 
         const event =
-            roleLogs.event(
+            vanityLogs.event(
                 user,
                 "updated",
-                firstRole,
-                [
-                    "Administrator — added",
-                    "ManageRoles — added",
-                    "ManageChannels — added"
-                ],
-                "Role permissions updated.",
-                "TEST-ROLE-EVENT"
-            );
-
-
-        // =========================
-        // MULTIPLE ROLE EVENT
-        // =========================
-
-        const multipleEvent =
-            roleLogs.event(
-                user,
-                "updated",
-                [
-                    firstRole,
-                    secondRole,
-                    thirdRole
-                ],
-                [
-                    "Administrator — added",
-                    "ManageRoles — added",
-                    "ManageChannels — added"
-                ],
-                "Multiple role permissions updated.",
-                "TEST-ROLE-MULTIPLE"
+                "oldvanity",
+                "newvanity",
+                "The vanity change was detected and restored.",
+                "TEST-VANITY-EVENT"
             );
 
 
@@ -106,80 +56,29 @@ module.exports = {
         // =========================
 
         const triggered =
-            roleLogs.triggered(
+            vanityLogs.triggered(
                 user,
-                5,
-                3,
-                [
-                    `${firstRole?.name || "Unknown role"} — Administrator added`,
-                    `${secondRole?.name || "Unknown role"} — ManageRoles added`,
-                    `${thirdRole?.name || "Unknown role"} — ManageChannels added`
-                ],
+                "oldvanity",
+                "newvanity",
+                1,
+                1,
                 "ban",
-                "Successfully applied.",
-                firstRole
-            );
-
-
-        // =========================
-        // MULTIPLE ROLE TRIGGER
-        // =========================
-
-        const multipleTriggered =
-            roleLogs.triggered(
-                user,
-                8,
-                5,
+                "The original vanity was restored successfully.",
                 [
-                    `${firstRole?.name || "Unknown role"} — Administrator added`,
-                    `${secondRole?.name || "Unknown role"} — ManageRoles added`,
-                    `${thirdRole?.name || "Unknown role"} — ManageChannels added`
-                ],
-                "ban",
-                "Successfully applied.",
-                [
-                    firstRole,
-                    secondRole,
-                    thirdRole
+                    "Vanity changed"
                 ]
             );
 
 
         // =========================
-        // ROLE RECOVERY
+        // VANITY RECOVERY
         // =========================
 
         const recovery =
-            roleLogs.recovery(
+            vanityLogs.recovery(
                 user,
-                firstRole,
-                [
-                    "Administrator — removed",
-                    "ManageRoles — removed",
-                    "ManageChannels — removed"
-                ],
-                "Role permissions restored."
-            );
-
-
-        // =========================
-        // MULTIPLE ROLE RECOVERY
-        // =========================
-
-        const multipleRecovery =
-            roleLogs.recovery(
-                user,
-                [
-                    firstRole,
-                    secondRole,
-                    thirdRole
-                ],
-                [
-                    "Administrator — removed",
-                    "ManageRoles — removed",
-                    "ManageChannels — removed"
-                ],
-                "Multiple role permissions restored."
+                "oldvanity",
+                "The original vanity was restored successfully."
             );
 
 
@@ -198,34 +97,7 @@ module.exports = {
 
         await message.channel.send({
             components: [
-                multipleEvent
-            ],
-            flags:
-                MessageFlags.IsComponentsV2
-        });
-
-
-        await message.channel.send({
-            components: [
                 triggered
-            ],
-            flags:
-                MessageFlags.IsComponentsV2
-        });
-
-
-        await message.channel.send({
-            components: [
-                multipleTriggered
-            ],
-            flags:
-                MessageFlags.IsComponentsV2
-        });
-
-
-        await message.channel.send({
-            components: [
-                recovery
             ],
             flags:
                 MessageFlags.IsComponentsV2
@@ -234,7 +106,7 @@ module.exports = {
 
         return message.channel.send({
             components: [
-                multipleRecovery
+                recovery
             ],
             flags:
                 MessageFlags.IsComponentsV2
