@@ -46,32 +46,24 @@ function userSection(
     content
 ) {
 
-    const text =
-        new TextDisplayBuilder()
-            .setContent(
-                content || ""
-            );
-
     const section =
         new SectionBuilder()
             .addTextDisplayComponents(
-                text
+                new TextDisplayBuilder()
+                    .setContent(
+                        content || ""
+                    )
             );
 
-    if (
-        user
-    ) {
-
-        const avatar =
-            user.displayAvatarURL({
-                dynamic: true,
-                size: 256
-            });
+    if (user) {
 
         section.setThumbnailAccessory(
             new ThumbnailBuilder()
                 .setURL(
-                    avatar
+                    user.displayAvatarURL({
+                        dynamic: true,
+                        size: 256
+                    })
                 )
         );
 
@@ -158,12 +150,24 @@ function event(
     action,
     role,
     changes = [],
-    result = "Role permission event detected.",
+    result = "The role permission changes were recorded.",
     eventId = null
 ) {
 
     const multipleRoles =
         Array.isArray(role);
+
+    const title =
+        action === "created"
+            ? "Role Permissions Added"
+            : action === "deleted"
+                ? "Role Permissions Removed"
+                : "Role Permissions Updated";
+
+    const description =
+        multipleRoles
+            ? `> ${user} updated dangerous permissions on multiple roles.`
+            : `> ${user} updated dangerous permissions on ${role || "a role"}.`;
 
     const information =
         multipleRoles
@@ -178,33 +182,7 @@ function event(
 **Module:** \`role\`
 **Action:** \`${action}\`
 **Role:** ${role || "Unknown"}
-**Role ID:** ${role?.id || "N/A"}`;
-
-    const changesSection =
-        listSection(
-            "Changes:",
-            changes
-        );
-
-    const resultSection =
-        new TextDisplayBuilder()
-            .setContent(
-                `**Result:** ${result}`
-            );
-
-    const eventSection =
-        new TextDisplayBuilder()
-            .setContent(
-                `**Event ID:** \`${eventId || "N/A"}\``
-            );
-
-    const title =
-        "Role Permissions";
-
-    const description =
-        multipleRoles
-            ? `> detected dangerous permissions being **${action}** on multiple roles.`
-            : `> detected dangerous permissions being **${action}** on ${role || "a role"}.`;
+**Role ID:** \`${role?.id || "N/A"}\``;
 
     const container =
         new ContainerBuilder()
@@ -249,19 +227,28 @@ function event(
 
     return container
         .addTextDisplayComponents(
-            changesSection
+            listSection(
+                "Changes:",
+                changes
+            )
         )
         .addSeparatorComponents(
             separator()
         )
         .addTextDisplayComponents(
-            resultSection
+            new TextDisplayBuilder()
+                .setContent(
+                    `**Result:** ${result}`
+                )
         )
         .addSeparatorComponents(
             separator()
         )
         .addTextDisplayComponents(
-            eventSection
+            new TextDisplayBuilder()
+                .setContent(
+                    `**Event ID:** \`${eventId || "N/A"}\``
+                )
         );
 
 }
@@ -290,55 +277,68 @@ function triggered(
 **Punishment:** \`${punishment || "N/A"}\`
 **Result:** ${result || "N/A"}`;
 
-    const roles =
-        multipleRoles
-            ? rolesSection(
-                "Affected roles:",
-                role
+    const container =
+        new ContainerBuilder()
+            .setAccentColor(
+                config.colors.regular
             )
-            : new TextDisplayBuilder()
-                .setContent(
-`**Role:** ${role || "Unknown"}
-**Role ID:** ${role?.id || "N/A"}`
-                );
-
-    const detectedSection =
-        listSection(
-            "Detected actions:",
-            detectedActions
-        );
-
-    return new ContainerBuilder()
-        .setAccentColor(
-            config.colors.regular
-        )
-        .addTextDisplayComponents(
-            new TextDisplayBuilder()
-                .setContent(
-                    "## AntiNuke Alert\n" +
-                    `> detected dangerous role permission activity from ${user}.`
+            .addTextDisplayComponents(
+                new TextDisplayBuilder()
+                    .setContent(
+                        "## AntiNuke Alert\n" +
+                        `> ${user} made several dangerous changes to role permissions.`
+                    )
+            )
+            .addSeparatorComponents(
+                separator()
+            )
+            .addSectionComponents(
+                userSection(
+                    user,
+                    information
                 )
-        )
-        .addSeparatorComponents(
-            separator()
-        )
-        .addSectionComponents(
-            userSection(
-                user,
-                information
             )
-        )
-        .addSeparatorComponents(
-            separator()
-        )
+            .addSeparatorComponents(
+                separator()
+            );
+
+    if (
+        multipleRoles
+    ) {
+
+        container
+            .addTextDisplayComponents(
+                rolesSection(
+                    "Affected roles:",
+                    role
+                )
+            )
+            .addSeparatorComponents(
+                separator()
+            );
+
+    } else {
+
+        container
+            .addTextDisplayComponents(
+                new TextDisplayBuilder()
+                    .setContent(
+`**Role:** ${role || "Unknown"}
+**Role ID:** \`${role?.id || "N/A"}\``
+                    )
+            )
+            .addSeparatorComponents(
+                separator()
+            );
+
+    }
+
+    return container
         .addTextDisplayComponents(
-            roles
-        )
-        .addSeparatorComponents(
-            separator()
-        )
-        .addTextDisplayComponents(
-            detectedSection
+            listSection(
+                "Detected actions:",
+                detectedActions
+            )
         );
 
 }
@@ -348,7 +348,8 @@ function recovery(
     user,
     role,
     recoveredActions = [],
-    result = "Role permissions restored."
+    result =
+        "The affected role permissions were successfully restored."
 ) {
 
     const multipleRoles =
@@ -360,67 +361,77 @@ function recovery(
 
 **Module:** \`role\``;
 
-    const roles =
-        multipleRoles
-            ? rolesSection(
-                "Recovered roles:",
-                role
+    const container =
+        new ContainerBuilder()
+            .setAccentColor(
+                config.colors.regular
             )
-            : new TextDisplayBuilder()
-                .setContent(
-`**Role:** ${role || "Unknown"}
-**Role ID:** ${role?.id || "N/A"}`
-                );
-
-    const recoveredSection =
-        listSection(
-            "Recovered actions:",
-            recoveredActions
-        );
-
-    const resultSection =
-        new TextDisplayBuilder()
-            .setContent(
-                `**Result:** ${result}`
+            .addTextDisplayComponents(
+                new TextDisplayBuilder()
+                    .setContent(
+                        "## Roles Restored\n" +
+                        "> The affected role permissions were successfully restored."
+                    )
+            )
+            .addSeparatorComponents(
+                separator()
+            )
+            .addSectionComponents(
+                userSection(
+                    user,
+                    information
+                )
+            )
+            .addSeparatorComponents(
+                separator()
             );
 
-    return new ContainerBuilder()
-        .setAccentColor(
-            config.colors.regular
+    if (
+        multipleRoles
+    ) {
+
+        container
+            .addTextDisplayComponents(
+                rolesSection(
+                    "Recovered roles:",
+                    role
+                )
+            )
+            .addSeparatorComponents(
+                separator()
+            );
+
+    } else {
+
+        container
+            .addTextDisplayComponents(
+                new TextDisplayBuilder()
+                    .setContent(
+`**Role:** ${role || "Unknown"}
+**Role ID:** \`${role?.id || "N/A"}\``
+                    )
+            )
+            .addSeparatorComponents(
+                separator()
+            );
+
+    }
+
+    return container
+        .addTextDisplayComponents(
+            listSection(
+                "Recovered actions:",
+                recoveredActions
+            )
+        )
+        .addSeparatorComponents(
+            separator()
         )
         .addTextDisplayComponents(
             new TextDisplayBuilder()
                 .setContent(
-                    "## Restored\n" +
-                    "> successfully restored the affected role permissions."
+                    `**Result:** ${result}`
                 )
-        )
-        .addSeparatorComponents(
-            separator()
-        )
-        .addSectionComponents(
-            userSection(
-                user,
-                information
-            )
-        )
-        .addSeparatorComponents(
-            separator()
-        )
-        .addTextDisplayComponents(
-            roles
-        )
-        .addSeparatorComponents(
-            separator()
-        )
-        .addTextDisplayComponents(
-            recoveredSection
-        )
-        .addSeparatorComponents(
-            separator()
-        )
-        .addTextDisplayComponents(
-            resultSection
         );
 
 }
