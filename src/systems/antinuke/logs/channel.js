@@ -27,32 +27,24 @@ function userSection(
     content
 ) {
 
-    const text =
-        new TextDisplayBuilder()
-            .setContent(
-                content
-            );
-
     const section =
         new SectionBuilder()
             .addTextDisplayComponents(
-                text
+                new TextDisplayBuilder()
+                    .setContent(
+                        content || ""
+                    )
             );
 
-    if (
-        user
-    ) {
-
-        const avatar =
-            user.displayAvatarURL({
-                dynamic: true,
-                size: 256
-            });
+    if (user) {
 
         section.setThumbnailAccessory(
             new ThumbnailBuilder()
                 .setURL(
-                    avatar
+                    user.displayAvatarURL({
+                        dynamic: true,
+                        size: 256
+                    })
                 )
         );
 
@@ -89,12 +81,16 @@ ${content}
 }
 
 
+/* =========================================================
+   NORMAL CHANNEL EVENT
+========================================================= */
+
 function event(
     user,
     action,
     channel,
     changes = [],
-    result = "Channel event detected.",
+    result = "The channel event was recorded successfully.",
     eventId = null
 ) {
 
@@ -102,7 +98,7 @@ function event(
         "Channel Event";
 
     let description =
-        `> detected a channel **${action}** event performed by ${user}.`;
+        `> ${user} performed a channel **${action}** action.`;
 
     if (
         action === "created"
@@ -112,7 +108,7 @@ function event(
             "Channel Created";
 
         description =
-            `> detected a new channel being **created** by ${user}.`;
+            `> ${user} created ${channel}.`;
 
     }
 
@@ -124,7 +120,7 @@ function event(
             "Channel Updated";
 
         description =
-            `> detected a channel **update** performed by ${user}.`;
+            `> ${user} updated ${channel}.`;
 
     }
 
@@ -136,7 +132,7 @@ function event(
             "Channel Deleted";
 
         description =
-            `> detected a channel being **deleted** by ${user}.`;
+            `> ${user} deleted ${channel}.`;
 
     }
 
@@ -208,6 +204,10 @@ function event(
 }
 
 
+/* =========================================================
+   ANTINUKE TRIGGERED
+========================================================= */
+
 function triggered(
     user,
     actions,
@@ -245,7 +245,7 @@ function triggered(
             new TextDisplayBuilder()
                 .setContent(
                     "## AntiNuke Alert\n" +
-                    `> detected destructive activity from ${user}.`
+                    `> ${user} made several destructive changes to the server's channels.`
                 )
         )
         .addSeparatorComponents(
@@ -267,35 +267,39 @@ function triggered(
 }
 
 
+/* =========================================================
+   CHANNEL RECOVERY
+========================================================= */
+
 function recovery(
     user,
     channels = [],
     recoveredActions = [],
-    result = "Channel recovery completed."
+    result =
+        "The affected channels were successfully restored."
 ) {
 
     const channelList =
         channels.length
-            ? channels
-                .map(
-                    channel => {
+            ? channels.map(
+                channel => {
 
-                        if (
-                            typeof channel ===
-                            "string"
-                        ) {
+                    if (
+                        typeof channel ===
+                        "string"
+                    ) {
 
-                            return channel;
-
-                        }
-
-                        return (
-                            `${channel.name || "Unknown channel"} ` +
-                            `[${channel.id}]`
-                        );
+                        return channel;
 
                     }
-                )
+
+                    return (
+                        `${channel.name || "Unknown channel"} ` +
+                        `[${channel.id}]`
+                    );
+
+                }
+            )
             : [];
 
     const information =
@@ -329,8 +333,8 @@ function recovery(
         .addTextDisplayComponents(
             new TextDisplayBuilder()
                 .setContent(
-                    "## Restored\n" +
-                    "> successfully recovered the affected channels."
+                    "## Channels Restored\n" +
+                    "> The affected channels were successfully restored."
                 )
         )
         .addSeparatorComponents(
@@ -364,8 +368,79 @@ function recovery(
 }
 
 
+/* =========================================================
+   CHANNEL PROTECTION FAILED
+========================================================= */
+
+function failed(
+    user,
+    channel,
+    failedActions = [],
+    result =
+        "The affected channels could not be fully restored.",
+    action = "restore"
+) {
+
+    const information =
+`**Member:** ${user}
+\`${user.id}\`
+
+**Module:** \`channel\`
+**Action:** \`${action}\`
+**Channel:** ${channel || "Unknown"}
+**Channel ID:** \`${channel?.id || "N/A"}\``;
+
+    const failedSection =
+        listSection(
+            "Failed actions:",
+            failedActions
+        );
+
+    const resultSection =
+        new TextDisplayBuilder()
+            .setContent(
+                `**Result:** ${result}`
+            );
+
+    return new ContainerBuilder()
+        .setAccentColor(
+            config.colors.regular
+        )
+        .addTextDisplayComponents(
+            new TextDisplayBuilder()
+                .setContent(
+                    "## Channel Protection Failed\n" +
+                    `> ${user} made destructive channel changes, but the affected channels could not be fully restored.`
+                )
+        )
+        .addSeparatorComponents(
+            separator()
+        )
+        .addSectionComponents(
+            userSection(
+                user,
+                information
+            )
+        )
+        .addSeparatorComponents(
+            separator()
+        )
+        .addTextDisplayComponents(
+            failedSection
+        )
+        .addSeparatorComponents(
+            separator()
+        )
+        .addTextDisplayComponents(
+            resultSection
+        );
+
+}
+
+
 module.exports = {
     event,
     triggered,
-    recovery
+    recovery,
+    failed
 };
