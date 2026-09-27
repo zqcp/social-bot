@@ -36,7 +36,9 @@ function userSection(
                     )
             );
 
-    if (user) {
+    if (
+        user
+    ) {
 
         section.setThumbnailAccessory(
             new ThumbnailBuilder()
@@ -81,24 +83,20 @@ ${content}
 }
 
 
-/* =========================================================
-   NORMAL CHANNEL EVENT
-========================================================= */
-
 function event(
     user,
     action,
     channel,
     changes = [],
-    result = "The channel event was recorded successfully.",
+    result = "The channel was updated.",
     eventId = null
 ) {
 
     let title =
-        "Channel Event";
+        "Channel Updated";
 
     let description =
-        `> ${user} performed a channel **${action}** action.`;
+        `> ${user} updated ${channel}.`;
 
     if (
         action === "created"
@@ -109,18 +107,6 @@ function event(
 
         description =
             `> ${user} created ${channel}.`;
-
-    }
-
-    if (
-        action === "updated"
-    ) {
-
-        title =
-            "Channel Updated";
-
-        description =
-            `> ${user} updated ${channel}.`;
 
     }
 
@@ -137,31 +123,15 @@ function event(
     }
 
     const information =
-`**Member:** ${user}
-\`${user.id}\`
-
-**Module:** \`channel\`
+`**Channel:** ${channel}
 **Action:** \`${action}\`
-**Channel:** ${channel}
-**Channel ID:** \`${channel.id}\``;
+**Type:** \`${channel.type || "Unknown"}\``;
 
     const changesSection =
         listSection(
             "Changes:",
             changes
         );
-
-    const resultSection =
-        new TextDisplayBuilder()
-            .setContent(
-                `**Result:** ${result}`
-            );
-
-    const eventSection =
-        new TextDisplayBuilder()
-            .setContent(
-                `**Event ID:** \`${eventId || "N/A"}\``
-            );
 
     return new ContainerBuilder()
         .setAccentColor(
@@ -192,21 +162,23 @@ function event(
             separator()
         )
         .addTextDisplayComponents(
-            resultSection
+            new TextDisplayBuilder()
+                .setContent(
+                    `**Result:** ${result}`
+                )
         )
         .addSeparatorComponents(
             separator()
         )
         .addTextDisplayComponents(
-            eventSection
+            new TextDisplayBuilder()
+                .setContent(
+                    `**Event ID:** \`${eventId || "N/A"}\``
+                )
         );
 
 }
 
-
-/* =========================================================
-   ANTINUKE TRIGGERED
-========================================================= */
 
 function triggered(
     user,
@@ -219,21 +191,14 @@ function triggered(
 ) {
 
     const information =
-`**Member:** ${user}
-\`${user.id}\`
-
-**Module:** \`channel\`
-**Channel:** ${channel || "Unknown"}
-**Channel ID:** \`${channel?.id || "N/A"}\`
-
-**Activity:** \`${actions} actions\`
-**Threshold:** \`${threshold} actions\`
-**Punishment:** \`${punishment || "N/A"}\`
-**Result:** ${result || "N/A"}`;
+`**Channel:** ${channel || "Unknown"}
+**Actions:** \`${actions}\`
+**Threshold:** \`${threshold}\`
+**Punishment:** \`${punishment || "N/A"}\``;
 
     const detectedSection =
         listSection(
-            "Detected actions:",
+            "Detected:",
             detectedActions
         );
 
@@ -244,8 +209,7 @@ function triggered(
         .addTextDisplayComponents(
             new TextDisplayBuilder()
                 .setContent(
-                    "## AntiNuke Alert\n" +
-                    `> ${user} made several destructive changes to the server's channels.`
+                    `## AntiNuke Alert\n> ${user} made several changes to the server's channels.`
                 )
         )
         .addSeparatorComponents(
@@ -262,69 +226,66 @@ function triggered(
         )
         .addTextDisplayComponents(
             detectedSection
+        )
+        .addSeparatorComponents(
+            separator()
+        )
+        .addTextDisplayComponents(
+            new TextDisplayBuilder()
+                .setContent(
+                    `**Result:** ${result || "The user was punished."}`
+                )
         );
 
 }
 
 
-/* =========================================================
-   CHANNEL RECOVERY
-========================================================= */
-
 function recovery(
     user,
     channels = [],
     recoveredActions = [],
-    result =
-        "The affected channels were successfully restored."
+    result = "Everything was restored."
 ) {
 
     const channelList =
         channels.length
-            ? channels.map(
-                channel => {
+            ? channels
+                .map(
+                    channel => {
 
-                    if (
-                        typeof channel ===
-                        "string"
-                    ) {
+                        if (
+                            typeof channel ===
+                            "string"
+                        ) {
 
-                        return channel;
+                            return channel;
+
+                        }
+
+                        return (
+                            `${channel.name || "Unknown channel"} ` +
+                            `[${channel.id}]`
+                        );
 
                     }
-
-                    return (
-                        `${channel.name || "Unknown channel"} ` +
-                        `[${channel.id}]`
-                    );
-
-                }
-            )
+                )
             : [];
 
     const information =
-`**Member:** ${user}
-\`${user.id}\`
-
-**Module:** \`channel\``;
+`**Module:** \`channel\`
+**Recovered:** \`${channels.length} channels\``;
 
     const recoveredChannels =
         listSection(
-            "Recovered channels:",
+            "Recovered:",
             channelList
         );
 
     const recoveredActionsSection =
         listSection(
-            "Recovered actions:",
+            "Changes:",
             recoveredActions
         );
-
-    const resultSection =
-        new TextDisplayBuilder()
-            .setContent(
-                `**Result:** ${result}`
-            );
 
     return new ContainerBuilder()
         .setAccentColor(
@@ -333,8 +294,7 @@ function recovery(
         .addTextDisplayComponents(
             new TextDisplayBuilder()
                 .setContent(
-                    "## Channels Restored\n" +
-                    "> The affected channels were successfully restored."
+                    `## Changes Restored\n> The changes made by ${user} were restored.`
                 )
         )
         .addSeparatorComponents(
@@ -362,45 +322,33 @@ function recovery(
             separator()
         )
         .addTextDisplayComponents(
-            resultSection
+            new TextDisplayBuilder()
+                .setContent(
+                    `**Result:** ${result}`
+                )
         );
 
 }
 
-
-/* =========================================================
-   CHANNEL PROTECTION FAILED
-========================================================= */
 
 function failed(
     user,
     channel,
     failedActions = [],
     result =
-        "The affected channels could not be fully restored.",
+        "Some changes could not be restored.",
     action = "restore"
 ) {
 
     const information =
-`**Member:** ${user}
-\`${user.id}\`
-
-**Module:** \`channel\`
-**Action:** \`${action}\`
-**Channel:** ${channel || "Unknown"}
-**Channel ID:** \`${channel?.id || "N/A"}\``;
+`**Channel:** ${channel || "Unknown"}
+**Action:** \`${action}\``;
 
     const failedSection =
         listSection(
-            "Failed actions:",
+            "Failed:",
             failedActions
         );
-
-    const resultSection =
-        new TextDisplayBuilder()
-            .setContent(
-                `**Result:** ${result}`
-            );
 
     return new ContainerBuilder()
         .setAccentColor(
@@ -409,8 +357,7 @@ function failed(
         .addTextDisplayComponents(
             new TextDisplayBuilder()
                 .setContent(
-                    "## Channel Protection Failed\n" +
-                    `> ${user} made destructive channel changes, but the affected channels could not be fully restored.`
+                    `## Protection Failed\n> Some of the changes made by ${user} could not be restored.`
                 )
         )
         .addSeparatorComponents(
@@ -432,7 +379,10 @@ function failed(
             separator()
         )
         .addTextDisplayComponents(
-            resultSection
+            new TextDisplayBuilder()
+                .setContent(
+                    `**Result:** ${result}`
+                )
         );
 
 }
