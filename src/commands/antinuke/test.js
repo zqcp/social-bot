@@ -1,5 +1,3 @@
-{"variant":"document","id":"ui4vlb","subject":"src/commands/antinuke/test.js"}
-```js
 const {
     PermissionFlagsBits,
     MessageFlags
@@ -60,12 +58,14 @@ module.exports = {
                 user,
                 "oldvanity",
                 "newvanity",
-                1,
-                1,
+                3,
+                3,
                 "ban",
-                "The original vanity was restored successfully.",
+                "Punishment applied successfully.",
                 [
-                    "Vanity changed"
+                    "Vanity changed",
+                    "Unauthorized vanity update",
+                    "Vanity restoration"
                 ]
             );
 
