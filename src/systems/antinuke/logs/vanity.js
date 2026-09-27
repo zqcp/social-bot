@@ -204,7 +204,7 @@ function triggered(
 function recovery(
     user,
     vanity,
-    result = "The original vanity was restored successfully."
+    result = "The original server vanity was restored successfully."
 ) {
 
     const information =
@@ -221,7 +221,7 @@ function recovery(
         .addTextDisplayComponents(
             new TextDisplayBuilder()
                 .setContent(
-                    "## Vanity Restored\n> The server vanity was restored after an unauthorized change was detected."
+                    "## Vanity Restored\n> The original server vanity was restored successfully."
                 )
         )
         .addSeparatorComponents(
@@ -250,7 +250,7 @@ function failed(
     user,
     oldVanity,
     attemptedVanity,
-    result = "Failed to restore the original server vanity.",
+    result = "The original server vanity could not be restored.",
     action = "vanity changed"
 ) {
 
@@ -270,7 +270,7 @@ function failed(
         .addTextDisplayComponents(
             new TextDisplayBuilder()
                 .setContent(
-                    `## Vanity Protection Failed\n> ${user} attempted to change the server vanity, but AntiNuke could not restore it.`
+                    `## Vanity Protection Failed\n> ${user} attempted to change the server vanity, but the original vanity could not be restored.`
                 )
         )
         .addSeparatorComponents(
