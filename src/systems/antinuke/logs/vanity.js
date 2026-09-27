@@ -216,7 +216,7 @@ function recovery(
 
     return new ContainerBuilder()
         .setAccentColor(
-            config.colors.success
+            config.colors.regular
         )
         .addTextDisplayComponents(
             new TextDisplayBuilder()
@@ -246,8 +246,58 @@ function recovery(
 }
 
 
+function failed(
+    user,
+    oldVanity,
+    attemptedVanity,
+    result = "Failed to restore the original server vanity.",
+    action = "vanity changed"
+) {
+
+    const information =
+`**Member:** ${user}
+\`${user.id}\`
+
+**Module:** \`vanity\`
+**Action:** \`${action}\`
+**Old Vanity:** \`${oldVanity || "None"}\`
+**Attempted Vanity:** \`${attemptedVanity || "None"}\``;
+
+    return new ContainerBuilder()
+        .setAccentColor(
+            config.colors.failed
+        )
+        .addTextDisplayComponents(
+            new TextDisplayBuilder()
+                .setContent(
+                    `## Vanity Protection Failed\n> ${user} attempted to change the server vanity, but AntiNuke could not restore it.`
+                )
+        )
+        .addSeparatorComponents(
+            separator()
+        )
+        .addSectionComponents(
+            userSection(
+                user,
+                information
+            )
+        )
+        .addSeparatorComponents(
+            separator()
+        )
+        .addTextDisplayComponents(
+            new TextDisplayBuilder()
+                .setContent(
+                    `**Result:** ${result}`
+                )
+        );
+
+}
+
+
 module.exports = {
     event,
     triggered,
-    recovery
+    recovery,
+    failed
 };
