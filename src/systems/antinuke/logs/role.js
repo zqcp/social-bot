@@ -49,7 +49,7 @@ function userSection(
     const text =
         new TextDisplayBuilder()
             .setContent(
-                content
+                content || ""
             );
 
     const section =
@@ -108,7 +108,8 @@ ${content}
 }
 
 
-function roleList(
+function rolesSection(
+    title,
     roles = []
 ) {
 
@@ -117,41 +118,29 @@ function roleList(
             ? roles
             : [roles];
 
-    return list
-        .filter(Boolean)
-        .map(
-            role => {
+    const content =
+        list
+            .filter(Boolean)
+            .map(
+                role => {
 
-                if (
-                    typeof role ===
-                    "string"
-                ) {
+                    if (
+                        typeof role ===
+                        "string"
+                    ) {
 
-                    return `• ${role}`;
+                        return `• ${role}`;
+
+                    }
+
+                    return (
+                        `• ${role.name || "Unknown role"} ` +
+                        `[${role.id}]`
+                    );
 
                 }
-
-                return (
-                    `• ${role}\n` +
-                    `[${role.id}]`
-                );
-
-            }
-        )
-        .join("\n");
-
-}
-
-
-function rolesSection(
-    title,
-    roles = []
-) {
-
-    const content =
-        roleList(
-            roles
-        ) || "None";
+            )
+            .join("\n") || "None";
 
     return new TextDisplayBuilder()
         .setContent(
@@ -177,38 +166,19 @@ function event(
         Array.isArray(role);
 
     const information =
-`**Member:** ${user}
+        multipleRoles
+            ? `**Member:** ${user}
 \`${user.id}\`
 
 **Module:** \`role\`
-**Action:** \`${action}\``;
+**Action:** \`${action}\``
+            : `**Member:** ${user}
+\`${user.id}\`
 
-    const roleInformation =
-        multipleRoles
-            ? null
-            : new TextDisplayBuilder()
-                .setContent(
-                    information +
-                    `\n**Role:** ${role || "Unknown"}\n` +
-                    `**Role ID:** [${role?.id || "N/A"}]`
-                );
-
-    const informationSection =
-        userSection(
-            user,
-            multipleRoles
-                ? information
-                : roleInformation
-                    .content
-        );
-
-    const roles =
-        multipleRoles
-            ? rolesSection(
-                "Roles:",
-                role
-            )
-            : null;
+**Module:** \`role\`
+**Action:** \`${action}\`
+**Role:** ${role || "Unknown"}
+**Role ID:** [${role?.id || "N/A"}]`;
 
     const changesSection =
         listSection(
@@ -228,17 +198,13 @@ function event(
                 `**Event ID:** \`${eventId || "N/A"}\``
             );
 
-    let description =
-        `> detected dangerous permissions being **${action}** on ${role || "a role"}.`;
+    const title =
+        "Role Permissions";
 
-    if (
+    const description =
         multipleRoles
-    ) {
-
-        description =
-            `> detected dangerous permissions being **${action}** on multiple roles.`;
-
-    }
+            ? `> detected dangerous permissions being **${action}** on multiple roles.`
+            : `> detected dangerous permissions being **${action}** on ${role || "a role"}.`;
 
     const container =
         new ContainerBuilder()
@@ -248,14 +214,17 @@ function event(
             .addTextDisplayComponents(
                 new TextDisplayBuilder()
                     .setContent(
-                        `## Role Permissions\n${description}`
+                        `## ${title}\n${description}`
                     )
             )
             .addSeparatorComponents(
                 separator()
             )
             .addSectionComponents(
-                informationSection
+                userSection(
+                    user,
+                    information
+                )
             )
             .addSeparatorComponents(
                 separator()
@@ -267,7 +236,10 @@ function event(
 
         container
             .addTextDisplayComponents(
-                roles
+                rolesSection(
+                    "Roles:",
+                    role
+                )
             )
             .addSeparatorComponents(
                 separator()
@@ -318,12 +290,6 @@ function triggered(
 **Punishment:** \`${punishment || "N/A"}\`
 **Result:** ${result || "N/A"}`;
 
-    const informationSection =
-        userSection(
-            user,
-            information
-        );
-
     const roles =
         multipleRoles
             ? rolesSection(
@@ -332,8 +298,8 @@ function triggered(
             )
             : new TextDisplayBuilder()
                 .setContent(
-                    `**Role:** ${role || "Unknown"}\n` +
-                    `**Role ID:** [${role?.id || "N/A"}]`
+`**Role:** ${role || "Unknown"}
+**Role ID:** [${role?.id || "N/A"}]`
                 );
 
     const detectedSection =
@@ -357,7 +323,10 @@ function triggered(
             separator()
         )
         .addSectionComponents(
-            informationSection
+            userSection(
+                user,
+                information
+            )
         )
         .addSeparatorComponents(
             separator()
@@ -391,12 +360,6 @@ function recovery(
 
 **Module:** \`role\``;
 
-    const informationSection =
-        userSection(
-            user,
-            information
-        );
-
     const roles =
         multipleRoles
             ? rolesSection(
@@ -405,8 +368,8 @@ function recovery(
             )
             : new TextDisplayBuilder()
                 .setContent(
-                    `**Role:** ${role || "Unknown"}\n` +
-                    `**Role ID:** [${role?.id || "N/A"}]`
+`**Role:** ${role || "Unknown"}
+**Role ID:** [${role?.id || "N/A"}]`
                 );
 
     const recoveredSection =
@@ -436,7 +399,10 @@ function recovery(
             separator()
         )
         .addSectionComponents(
-            informationSection
+            userSection(
+                user,
+                information
+            )
         )
         .addSeparatorComponents(
             separator()
