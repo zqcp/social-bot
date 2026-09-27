@@ -83,6 +83,19 @@ module.exports = {
 
 
         // =========================
+        // VANITY FAILED
+        // =========================
+
+        const failed =
+            vanityLogs.failed(
+                user,
+                "oldvanity",
+                "newvanity",
+                "Failed to restore the original server vanity."
+            );
+
+
+        // =========================
         // SEND EACH LOG SEPARATELY
         // =========================
 
@@ -104,9 +117,18 @@ module.exports = {
         });
 
 
-        return message.channel.send({
+        await message.channel.send({
             components: [
                 recovery
+            ],
+            flags:
+                MessageFlags.IsComponentsV2
+        });
+
+
+        return message.channel.send({
+            components: [
+                failed
             ],
             flags:
                 MessageFlags.IsComponentsV2
