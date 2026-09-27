@@ -178,7 +178,7 @@ function event(
 **Module:** \`role\`
 **Action:** \`${action}\`
 **Role:** ${role || "Unknown"}
-**Role ID:** [${role?.id || "N/A"}]`;
+**Role ID:** ${role?.id || "N/A"}`;
 
     const changesSection =
         listSection(
@@ -299,7 +299,7 @@ function triggered(
             : new TextDisplayBuilder()
                 .setContent(
 `**Role:** ${role || "Unknown"}
-**Role ID:** [${role?.id || "N/A"}]`
+**Role ID:** ${role?.id || "N/A"}`
                 );
 
     const detectedSection =
@@ -369,7 +369,7 @@ function recovery(
             : new TextDisplayBuilder()
                 .setContent(
 `**Role:** ${role || "Unknown"}
-**Role ID:** [${role?.id || "N/A"}]`
+**Role ID:** ${role?.id || "N/A"}`
                 );
 
     const recoveredSection =
