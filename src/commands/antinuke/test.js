@@ -3,8 +3,8 @@ const {
     MessageFlags
 } = require("discord.js");
 
-const channelLogs =
-    require("../../systems/antinuke/logs/channel");
+const roleLogs =
+    require("../../systems/antinuke/logs/role");
 
 
 module.exports = {
@@ -30,65 +30,74 @@ module.exports = {
         }
 
 
-        const channel =
-            message.channel;
-
         const user =
             message.author;
 
+        const roles =
+            message.guild.roles.cache
+                .filter(
+                    role =>
+                        role.id !==
+                        message.guild.id
+                )
+                .first(3);
+
+        const roleList =
+            [...roles];
+
+
+        const firstRole =
+            roleList[0] ||
+            null;
+
+        const secondRole =
+            roleList[1] ||
+            firstRole;
+
+        const thirdRole =
+            roleList[2] ||
+            secondRole;
+
 
         // =========================
-        // CHANNEL CREATED
+        // ROLE CREATED / UPDATED
         // =========================
 
-        const created =
-            channelLogs.event(
-                user,
-                "created",
-                channel,
-                [
-                    `${channel.name} — created`,
-                    "Permissions configured"
-                ],
-                "Channel event detected.",
-                "TEST-CREATED"
-            );
-
-
-        // =========================
-        // CHANNEL UPDATED
-        // =========================
-
-        const updated =
-            channelLogs.event(
+        const event =
+            roleLogs.event(
                 user,
                 "updated",
-                channel,
+                firstRole,
                 [
-                    "Name changed",
-                    "Topic changed",
-                    "Permission overwrite changed"
+                    "Administrator — added",
+                    "ManageRoles — added",
+                    "ManageChannels — added"
                 ],
-                "Channel event detected.",
-                "TEST-UPDATED"
+                "Role permissions updated.",
+                "TEST-ROLE-EVENT"
             );
 
 
         // =========================
-        // CHANNEL DELETED
+        // MULTIPLE ROLE EVENT
         // =========================
 
-        const deleted =
-            channelLogs.event(
+        const multipleEvent =
+            roleLogs.event(
                 user,
-                "deleted",
-                channel,
+                "updated",
                 [
-                    `${channel.name} — deleted`,
-                    "Permission overwrites removed"
+                    firstRole,
+                    secondRole,
+                    thirdRole
                 ],
-                "Channel event detected.",
-                "TEST-DELETED"
+                [
+                    "Administrator — added",
+                    "ManageRoles — added",
+                    "ManageChannels — added"
+                ],
+                "Multiple role permissions updated.",
+                "TEST-ROLE-MULTIPLE"
             );
 
 
@@ -97,41 +106,80 @@ module.exports = {
         // =========================
 
         const triggered =
-            channelLogs.triggered(
+            roleLogs.triggered(
                 user,
-                8,
                 5,
+                3,
                 [
-                    `${channel.name} — deleted`,
-                    "#rules — deleted",
-                    "#media — deleted",
-                    "#staff — deleted",
-                    "#general — deleted"
+                    `${firstRole?.name || "Unknown role"} — Administrator added`,
+                    `${secondRole?.name || "Unknown role"} — ManageRoles added`,
+                    `${thirdRole?.name || "Unknown role"} — ManageChannels added`
                 ],
                 "ban",
                 "Successfully applied.",
-                channel
+                firstRole
             );
 
 
         // =========================
-        // ANTINUKE RECOVERY
+        // MULTIPLE ROLE TRIGGER
+        // =========================
+
+        const multipleTriggered =
+            roleLogs.triggered(
+                user,
+                8,
+                5,
+                [
+                    `${firstRole?.name || "Unknown role"} — Administrator added`,
+                    `${secondRole?.name || "Unknown role"} — ManageRoles added`,
+                    `${thirdRole?.name || "Unknown role"} — ManageChannels added`
+                ],
+                "ban",
+                "Successfully applied.",
+                [
+                    firstRole,
+                    secondRole,
+                    thirdRole
+                ]
+            );
+
+
+        // =========================
+        // ROLE RECOVERY
         // =========================
 
         const recovery =
-            channelLogs.recovery(
+            roleLogs.recovery(
+                user,
+                firstRole,
+                [
+                    "Administrator — removed",
+                    "ManageRoles — removed",
+                    "ManageChannels — removed"
+                ],
+                "Role permissions restored."
+            );
+
+
+        // =========================
+        // MULTIPLE ROLE RECOVERY
+        // =========================
+
+        const multipleRecovery =
+            roleLogs.recovery(
                 user,
                 [
-                    channel,
-                    "#rules",
-                    "#media"
+                    firstRole,
+                    secondRole,
+                    thirdRole
                 ],
                 [
-                    "Channel recreated",
-                    "Permission overwrites restored",
-                    "Channel settings restored"
+                    "Administrator — removed",
+                    "ManageRoles — removed",
+                    "ManageChannels — removed"
                 ],
-                "Channel recovery completed."
+                "Multiple role permissions restored."
             );
 
 
@@ -141,7 +189,7 @@ module.exports = {
 
         await message.channel.send({
             components: [
-                created
+                event
             ],
             flags:
                 MessageFlags.IsComponentsV2
@@ -150,16 +198,7 @@ module.exports = {
 
         await message.channel.send({
             components: [
-                updated
-            ],
-            flags:
-                MessageFlags.IsComponentsV2
-        });
-
-
-        await message.channel.send({
-            components: [
-                deleted
+                multipleEvent
             ],
             flags:
                 MessageFlags.IsComponentsV2
@@ -175,9 +214,27 @@ module.exports = {
         });
 
 
-        return message.channel.send({
+        await message.channel.send({
+            components: [
+                multipleTriggered
+            ],
+            flags:
+                MessageFlags.IsComponentsV2
+        });
+
+
+        await message.channel.send({
             components: [
                 recovery
+            ],
+            flags:
+                MessageFlags.IsComponentsV2
+        });
+
+
+        return message.channel.send({
+            components: [
+                multipleRecovery
             ],
             flags:
                 MessageFlags.IsComponentsV2
