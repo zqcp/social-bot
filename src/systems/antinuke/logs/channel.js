@@ -291,7 +291,7 @@ function recovery(
 
                         return (
                             `${channel.name || "Unknown channel"} ` +
-                            `(\`${channel.id}\`)`
+                            `[${channel.id}]`
                         );
 
                     }
