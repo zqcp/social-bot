@@ -14,7 +14,6 @@ const config =
 function separator() {
 
     return new SeparatorBuilder()
-        .setDivider(true)
         .setSpacing(
             SeparatorSpacingSize.Small
         );
@@ -27,32 +26,22 @@ function userSection(
     content
 ) {
 
-    const section =
-        new SectionBuilder()
-            .addTextDisplayComponents(
-                new TextDisplayBuilder()
-                    .setContent(
-                        content || ""
-                    )
-            );
-
-    if (
-        user
-    ) {
-
-        section.setThumbnailAccessory(
+    return new SectionBuilder()
+        .addTextDisplayComponents(
+            new TextDisplayBuilder()
+                .setContent(
+                    content
+                )
+        )
+        .setThumbnailAccessory(
             new ThumbnailBuilder()
                 .setURL(
                     user.displayAvatarURL({
                         dynamic: true,
-                        size: 256
+                        size: 128
                     })
                 )
         );
-
-    }
-
-    return section;
 
 }
 
@@ -62,22 +51,24 @@ function listSection(
     items = []
 ) {
 
-    const content =
-        items.length
-            ? items
+    if (!items.length) {
+        return new TextDisplayBuilder()
+            .setContent(
+                `**${title}**\n> None`
+            );
+    }
+
+    return new TextDisplayBuilder()
+        .setContent(
+            `**${title}**\n` +
+            "```\n" +
+            items
                 .map(
                     item =>
                         `• ${item}`
                 )
-                .join("\n")
-            : "None";
-
-    return new TextDisplayBuilder()
-        .setContent(
-`**${title}**
-\`\`\`
-${content}
-\`\`\``
+                .join("\n") +
+            "\n```"
         );
 
 }
@@ -88,105 +79,91 @@ function event(
     action,
     target,
     changes = [],
-    result = "The event was recorded.",
+    result = "The ban was recorded successfully.",
     eventId = null
 ) {
 
-    const actionText =
-        action || "updated";
-
     const targetText =
-        target || "Unknown";
+        target || "Unknown user";
 
     let title =
-        "Event Updated";
+        "User Banned";
 
     let description =
-        `> ${user} updated ${targetText}.`;
+        `> ${user} banned ${targetText}.`;
 
     if (
-        actionText === "created"
+        action === "deleted" ||
+        action === "unbanned"
     ) {
 
         title =
-            "Event Created";
+            "User Unbanned";
 
         description =
-            `> ${user} created ${targetText}.`;
+            `> ${user} removed the ban from ${targetText}.`;
 
     }
 
     if (
-        actionText === "deleted"
+        action === "updated"
     ) {
 
         title =
-            "Event Deleted";
+            "Ban Updated";
 
         description =
-            `> ${user} deleted ${targetText}.`;
-
-    }
-
-    if (
-        actionText === "added"
-    ) {
-
-        title =
-            "Event Added";
-
-        description =
-            `> ${user} added ${targetText}.`;
-
-    }
-
-    if (
-        actionText === "removed"
-    ) {
-
-        title =
-            "Event Removed";
-
-        description =
-            `> ${user} removed ${targetText}.`;
+            `> ${user} updated the ban for ${targetText}.`;
 
     }
 
     const information =
-`**Target:** ${targetText}
-**Action:** \`${actionText}\``;
+        `**Triggered by:** ${user}\n` +
+        `**Target:** ${targetText}\n` +
+        `**Action:** \`${action || "updated"}\``;
 
-    return new ContainerBuilder()
-        .setAccentColor(
-            config.colors.regular
-        )
-        .addTextDisplayComponents(
-            new TextDisplayBuilder()
-                .setContent(
-                    `## ${title}\n${description}`
+    const container =
+        new ContainerBuilder()
+            .setAccentColor(
+                config.colors.regular
+            )
+            .addTextDisplayComponents(
+                new TextDisplayBuilder()
+                    .setContent(
+                        `## ${title}\n${description}`
+                    )
+            )
+            .addSeparatorComponents(
+                separator()
+            )
+            .addSectionComponents(
+                userSection(
+                    user,
+                    information
                 )
-        )
-        .addSeparatorComponents(
-            separator()
-        )
-        .addSectionComponents(
-            userSection(
-                user,
-                information
             )
-        )
-        .addSeparatorComponents(
-            separator()
-        )
-        .addTextDisplayComponents(
-            listSection(
-                "Changes:",
-                changes
+            .addSeparatorComponents(
+                separator()
+            );
+
+    if (
+        changes.length
+    ) {
+
+        container
+            .addTextDisplayComponents(
+                listSection(
+                    "Changes:",
+                    changes
+                )
             )
-        )
-        .addSeparatorComponents(
-            separator()
-        )
+            .addSeparatorComponents(
+                separator()
+            );
+
+    }
+
+    container
         .addTextDisplayComponents(
             new TextDisplayBuilder()
                 .setContent(
@@ -203,6 +180,8 @@ function event(
                 )
         );
 
+    return container;
+
 }
 
 
@@ -216,11 +195,31 @@ function triggered(
     target
 ) {
 
+    const punishmentText =
+        punishment || "strip";
+
+    const punishmentResult = {
+
+        ban:
+            `${user} has been banned.`,
+
+        kick:
+            `${user} has been kicked.`,
+
+        strip:
+            `${user} has had their removable roles stripped.`
+
+    }[
+        punishmentText
+    ] ||
+        `${user} has been restricted.`;
+
     const information =
-`**Target:** ${target || "Unknown"}
-**Actions:** \`${actions}\`
-**Threshold:** \`${threshold}\`
-**Punishment:** \`${punishment || "N/A"}\``;
+        `**Member:** ${user}\n` +
+        `**Target:** ${target || "Multiple users"}\n` +
+        `**Actions:** \`${actions}\`\n` +
+        `**Threshold:** \`${threshold}\`\n` +
+        `**Punishment:** \`${punishmentText}\``;
 
     return new ContainerBuilder()
         .setAccentColor(
@@ -229,7 +228,8 @@ function triggered(
         .addTextDisplayComponents(
             new TextDisplayBuilder()
                 .setContent(
-                    `## AntiNuke Alert\n> ${user} made several changes that exceeded the configured protection threshold.`
+                    `## Mass Ban Alert\n` +
+                    `> Detected mass banning from ${user}.`
                 )
         )
         .addSeparatorComponents(
@@ -246,7 +246,7 @@ function triggered(
         )
         .addTextDisplayComponents(
             listSection(
-                "Detected:",
+                "Detected bans:",
                 detectedActions
             )
         )
@@ -256,7 +256,7 @@ function triggered(
         .addTextDisplayComponents(
             new TextDisplayBuilder()
                 .setContent(
-                    `**Result:** ${result || "The user was punished."}`
+                    `**Result:** ${result || punishmentResult}`
                 )
         );
 
@@ -267,7 +267,8 @@ function recovery(
     user,
     recovered = [],
     changes = [],
-    result = "Everything was restored."
+    result =
+        "The affected bans have been restored."
 ) {
 
     const recoveredList =
@@ -277,54 +278,72 @@ function recovery(
                 if (
                     typeof item === "string"
                 ) {
+
                     return item;
+
                 }
 
                 return (
-                    `${item.name || "Unknown"} ` +
-                    `[${item.id || "N/A"}]`
+                    `${item.name || "Unknown user"} ` +
+                    `[\`${item.id || "N/A"}\`]`
                 );
 
             }
         );
 
-    return new ContainerBuilder()
-        .setAccentColor(
-            config.colors.regular
-        )
-        .addTextDisplayComponents(
-            new TextDisplayBuilder()
-                .setContent(
-                    `## Changes Restored\n> The changes made by ${user} were restored.`
+    const information =
+        `**Triggered by:** ${user}\n` +
+        `**Recovered:** \`${recovered.length}\``;
+
+    const container =
+        new ContainerBuilder()
+            .setAccentColor(
+                config.colors.regular
+            )
+            .addTextDisplayComponents(
+                new TextDisplayBuilder()
+                    .setContent(
+                        `## Bans Restored\n` +
+                        `> ${user}'s ban changes were restored.`
+                    )
+            )
+            .addSeparatorComponents(
+                separator()
+            )
+            .addSectionComponents(
+                userSection(
+                    user,
+                    information
                 )
-        )
-        .addSeparatorComponents(
-            separator()
-        )
-        .addSectionComponents(
-            userSection(
-                user,
-                `**Recovered:** \`${recovered.length}\``
             )
-        )
-        .addSeparatorComponents(
-            separator()
-        )
-        .addTextDisplayComponents(
-            listSection(
-                "Recovered:",
-                recoveredList
+            .addSeparatorComponents(
+                separator()
             )
-        )
-        .addSeparatorComponents(
-            separator()
-        )
-        .addTextDisplayComponents(
-            listSection(
-                "Changes:",
-                changes
+            .addTextDisplayComponents(
+                listSection(
+                    "Restored bans:",
+                    recoveredList
+                )
+            );
+
+    if (
+        changes.length
+    ) {
+
+        container
+            .addSeparatorComponents(
+                separator()
             )
-        )
+            .addTextDisplayComponents(
+                listSection(
+                    "Changes:",
+                    changes
+                )
+            );
+
+    }
+
+    container
         .addSeparatorComponents(
             separator()
         )
@@ -334,6 +353,8 @@ function recovery(
                     `**Result:** ${result}`
                 )
         );
+
+    return container;
 
 }
 
@@ -342,42 +363,58 @@ function failed(
     user,
     target,
     failedActions = [],
-    result = "Some changes could not be restored.",
-    action = "restore"
+    result =
+        "The ban action could not be completed.",
+    action = "ban"
 ) {
 
-    const information =
-`**Target:** ${target || "Unknown"}
-**Action:** \`${action}\``;
+    const targetText =
+        target || "Unknown user";
 
-    return new ContainerBuilder()
-        .setAccentColor(
-            config.colors.regular
-        )
-        .addTextDisplayComponents(
-            new TextDisplayBuilder()
-                .setContent(
-                    `## Protection Failed\n> Some changes made by ${user} could not be restored.`
+    const information =
+        `**Target:** ${targetText}\n` +
+        `**Action:** \`${action}\``;
+
+    const container =
+        new ContainerBuilder()
+            .setAccentColor(
+                config.colors.regular
+            )
+            .addTextDisplayComponents(
+                new TextDisplayBuilder()
+                    .setContent(
+                        `## Ban Failed\n` +
+                        `> ${user} couldn't complete the ban action for ${targetText}.`
+                    )
+            )
+            .addSeparatorComponents(
+                separator()
+            )
+            .addSectionComponents(
+                userSection(
+                    user,
+                    information
                 )
-        )
-        .addSeparatorComponents(
-            separator()
-        )
-        .addSectionComponents(
-            userSection(
-                user,
-                information
+            );
+
+    if (
+        failedActions.length
+    ) {
+
+        container
+            .addSeparatorComponents(
+                separator()
             )
-        )
-        .addSeparatorComponents(
-            separator()
-        )
-        .addTextDisplayComponents(
-            listSection(
-                "Failed:",
-                failedActions
-            )
-        )
+            .addTextDisplayComponents(
+                listSection(
+                    "Failed actions:",
+                    failedActions
+                )
+            );
+
+    }
+
+    container
         .addSeparatorComponents(
             separator()
         )
@@ -387,6 +424,8 @@ function failed(
                     `**Result:** ${result}`
                 )
         );
+
+    return container;
 
 }
 
