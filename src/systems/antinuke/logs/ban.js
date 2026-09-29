@@ -118,7 +118,7 @@ function event(
     }
 
     const information =
-        `**Triggered by:** ${user}\n` +
+        `**Member:** ${user}\n` +
         `**Target:** ${targetText}\n` +
         `**Action:** \`${action || "updated"}\``;
 
@@ -292,7 +292,7 @@ function recovery(
         );
 
     const information =
-        `**Triggered by:** ${user}\n` +
+        `**Member:** ${user}\n` +
         `**Recovered:** \`${recovered.length}\``;
 
     const container =
