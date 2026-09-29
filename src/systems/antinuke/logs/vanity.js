@@ -88,102 +88,92 @@ function event(
     action,
     target,
     changes = [],
-    result = "The event was recorded.",
+    result = "The server vanity URL has been updated.",
     eventId = null
 ) {
+
+    const targetText =
+        target || "Server Vanity URL";
 
     const actionText =
         action || "updated";
 
-    const targetText =
-        target || "Unknown";
-
     let title =
-        "Event Updated";
+        "Vanity Updated";
 
     let description =
-        `> ${user} updated ${targetText}.`;
+        `> ${user} updated the server vanity URL.`;
 
     if (
-        actionText === "created"
-    ) {
-
-        title =
-            "Event Created";
-
-        description =
-            `> ${user} created ${targetText}.`;
-
-    }
-
-    if (
-        actionText === "deleted"
-    ) {
-
-        title =
-            "Event Deleted";
-
-        description =
-            `> ${user} deleted ${targetText}.`;
-
-    }
-
-    if (
+        actionText === "created" ||
         actionText === "added"
     ) {
 
         title =
-            "Event Added";
+            "Vanity Updated";
 
         description =
-            `> ${user} added ${targetText}.`;
+            `> ${user} updated the server vanity URL.`;
 
     }
 
     if (
+        actionText === "deleted" ||
         actionText === "removed"
     ) {
 
         title =
-            "Event Removed";
+            "Vanity Updated";
 
         description =
-            `> ${user} removed ${targetText}.`;
+            `> ${user} removed the server vanity URL.`;
 
     }
 
     const information =
-`**Target:** ${targetText}
+`**Member:** ${user}
+**Target:** ${targetText}
 **Action:** \`${actionText}\``;
 
-    return new ContainerBuilder()
-        .setAccentColor(
-            config.colors.regular
-        )
-        .addTextDisplayComponents(
-            new TextDisplayBuilder()
-                .setContent(
-                    `## ${title}\n${description}`
+    const container =
+        new ContainerBuilder()
+            .setAccentColor(
+                config.colors.regular
+            )
+            .addTextDisplayComponents(
+                new TextDisplayBuilder()
+                    .setContent(
+                        `## ${title}\n${description}`
+                    )
+            )
+            .addSeparatorComponents(
+                separator()
+            )
+            .addSectionComponents(
+                userSection(
+                    user,
+                    information
                 )
-        )
-        .addSeparatorComponents(
-            separator()
-        )
-        .addSectionComponents(
-            userSection(
-                user,
-                information
+            );
+
+    if (
+        changes.length
+    ) {
+
+        container
+            .addSeparatorComponents(
+                separator()
             )
-        )
-        .addSeparatorComponents(
-            separator()
-        )
-        .addTextDisplayComponents(
-            listSection(
-                "Changes:",
-                changes
-            )
-        )
+            .addTextDisplayComponents(
+                listSection(
+                    "Changes:",
+                    changes
+                )
+            );
+
+    }
+
+    container
         .addSeparatorComponents(
             separator()
         )
@@ -203,6 +193,8 @@ function event(
                 )
         );
 
+    return container;
+
 }
 
 
@@ -216,11 +208,31 @@ function triggered(
     target
 ) {
 
+    const punishmentText =
+        punishment || "strip";
+
+    const punishmentResult = {
+
+        ban:
+            `${user} has been banned.`,
+
+        kick:
+            `${user} has been kicked.`,
+
+        strip:
+            `${user} has had their removable roles stripped.`
+
+    }[
+        punishmentText
+    ] ||
+        `${user} has been restricted.`;
+
     const information =
-`**Target:** ${target || "Unknown"}
+`**Member:** ${user}
+**Targer:** ${target || "Server Vanity URL"}
 **Actions:** \`${actions}\`
 **Threshold:** \`${threshold}\`
-**Punishment:** \`${punishment || "N/A"}\``;
+**Punishment:** \`${punishmentText}\``;
 
     return new ContainerBuilder()
         .setAccentColor(
@@ -229,7 +241,8 @@ function triggered(
         .addTextDisplayComponents(
             new TextDisplayBuilder()
                 .setContent(
-                    `## AntiNuke Alert\n> ${user} made several changes that exceeded the configured protection threshold.`
+                    `## Vanity Alert\n` +
+                    `> Detected a vanity URL change from ${user}.`
                 )
         )
         .addSeparatorComponents(
@@ -246,7 +259,7 @@ function triggered(
         )
         .addTextDisplayComponents(
             listSection(
-                "Detected:",
+                "Detected changes:",
                 detectedActions
             )
         )
@@ -256,7 +269,7 @@ function triggered(
         .addTextDisplayComponents(
             new TextDisplayBuilder()
                 .setContent(
-                    `**Result:** ${result || "The user was punished."}`
+                    `**Result:** ${result || punishmentResult}`
                 )
         );
 
@@ -267,7 +280,8 @@ function recovery(
     user,
     recovered = [],
     changes = [],
-    result = "Everything was restored."
+    result =
+        "The server vanity URL has been restored."
 ) {
 
     const recoveredList =
@@ -277,54 +291,81 @@ function recovery(
                 if (
                     typeof item === "string"
                 ) {
+
                     return item;
+
                 }
 
                 return (
-                    `${item.name || "Unknown"} ` +
-                    `[${item.id || "N/A"}]`
+                    `${item.name || "Server Vanity URL"} ` +
+                    `[\`${item.id || "N/A"}\`]`
                 );
 
             }
         );
 
-    return new ContainerBuilder()
-        .setAccentColor(
-            config.colors.regular
-        )
-        .addTextDisplayComponents(
-            new TextDisplayBuilder()
-                .setContent(
-                    `## Changes Restored\n> The changes made by ${user} were restored.`
+    const information =
+`**Member:** ${user}
+**Target:** Server Vanity URL
+**Action:** \`restore\``;
+
+    const container =
+        new ContainerBuilder()
+            .setAccentColor(
+                config.colors.regular
+            )
+            .addTextDisplayComponents(
+                new TextDisplayBuilder()
+                    .setContent(
+                        `## Vanity Restored\n` +
+                        `> ${user}'s vanity URL change was restored.`
+                    )
+            )
+            .addSeparatorComponents(
+                separator()
+            )
+            .addSectionComponents(
+                userSection(
+                    user,
+                    information
                 )
-        )
-        .addSeparatorComponents(
-            separator()
-        )
-        .addSectionComponents(
-            userSection(
-                user,
-                `**Recovered:** \`${recovered.length}\``
+            );
+
+    if (
+        recovered.length
+    ) {
+
+        container
+            .addSeparatorComponents(
+                separator()
             )
-        )
-        .addSeparatorComponents(
-            separator()
-        )
-        .addTextDisplayComponents(
-            listSection(
-                "Recovered:",
-                recoveredList
+            .addTextDisplayComponents(
+                listSection(
+                    "Restored:",
+                    recoveredList
+                )
+            );
+
+    }
+
+    if (
+        changes.length
+    ) {
+
+        container
+            .addSeparatorComponents(
+                separator()
             )
-        )
-        .addSeparatorComponents(
-            separator()
-        )
-        .addTextDisplayComponents(
-            listSection(
-                "Changes:",
-                changes
-            )
-        )
+            .addTextDisplayComponents(
+                listSection(
+                    "Changes:",
+                    changes
+                )
+            );
+
+    }
+
+    container
         .addSeparatorComponents(
             separator()
         )
@@ -334,6 +375,8 @@ function recovery(
                     `**Result:** ${result}`
                 )
         );
+
+    return container;
 
 }
 
@@ -342,42 +385,58 @@ function failed(
     user,
     target,
     failedActions = [],
-    result = "Some changes could not be restored.",
+    result =
+        "The vanity URL could not be restored.",
     action = "restore"
 ) {
 
+    const targetText =
+        target || "Server Vanity URL";
+
     const information =
-`**Target:** ${target || "Unknown"}
+`**Target:** ${targetText}
 **Action:** \`${action}\``;
 
-    return new ContainerBuilder()
-        .setAccentColor(
-            config.colors.regular
-        )
-        .addTextDisplayComponents(
-            new TextDisplayBuilder()
-                .setContent(
-                    `## Protection Failed\n> Some changes made by ${user} could not be restored.`
+    const container =
+        new ContainerBuilder()
+            .setAccentColor(
+                config.colors.regular
+            )
+            .addTextDisplayComponents(
+                new TextDisplayBuilder()
+                    .setContent(
+                        `## Vanity Failed\n` +
+                        `> ${user} couldn't restore the server vanity URL.`
+                    )
+            )
+            .addSeparatorComponents(
+                separator()
+            )
+            .addSectionComponents(
+                userSection(
+                    user,
+                    information
                 )
-        )
-        .addSeparatorComponents(
-            separator()
-        )
-        .addSectionComponents(
-            userSection(
-                user,
-                information
+            );
+
+    if (
+        failedActions.length
+    ) {
+
+        container
+            .addSeparatorComponents(
+                separator()
             )
-        )
-        .addSeparatorComponents(
-            separator()
-        )
-        .addTextDisplayComponents(
-            listSection(
-                "Failed:",
-                failedActions
-            )
-        )
+            .addTextDisplayComponents(
+                listSection(
+                    "Failed actions:",
+                    failedActions
+                )
+            );
+
+    }
+
+    container
         .addSeparatorComponents(
             separator()
         )
@@ -387,6 +446,8 @@ function failed(
                     `**Result:** ${result}`
                 )
         );
+
+    return container;
 
 }
 
