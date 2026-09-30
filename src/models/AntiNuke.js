@@ -112,6 +112,11 @@ const AntiNukeSchema = new mongoose.Schema(
             channelId: {
                 type: String,
                 default: null
+            },
+
+            webhookUrl: {
+                type: String,
+                default: null
             }
         },
 
