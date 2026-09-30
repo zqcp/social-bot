@@ -1,5 +1,6 @@
 const {
-    PermissionFlagsBits
+    PermissionFlagsBits,
+    WebhookClient
 } = require("discord.js");
 
 const AntiNuke =
@@ -45,86 +46,23 @@ async function send(
         return;
     }
 
-    const channelId =
-        antiNuke.logs?.channelId;
+    const webhookUrl =
+        antiNuke.logs?.webhookUrl;
 
-    if (!channelId) {
+    if (!webhookUrl) {
         return;
     }
 
-    const channel =
-        guild.channels.cache.get(
-            channelId
-        );
-
-    if (!channel) {
-        return;
-    }
-
-    const botMember =
-        guild.members.me;
-
-    if (!botMember) {
-
-        console.error(
-            `[ANTINUKE LOGGER] Bot member missing in ${guild.id}.`
-        );
-
-        return;
-
-    }
-
-    const permissions =
-        channel.permissionsFor(
-            botMember
-        );
-
-    if (
-        !permissions?.has(
-            PermissionFlagsBits.ViewChannel
-        )
-    ) {
-
-        console.error(
-            `[ANTINUKE LOGGER] Missing ViewChannel in ${guild.id}.`
-        );
-
-        return;
-
-    }
-
-    if (
-        !permissions.has(
-            PermissionFlagsBits.SendMessages
-        )
-    ) {
-
-        console.error(
-            `[ANTINUKE LOGGER] Missing SendMessages in ${guild.id}.`
-        );
-
-        return;
-
-    }
-
-    if (
-        !permissions.has(
-            PermissionFlagsBits.EmbedLinks
-        )
-    ) {
-
-        console.error(
-            `[ANTINUKE LOGGER] Missing EmbedLinks in ${guild.id}.`
-        );
-
-        return;
-
-    }
+    const webhook =
+        new WebhookClient({
+            url: webhookUrl
+        });
 
     if (
         !data?.module ||
         !data.user
     ) {
+        webhook.destroy();
         return;
     }
 
@@ -262,15 +200,19 @@ async function send(
             break;
 
         default:
+
+            webhook.destroy();
+
             return;
 
     }
 
     if (!embed) {
+        webhook.destroy();
         return;
     }
 
-    await channel.send({
+    await webhook.send({
         embeds: [
             embed
         ]
@@ -284,6 +226,8 @@ async function send(
 
         }
     );
+
+    webhook.destroy();
 
 }
 
