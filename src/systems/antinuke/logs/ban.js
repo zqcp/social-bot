@@ -14,6 +14,7 @@ const config =
 function separator() {
 
     return new SeparatorBuilder()
+        .setDivider(true)
         .setSpacing(
             SeparatorSpacingSize.Small
         );
@@ -26,22 +27,32 @@ function userSection(
     content
 ) {
 
-    return new SectionBuilder()
-        .addTextDisplayComponents(
-            new TextDisplayBuilder()
-                .setContent(
-                    content
-                )
-        )
-        .setThumbnailAccessory(
+    const section =
+        new SectionBuilder()
+            .addTextDisplayComponents(
+                new TextDisplayBuilder()
+                    .setContent(
+                        content || ""
+                    )
+            );
+
+    if (
+        user
+    ) {
+
+        section.setThumbnailAccessory(
             new ThumbnailBuilder()
                 .setURL(
                     user.displayAvatarURL({
                         dynamic: true,
-                        size: 128
+                        size: 256
                     })
                 )
         );
+
+    }
+
+    return section;
 
 }
 
@@ -51,11 +62,26 @@ function listSection(
     items = []
 ) {
 
-    if (!items.length) {
+    if (
+        !items.length
+    ) {
+
         return new TextDisplayBuilder()
             .setContent(
                 `**${title}**\n> None`
             );
+
+    }
+
+    if (
+        items.length === 1
+    ) {
+
+        return new TextDisplayBuilder()
+            .setContent(
+                `**${title}**\n> • ${items[0]}`
+            );
+
     }
 
     return new TextDisplayBuilder()
@@ -86,6 +112,9 @@ function event(
     const targetText =
         target || "Unknown user";
 
+    const actionText =
+        action || "updated";
+
     let title =
         "User Banned";
 
@@ -93,8 +122,8 @@ function event(
         `> ${user} banned ${targetText}.`;
 
     if (
-        action === "deleted" ||
-        action === "unbanned"
+        actionText === "deleted" ||
+        actionText === "unbanned"
     ) {
 
         title =
@@ -106,7 +135,7 @@ function event(
     }
 
     if (
-        action === "updated"
+        actionText === "updated"
     ) {
 
         title =
@@ -120,7 +149,7 @@ function event(
     const information =
         `**Member:** ${user}\n` +
         `**Target:** ${targetText}\n` +
-        `**Action:** \`${action || "updated"}\``;
+        `**Action:** \`${actionText}\``;
 
     const container =
         new ContainerBuilder()
@@ -141,9 +170,6 @@ function event(
                     user,
                     information
                 )
-            )
-            .addSeparatorComponents(
-                separator()
             );
 
     if (
@@ -151,19 +177,22 @@ function event(
     ) {
 
         container
+            .addSeparatorComponents(
+                separator()
+            )
             .addTextDisplayComponents(
                 listSection(
                     "Changes:",
                     changes
                 )
-            )
-            .addSeparatorComponents(
-                separator()
             );
 
     }
 
     container
+        .addSeparatorComponents(
+            separator()
+        )
         .addTextDisplayComponents(
             new TextDisplayBuilder()
                 .setContent(
@@ -315,7 +344,13 @@ function recovery(
                     user,
                     information
                 )
-            )
+            );
+
+    if (
+        recoveredList.length
+    ) {
+
+        container
             .addSeparatorComponents(
                 separator()
             )
@@ -325,6 +360,8 @@ function recovery(
                     recoveredList
                 )
             );
+
+    }
 
     if (
         changes.length
