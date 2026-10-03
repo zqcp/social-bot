@@ -1,10 +1,8 @@
 const {
     ContainerBuilder,
-    SectionBuilder,
     SeparatorBuilder,
     SeparatorSpacingSize,
-    TextDisplayBuilder,
-    ThumbnailBuilder
+    TextDisplayBuilder
 } = require("discord.js");
 
 const config =
@@ -22,63 +20,35 @@ function separator() {
 }
 
 
-function userSection(
-    user,
-    content
-) {
-
-    const section =
-        new SectionBuilder()
-            .addTextDisplayComponents(
-                new TextDisplayBuilder()
-                    .setContent(
-                        content || ""
-                    )
-            );
-
-    if (
-        user
-    ) {
-
-        section.setThumbnailAccessory(
-            new ThumbnailBuilder()
-                .setURL(
-                    user.displayAvatarURL({
-                        dynamic: true,
-                        size: 256
-                    })
-                )
-        );
-
-    }
-
-    return section;
-
-}
-
-
-function listSection(
+function list(
     title,
     items = []
 ) {
 
-    const content =
-        items.length
-            ? items
-                .map(
-                    item =>
-                        `• ${item}`
-                )
-                .join("\n")
-            : "None";
+    if (!items.length) {
+        return null;
+    }
 
-    return new TextDisplayBuilder()
-        .setContent(
-`**${title}**
-\`\`\`
-${content}
-\`\`\``
+    if (items.length === 1) {
+
+        return (
+            `**${title}**\n` +
+            `> • ${items[0]}`
         );
+
+    }
+
+    return (
+        `**${title}**\n` +
+        "```\n" +
+        items
+            .map(
+                item =>
+                    `• ${item}`
+            )
+            .join("\n") +
+        "\n```"
+    );
 
 }
 
@@ -88,8 +58,8 @@ function event(
     action,
     target,
     changes = [],
-    result = "The server vanity URL has been updated.",
-    eventId = null
+    result =
+        "The server vanity URL was updated."
 ) {
 
     const targetText =
@@ -98,42 +68,23 @@ function event(
     const actionText =
         action || "updated";
 
-    let title =
-        "Vanity Updated";
-
     let description =
         `> ${user} updated the server vanity URL.`;
-
-    if (
-        actionText === "created" ||
-        actionText === "added"
-    ) {
-
-        title =
-            "Vanity Updated";
-
-        description =
-            `> ${user} updated the server vanity URL.`;
-
-    }
 
     if (
         actionText === "deleted" ||
         actionText === "removed"
     ) {
 
-        title =
-            "Vanity Updated";
-
         description =
             `> ${user} removed the server vanity URL.`;
 
     }
 
-    const information =
-`**Member:** ${user}
-**Target:** ${targetText}
-**Action:** \`${actionText}\``;
+    const details =
+        `**User:** ${user}\n` +
+        `**Target:** ${targetText}\n` +
+        `**Action:** \`${actionText}\``;
 
     const container =
         new ContainerBuilder()
@@ -143,32 +94,37 @@ function event(
             .addTextDisplayComponents(
                 new TextDisplayBuilder()
                     .setContent(
-                        `## ${title}\n${description}`
+                        `## Vanity Updated\n` +
+                        description
                     )
             )
             .addSeparatorComponents(
                 separator()
             )
-            .addSectionComponents(
-                userSection(
-                    user,
-                    information
-                )
+            .addTextDisplayComponents(
+                new TextDisplayBuilder()
+                    .setContent(
+                        `**Details**\n${details}`
+                    )
             );
 
-    if (
-        changes.length
-    ) {
+    const changesList =
+        list(
+            "Changes:",
+            changes
+        );
+
+    if (changesList) {
 
         container
             .addSeparatorComponents(
                 separator()
             )
             .addTextDisplayComponents(
-                listSection(
-                    "Changes:",
-                    changes
-                )
+                new TextDisplayBuilder()
+                    .setContent(
+                        changesList
+                    )
             );
 
     }
@@ -182,15 +138,6 @@ function event(
                 .setContent(
                     `**Result:** ${result}`
                 )
-        )
-        .addSeparatorComponents(
-            separator()
-        )
-        .addTextDisplayComponents(
-            new TextDisplayBuilder()
-                .setContent(
-                    `**Event ID:** \`${eventId || "N/A"}\``
-                )
         );
 
     return container;
@@ -202,10 +149,9 @@ function triggered(
     user,
     actions,
     threshold,
-    detectedActions = [],
+    detectedChanges = [],
     punishment,
-    result,
-    target
+    result
 ) {
 
     const punishmentText =
@@ -227,42 +173,57 @@ function triggered(
     ] ||
         `${user} has been restricted.`;
 
-    const information =
-`**Member:** ${user}
-**Targer:** ${target || "Server Vanity URL"}
-**Actions:** \`${actions}\`
-**Threshold:** \`${threshold}\`
-**Punishment:** \`${punishmentText}\``;
+    const details =
+        `**User:** ${user}\n` +
+        `**Target:** Server Vanity URL\n` +
+        `**Actions:** \`${actions}\`\n` +
+        `**Threshold:** \`${threshold}\`\n` +
+        `**Punishment:** \`${punishmentText}\``;
 
-    return new ContainerBuilder()
-        .setAccentColor(
-            config.colors.regular
-        )
-        .addTextDisplayComponents(
-            new TextDisplayBuilder()
-                .setContent(
-                    `## Vanity Alert\n` +
-                    `> Detected a vanity URL change from ${user}.`
-                )
-        )
-        .addSeparatorComponents(
-            separator()
-        )
-        .addSectionComponents(
-            userSection(
-                user,
-                information
+    const container =
+        new ContainerBuilder()
+            .setAccentColor(
+                config.colors.regular
             )
-        )
-        .addSeparatorComponents(
-            separator()
-        )
-        .addTextDisplayComponents(
-            listSection(
-                "Detected changes:",
-                detectedActions
+            .addTextDisplayComponents(
+                new TextDisplayBuilder()
+                    .setContent(
+                        `## Vanity Alert\n` +
+                        `> Detected a vanity URL change from ${user}.`
+                    )
             )
-        )
+            .addSeparatorComponents(
+                separator()
+            )
+            .addTextDisplayComponents(
+                new TextDisplayBuilder()
+                    .setContent(
+                        `**Details**\n${details}`
+                    )
+            );
+
+    const detectedList =
+        list(
+            "Detected:",
+            detectedChanges
+        );
+
+    if (detectedList) {
+
+        container
+            .addSeparatorComponents(
+                separator()
+            )
+            .addTextDisplayComponents(
+                new TextDisplayBuilder()
+                    .setContent(
+                        detectedList
+                    )
+            );
+
+    }
+
+    container
         .addSeparatorComponents(
             separator()
         )
@@ -273,6 +234,8 @@ function triggered(
                 )
         );
 
+    return container;
+
 }
 
 
@@ -281,7 +244,7 @@ function recovery(
     recovered = [],
     changes = [],
     result =
-        "The server vanity URL has been restored."
+        "The server vanity URL was reverted successfully."
 ) {
 
     const recoveredList =
@@ -304,10 +267,11 @@ function recovery(
             }
         );
 
-    const information =
-`**Member:** ${user}
-**Target:** Server Vanity URL
-**Action:** \`restore\``;
+    const details =
+        `**User:** ${user}\n` +
+        `**Target:** Server Vanity URL\n` +
+        `**Action:** \`revert\`\n` +
+        `**Recovered:** \`${recovered.length}\``;
 
     const container =
         new ContainerBuilder()
@@ -317,50 +281,58 @@ function recovery(
             .addTextDisplayComponents(
                 new TextDisplayBuilder()
                     .setContent(
-                        `## Vanity Restored\n` +
-                        `> ${user}'s vanity URL change was restored.`
+                        `## Vanity Reverted\n` +
+                        `> The server vanity URL was reverted.`
                     )
             )
             .addSeparatorComponents(
                 separator()
             )
-            .addSectionComponents(
-                userSection(
-                    user,
-                    information
-                )
+            .addTextDisplayComponents(
+                new TextDisplayBuilder()
+                    .setContent(
+                        `**Details**\n${details}`
+                    )
             );
 
-    if (
-        recovered.length
-    ) {
+    const revertedList =
+        list(
+            "Reverted:",
+            recoveredList
+        );
+
+    if (revertedList) {
 
         container
             .addSeparatorComponents(
                 separator()
             )
             .addTextDisplayComponents(
-                listSection(
-                    "Restored:",
-                    recoveredList
-                )
+                new TextDisplayBuilder()
+                    .setContent(
+                        revertedList
+                    )
             );
 
     }
 
-    if (
-        changes.length
-    ) {
+    const changesList =
+        list(
+            "Changes:",
+            changes
+        );
+
+    if (changesList) {
 
         container
             .addSeparatorComponents(
                 separator()
             )
             .addTextDisplayComponents(
-                listSection(
-                    "Changes:",
-                    changes
-                )
+                new TextDisplayBuilder()
+                    .setContent(
+                        changesList
+                    )
             );
 
     }
@@ -393,9 +365,9 @@ function failed(
     const targetText =
         target || "Server Vanity URL";
 
-    const information =
-`**Target:** ${targetText}
-**Action:** \`${action}\``;
+    const details =
+        `**Target:** ${targetText}\n` +
+        `**Action:** \`${action}\``;
 
     const container =
         new ContainerBuilder()
@@ -412,26 +384,30 @@ function failed(
             .addSeparatorComponents(
                 separator()
             )
-            .addSectionComponents(
-                userSection(
-                    user,
-                    information
-                )
+            .addTextDisplayComponents(
+                new TextDisplayBuilder()
+                    .setContent(
+                        `**Details**\n${details}`
+                    )
             );
 
-    if (
-        failedActions.length
-    ) {
+    const failedList =
+        list(
+            "Failed:",
+            failedActions
+        );
+
+    if (failedList) {
 
         container
             .addSeparatorComponents(
                 separator()
             )
             .addTextDisplayComponents(
-                listSection(
-                    "Failed actions:",
-                    failedActions
-                )
+                new TextDisplayBuilder()
+                    .setContent(
+                        failedList
+                    )
             );
 
     }
